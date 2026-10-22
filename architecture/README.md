@@ -10,5 +10,8 @@
 | [ADR-0004](./ADR-0004-license.md) | 许可证策略 | 已接受 |
 | [ADR-0005](./ADR-0005-shared-go-module.md) | 共享 Go 代码组织 | 已接受 |
 | [ADR-0006](./ADR-0006-i18n.md) | 国际化（i18n）方案 | 已接受 |
+| [ADR-0007](./ADR-0007-auth-design.md) | 认证设计 | 已接受 |
+| [ADR-0008](./ADR-0008-rsa-key-management.md) | Yggdrasil RSA 签名密钥管理 | 已接受 |
+| [ADR-0009](./ADR-0009-codegen-workflow.md) | 代码生成工作流 | 已接受 |
 
 > 格式参照 [MADR](https://adr.github.io/madr/) 简化版；新决策追加 `ADR-NNNN-<slug>.md`。
