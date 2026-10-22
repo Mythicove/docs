@@ -1,0 +1,8 @@
+:8080 {
+	# Mod 托管路由（Hoard）
+	reverse_proxy /v2/* hoard:8081
+	reverse_proxy /api/mods* hoard:8081
+
+	# 其余走皮肤站（Mirror）
+	reverse_proxy mirror:8080
+}
