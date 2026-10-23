@@ -1,0 +1,42 @@
+---
+title: Mythicove
+description: 面向离线服 / 私服 / 模组服玩家的开源 Minecraft 生态套件
+template: splash
+hero:
+  tagline: 从罗盘启航，经群岛靠岸，用幻镜装扮身份，从秘藏取模组，翻舆图找整合包
+  actions:
+    - text: 快速开始
+      link: /getting-started/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: 产品介绍
+      link: /products/mirror/
+      icon: open-book
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## 产品矩阵
+
+统一「航海 / 港湾」隐喻，共享同一技术栈与基础设施。
+
+<CardGrid>
+  <Card title="Mythic Mirror 幻镜" icon="open-book">
+    皮肤站 —— Yggdrasil 外置登录 + 皮肤 / 披风分发，替代 Blessing Skin。
+  </Card>
+  <Card title="Mythic Hoard 秘藏" icon="seti:folder">
+    Mod 托管 —— Modrinth 兼容的模组 / 整合包分发，替代闭源平台。
+  </Card>
+  <Card title="Mythic Compass 罗盘" icon="rocket">
+    启动器 —— Yggdrasil 登录 + 3D 预览 + 一键下载整合包。
+  </Card>
+</CardGrid>
+
+## 核心原则
+
+- **开源优先**：产品 AGPL-3.0，API 契约 MIT，文档 CC BY-SA 4.0。
+- **协议对齐**：复用 Yggdrasil、Modrinth API、`.mrpack` 等事实标准。
+- **现代化栈**：Go 后端 + TypeScript 前端，单二进制自托管友好。
+- **按规模部署**：10 人私服到 10k 公共平台，组件可增可选。
+
+> 详细规划见 [简介](/getting-started/introduction/)。

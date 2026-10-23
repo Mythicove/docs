@@ -1,0 +1,42 @@
+---
+title: Mythicove
+description: Open-source Minecraft ecosystem for offline / private / modded servers
+template: splash
+hero:
+  tagline: Set sail from the Compass, dock at the Isles, dress your identity in the Mirror, take mods from the Hoard, and find modpacks in the Atlas
+  actions:
+    - text: Quickstart
+      link: /en/getting-started/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: Products
+      link: /en/products/mirror/
+      icon: open-book
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Products
+
+One "voyage / harbor" metaphor, one tech stack, one set of infrastructure.
+
+<CardGrid>
+  <Card title="Mythic Mirror" icon="open-book">
+    Skin station — Yggdrasil auth + skin / cape delivery, a modern Blessing Skin replacement.
+  </Card>
+  <Card title="Mythic Hoard" icon="seti:folder">
+    Mod hosting — Modrinth-compatible mod / modpack distribution.
+  </Card>
+  <Card title="Mythic Compass" icon="rocket">
+    Launcher — Yggdrasil login + 3D preview + one-click modpack download.
+  </Card>
+</CardGrid>
+
+## Principles
+
+- **Open source first**: AGPL-3.0 products, MIT API contract, CC BY-SA 4.0 docs.
+- **Protocol aligned**: reuse Yggdrasil, Modrinth API, `.mrpack` and other de-facto standards.
+- **Modern stack**: Go backend + TypeScript frontend, self-host friendly.
+- **Scale with tiers**: from a 10-player private server to a 10k public platform.
+
+> See the [introduction](/en/getting-started/introduction/) for the full plan.

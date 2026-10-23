@@ -1,0 +1,17 @@
+/* Mythicove 品牌蓝紫主题 */
+:root {
+  --sl-color-accent: #4f46e5;
+  --sl-color-accent-high: #6366f1;
+  --sl-color-text-accent: #4f46e5;
+}
+
+[data-theme="dark"] {
+  --sl-color-accent: #6366f1;
+  --sl-color-accent-high: #818cf8;
+  --sl-color-text-accent: #818cf8;
+}
+
+/* 导航栏 logo 高度 */
+.site-title img {
+  height: 2rem;
+}

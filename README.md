@@ -2,6 +2,8 @@
 
 Mythicove 生态的统一文档仓库。所有跨仓库、或"开发过程中需要版本化"的文档统一放这里，不散落到各产品仓库的随机子目录。
 
+文档站基于 **Astro + Starlight** 构建（Markdown 为唯一内容源），支持 zh-CN（默认）/ en 双语、深浅色 logo、按分类的侧边栏与全文搜索（Pagefind）。
+
 ## 约定
 
 | 放这里（`docs`） | 放产品仓库 | 放 `api` 仓库 | 不进仓库 |
@@ -10,12 +12,44 @@ Mythicove 生态的统一文档仓库。所有跨仓库、或"开发过程中需
 
 ## 目录
 
-- `plans/` — 产品计划
-  - `overview.md` — 生态总览（命名、技术栈、部署分级）
-  - `mythic-mirror.md` — 皮肤站计划
-  - `mythic-hoard.md` — Mod 托管计划
-- `architecture/` — 架构决策记录（ADR，待建）
-- API 契约 → 独立仓库 `Mythicove/api`
+```
+docs/
+├── astro.config.mjs          # Starlight 配置（logo / i18n / 侧边栏 / 品牌色）
+├── public/                   # favicon 等静态资源
+├── src/
+│   ├── assets/               # logo（深/浅，圆角）
+│   ├── styles/custom.css     # 品牌蓝紫主题变量
+│   └── content/docs/         # 文档内容（Markdown / MDX）
+│       ├── index.mdx         # zh-CN 首页
+│       ├── getting-started/  # 简介、快速开始
+│       ├── products/         # Mirror / Hoard / Compass / 前端
+│       ├── guides/           # authlib-injector、正版绑定
+│       ├── architecture/     # ADR-0001..0010
+│       ├── deploy/           # Docker Compose、存储分级、多实例
+│       └── en/               # 英文内容（未翻译页回退到中文）
+└── deploy/                   # 可直接使用的部署产物（docker-compose / Caddyfile）
+```
+
+## 本地开发
+
+```bash
+pnpm install
+pnpm dev      # http://localhost:4321
+pnpm build    # 产出 dist/
+```
+
+## 部署
+
+GitHub Actions（`.github/workflows/deploy.yml`）构建并部署到 GitHub Pages。
+
+- 自定义域名（如 `docs.mythicove.com`）：保持 `astro.config.mjs` 的 `site` 与默认 `base: '/'`。
+- 项目站点（`<org>.github.io/docs/`）：在 `astro.config.mjs` 增加 `base: '/docs/'`。
+
+## 多语言
+
+- 默认（root）= zh-CN，英文在 `src/content/docs/en/`。
+- 未翻译的页面自动回退到中文，避免死链。
+- 侧边栏分类标签在 `astro.config.mjs` 的 `sidebar` 中通过 `translations` 提供双语。
 
 ## 许可证
 
