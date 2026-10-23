@@ -137,7 +137,7 @@
 - ~~用户级上传~~✅（W3）：`POST /v2/project`（Modrinth 形 multipart data+file，自动建团队归属）、`POST /v2/version`（团队成员校验）、`DELETE /v2/project/{id}`（owner/admin）；PAT scopes 强制（声明 scopes 须含 UPLOAD）；`HOARD_REQUIRE_REVIEW` 审核开关接线；管理员 `/api/mods` 队列保留；spec 漂移门绿
 - ~~mod 元数据解析~~✅（W4）：`internal/modmeta` 解析 jar 内 `fabric.mod.json`/`quilt.mod.json`/`META-INF/(neo)forge.mods.toml`（BurntSushi/toml）→ 自动填充 title/description/loaders/game_versions（minecraft 依赖下界）/license/version/icon；表单优先、冲突写 `metadata_flags`（title/description/loader/game_versions_mismatch）；icon 提取入对象存储 + `GET /api/mods/{id}/icon` 直出；migration 00004（license/icon_key/meta_flags 列）；非 jar/损坏元数据静默兼容；7 项解析单测 + 上传集成测试
 - ~~版本依赖~~✅（W5）：migration 00005 `version_dependencies`（required/optional/incompatible/embedded，Modrinth 形）；`POST /v2/project|version` data 带 `dependencies[]`（非法类型 400）；`GET /v2/project/{id}/dependencies`；mrpack 完全合规增强：`dependencies.minecraft.version`（版本级 game_versions 优先）、`env.client/server`（映射 client_side/server_side）、`overrides/` 目录；deps+mrpack 集成测试
-- 搜索 facets 透传 + Meili `total_hits` 补全（旧 TODO）
+- ~~搜索 facets 透传 + Meili `total_hits`~~✅（W6）：facets 解析已在位（内层 OR/外层 AND，补单测）；shared/search `Query` 返回 total（v0.1.2，破坏性签名——仅 hoard 消费）；Meili 分支 total_hits 用 estimatedTotalHits 且修复同键多值 filter 被 AND 的语义 bug；hoard go.mod 升 shared v0.1.2
 
 前端：
 - mod 详情页（版本列表/changelog/文件/依赖）、创建项目+发版向导、teams 管理、PAT 管理
