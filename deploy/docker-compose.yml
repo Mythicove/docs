@@ -58,6 +58,9 @@ services:
       context: ./web
       args:
         NEXT_PUBLIC_API_URL: "${API_URL:-http://localhost:8080}"
+    environment:
+      # SSR/RSC 服务端取数走 compose 内部网络
+      API_URL_INTERNAL: "http://caddy:8080"
     ports:
       - "${WEB_PORT:-3101}:3000"
     depends_on:

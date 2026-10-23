@@ -15,7 +15,7 @@
 |---|---|
 | `mythic-mirror` | Go 后端。Yggdrasil 全套端点 + RSA 签名、皮肤/披风上传校验与分发、crafatar 风格头像/渲染、账号体系（注册/邮箱验证/找回密码/GitHub OAuth/Microsoft 正版绑定/邀请码/验证码）、皮肤库（发布/点赞，**评论只写不读**）、管理后台、OIDC Provider（Fosite，**token 存内存**）。存储本地/S3、缓存内存/Redis、邮件 SMTP/Resend/日志可切。集成测试对真 Postgres 全绿。 |
 | `mythic-hoard` | Go 后端。Project→Version→File 三级模型（Postgres/sqlc 或内存）、本地/S3 存储、pg_trgm/Meili 搜索、inline/asynq 队列、下载统计、审核状态、Modrinth 兼容读子集、`.mrpack` 生成（含 dependencies + mods/ 路径）。**上传/审核仅靠 `HOARD_ADMIN_TOKEN`，无用户体系。** |
-| `web` | Next.js 16 App Router。**全部客户端渲染（无 SSR/RSC 数据获取）**。landing/注册/登录(OAuth+忘记密码)/邮箱验证与重置落地页/皮肤库列表+详情/上传皮肤披风(profile)/3D 预览/管理后台/mod 列表+上传。类型由 OpenAPI 契约生成。**零前端测试；token 存 localStorage；管理后台手贴 admin token。** |
+| `web` | Next.js 16 App Router。**皮肤库列表/详情已改 RSC 服务端渲染**（搜索/排序/分页/评论区/应用到我的皮肤），其余页面仍为客户端渲染。landing/注册/登录(OAuth+忘记密码)/邮箱验证与重置落地页/上传皮肤披风(profile)/3D 预览/管理后台/mod 列表+上传。类型由 OpenAPI 契约生成。**零前端测试；token 存 localStorage；管理后台手贴 admin token。** |
 | `compass` | Tauri 2 原型（~500 行单页）。Yggdrasil 登录 + skinview3d 预览 + `.mrpack` 下载 + 委托 Prism 启动。**不原生启动 Minecraft**（无 Java 检测/版本清单/asset 下载/authlib-injector 注入/实例管理），无 CI、无自动更新。 |
 | `shared` | Go 能力接口 + 零依赖进程内实现：storage/search/cache/**ratelimit（Memory 固定窗口）**/**clientip（可信代理感知的客户端 IP 解析）**/queue/mailer/i18n/captcha/cdn/oauth/mc。**已删除无人引用的 `auth` 接口**（认证在各服务内直接实现，见 overview §5）。 |
 | `api` | OpenAPI 契约（mirror + hoard + common），已对齐实现（见下）。 |
@@ -46,7 +46,7 @@
 **后端深度**
 - OIDC token 仍存内存（`fosite` MemoryStore），多实例/重启失效 → 需 Postgres/Redis storage
 - `account.mojangStates` 仍是进程内 map → 多副本下 Microsoft 正版绑定失效
-- 皮肤库评论**只写不读**（无列表端点/UI）；无标签/搜索/排序/分页；无 2FA/举报/配额/审计日志
+- 皮肤库评论**读取已实现**（列表端点 + UI + 管理删除）；列表已有搜索/排序（最新/点赞）/分页（total）；仍缺：标签体系、2FA、举报、配额、审计日志
 - 邮箱校验 `validEmail` 仍偏宽松；多数请求体未跑 validator
 - Hoard **无用户/组织/团队/API Token**（只有管理员 token）→ 不是 Modrinth 替代品；无版本依赖关系、上传不解析 mod 元数据、无上游镜像代理、搜索无 facets 透传到 UI
 - Meili 分支 `total_hits` 仍是近似
@@ -89,7 +89,9 @@
 
 目标：一个陌生人按文档部署后，能完成 注册→验证→登录→传皮肤→皮肤库浏览互动 全流程。**范围=产品功能补齐**；生产化正确性（多实例/存储加固）归 Phase 2。
 
-后端（W1，先行，前端依赖它）：
+> **进度（2026-10-23）**：W1 后端✅（详情/评论读删/搜索排序分页/apply 全部落地，单测+真 PG 集成+11 项运行时冒烟全过，spec 同步且漂移门绿）；W2 皮肤库两页✅（RSC SSR + 搜索/排序/分页/评论区/apply，SSR 真渲染验证过，`API_URL_INTERNAL` 已进 compose）。W2 剩余：toast、error.tsx/loading.tsx、admin 页组件化。W3/W4 未动。
+
+后端（W1，先行，前端依赖它）：✅
 - `GET /skinlib/{id}` 详情端点（现状：前端拉 `listSkinLib(0,1000)` 客户端 find，必须废掉）
 - `GET /skinlib/{id}/comments` 评论读取 + 管理端删除；皮肤库 `q` 搜索 + 排序（最新/点赞）+ 分页 total
 - `POST /skinlib/{id}/apply` "应用到我的皮肤"（认证，将库条目纹理设为自己玩家的皮肤）
