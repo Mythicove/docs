@@ -136,7 +136,7 @@
 - ~~迁移：`users` 投影表、`teams`/`team_members`、`personal_access_tokens`~~✅（W2，migration 00002/00003）：投影表 + 服务端会话（W1）；teams 两级角色（owner 管成员/删项目，member 传版本）；PAT `mhp_` 前缀明文仅创建时返回一次、sha256 哈希存储、scopes、过期、last_used、可撤销；`projects.team_id` 可空兼容存量；mem+PG 集成 + HTTP 全链路测试（401/403/撤销即失效/明文不泄漏）
 - ~~用户级上传~~✅（W3）：`POST /v2/project`（Modrinth 形 multipart data+file，自动建团队归属）、`POST /v2/version`（团队成员校验）、`DELETE /v2/project/{id}`（owner/admin）；PAT scopes 强制（声明 scopes 须含 UPLOAD）；`HOARD_REQUIRE_REVIEW` 审核开关接线；管理员 `/api/mods` 队列保留；spec 漂移门绿
 - ~~mod 元数据解析~~✅（W4）：`internal/modmeta` 解析 jar 内 `fabric.mod.json`/`quilt.mod.json`/`META-INF/(neo)forge.mods.toml`（BurntSushi/toml）→ 自动填充 title/description/loaders/game_versions（minecraft 依赖下界）/license/version/icon；表单优先、冲突写 `metadata_flags`（title/description/loader/game_versions_mismatch）；icon 提取入对象存储 + `GET /api/mods/{id}/icon` 直出；migration 00004（license/icon_key/meta_flags 列）；非 jar/损坏元数据静默兼容；7 项解析单测 + 上传集成测试
-- 版本依赖：`version_dependencies`（required/optional/incompatible/embedded）+ `GET /v2/project/{id}/dependencies`；mrpack 完全合规（dependencies 版本、overrides、env）
+- ~~版本依赖~~✅（W5）：migration 00005 `version_dependencies`（required/optional/incompatible/embedded，Modrinth 形）；`POST /v2/project|version` data 带 `dependencies[]`（非法类型 400）；`GET /v2/project/{id}/dependencies`；mrpack 完全合规增强：`dependencies.minecraft.version`（版本级 game_versions 优先）、`env.client/server`（映射 client_side/server_side）、`overrides/` 目录；deps+mrpack 集成测试
 - 搜索 facets 透传 + Meili `total_hits` 补全（旧 TODO）
 
 前端：
