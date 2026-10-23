@@ -1,0 +1,51 @@
+# Mythicove 生产 Caddyfile 模板
+#
+# 用法：
+#   export API_DOMAIN=api.example.com WEB_DOMAIN=www.example.com
+#   caddy run --config Caddyfile.prod
+#
+# 前提：两个域名解析到本机，80/443 可达（Caddy 自动签发/续期 Let's Encrypt）。
+# 本地验证语法：caddy validate --config Caddyfile.prod --adapter caddyfile
+#
+# 多副本扩展：把 mirror:8080 / hoard:8081 / web:3000 换成多个上游即可，
+# 例如 reverse_proxy mirror-1:8080 mirror-2:8080。
+# 注意：OIDC token 目前存 mirror 进程内存（落库前排期见 docs/plans/status.md P2-B），
+# mirror 多副本时下方 lb_policy cookie 会把 /oauth2/* 流程粘在同一副本，保证授权码流可用；
+# Yggdrasil/皮肤/API 均无状态（Postgres + Redis），不受影响。
+
+{$API_DOMAIN:api.localhost} {
+	encode zstd gzip
+
+	# 安全头兜底（应用层也各自设置；此处保证反代直出的 404/5xx 也带）
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	# 信任边界：Caddy 是应用的可信代理（默认私网可信已覆盖 docker 网络）。
+	# 若 Caddy 前还有 CDN/LB，需在应用侧配置 *_TRUSTED_PROXIES 加入其网段。
+
+	# Mod 路由 → Hoard
+	reverse_proxy /v2/* hoard:8081
+	reverse_proxy /api/mods* hoard:8081
+
+	# 其余（Yggdrasil/账号/皮肤库/管理/OIDC）→ Mirror，OIDC 会话亲和
+	reverse_proxy mirror:8080 {
+		lb_policy cookie mythicove-affinity
+	}
+}
+
+{$WEB_DOMAIN:app.localhost} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	reverse_proxy web:3000
+}

@@ -1,0 +1,58 @@
+# Mythicove Prometheus 告警规则
+# 依赖指标：mirror/hoard 的 /metrics（http_requests_total、http_request_duration_seconds）
+# 与 Prometheus 自身的 up。加载：prometheus.yml → rule_files: [alerts.yml]
+groups:
+  - name: mythicove-availability
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~"mirror|hoard|web"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} 实例不可达"
+          description: "{{ $labels.instance }} 已 2 分钟抓取失败。"
+
+  - name: mythicove-traffic
+    rules:
+      - alert: High5xxRate
+        expr: |
+          sum by (job) (rate(http_requests_total{status=~"5.."}[5m]))
+            /
+          sum by (job) (rate(http_requests_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} 5xx 比例超过 5%"
+          description: "近 5 分钟 5xx 占比 {{ $value | humanizePercentage }}，检查服务日志与依赖（Postgres/Redis/存储）。"
+
+      - alert: HighP95Latency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (job, le) (rate(http_request_duration_seconds_bucket[5m]))) > 1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} P95 延迟超过 1s"
+          description: "近 5 分钟 P95 = {{ $value }}s，持续 15 分钟。"
+
+      - alert: RateLimitSurge
+        expr: sum by (job) (rate(http_requests_total{status="429"}[10m])) > 5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} 429 持续偏高"
+          description: "可能在被爆破/滥用，或限流阈值配置过低（*_RATE_LIMIT_*）。结合 clientip 日志确认来源。"
+
+  - name: mythicove-capacity
+    rules:
+      - alert: ProcessRestarted
+        expr: changes(process_start_time_seconds{job=~"mirror|hoard"}[1h]) > 2
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} 一小时内重启超过 2 次"
+          description: "疑似崩溃循环，检查日志与 OOM。"
