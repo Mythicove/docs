@@ -88,7 +88,7 @@
 
 目标：一个陌生人按文档部署后，能完成 注册→验证→登录→传皮肤→皮肤库浏览互动 全流程。**范围=产品功能补齐**；生产化正确性（多实例/存储加固）归 Phase 2。
 
-> **进度（2026-10-23）**：W1 后端✅（详情/评论读删/搜索排序分页/apply 全部落地，单测+真 PG 集成+11 项运行时冒烟全过，spec 同步且漂移门绿）；W2✅（皮肤库两页 RSC SSR + 搜索/排序/分页/评论区/apply + toast(sonner) + error/loading 边界 + admin 页 Tabs/Table 组件化，SSR 真渲染验证过，`API_URL_INTERNAL` 已进 compose）；W3✅（admin **会话登录**上线：后端 AdminAuth 本就支持 role=admin 会话，web 管理面板改用登录会话、手贴 token 降级为救援通道、hoard token 独立输入；CORS 收窄为可配白名单 `*_CORS_ORIGINS`，mirror 回退 WEB_URL，运行时验证允许/拒绝/PATCH 预检/会话 200/非管理员 403 五项全过）。**W4 未动**（Playwright E2E、gofmt 门、CHANGELOG、v0.1.0 tag）。
+> **进度（2026-10-23）**：W1 后端✅（详情/评论读删/搜索排序分页/apply 全部落地，单测+真 PG 集成+11 项运行时冒烟全过，spec 同步且漂移门绿）；W2✅（皮肤库两页 RSC SSR + 搜索/排序/分页/评论区/apply + toast(sonner) + error/loading 边界 + admin 页 Tabs/Table 组件化，SSR 真渲染验证过，`API_URL_INTERNAL` 已进 compose）；W3✅（admin **会话登录**上线：后端 AdminAuth 本就支持 role=admin 会话，web 管理面板改用登录会话、手贴 token 降级为救援通道、hoard token 独立输入；CORS 收窄为可配白名单 `*_CORS_ORIGINS`，mirror 回退 WEB_URL，运行时验证允许/拒绝/PATCH 预检/会话 200/非管理员 403 五项全过）。**W4✅（Phase 1 完成）**：Playwright E2E 全链路**本地真跑通过**并进 CI（注册→mailpit 收验证邮件→验证→登录→上传皮肤→发布到皮肤库→SSR 搜索→详情点赞/评论/应用）；gofmt 门 + 存量格式化；mirror/hoard/web CHANGELOG；profile 页补"发布到皮肤库"UI。E2E 抓出并修复两个真 bug：**SMTP 邮件从未发出**（go-mail host/port 误用 + 默认强制 STARTTLS + 错误被 `_ =` 吞掉；现按端口/凭证自动选 TLS 策略、发送失败进日志）与 **profile 上传 playerName 恒为空**（auth 异步恢复后 state 不回填，UI 上传从未通过）。v0.1.0 tag 已打（本地，待 push）。
 
 后端（W1，先行，前端依赖它）：✅
 - `GET /skinlib/{id}` 详情端点（现状：前端拉 `listSkinLib(0,1000)` 客户端 find，必须废掉）
