@@ -52,9 +52,8 @@
 - Meili 分支 `total_hits` 仍是近似
 
 **前端 / 启动器**
-- 全客户端渲染，无 SSR/RSC，SEO 与首屏差；无 mod 详情页；无数据层（query/form 库）；组件库仅 7 个 shadcn 件（admin 页手搓）；错误直接 `String(e)`
-- token 存 localStorage（XSS 风险）+ 后端 CORS `*`；管理后台靠手贴 token（非会话登录）
-- 零前端测试（无单测/Playwright）；compass 无 CI、`launch` 直接执行 UI 可编辑的程序名、下载全量入内存无进度/校验
+- 全客户端渲染问题已在皮肤库解决（列表/详情 RSC SSR）；其余页面（mods/profile/登录注册）仍为客户端渲染；无 mod 详情页；token 仍存 localStorage（P2 换 httpOnly cookie）；~~管理后台手贴 token~~ 已改会话登录（token 为救援通道）
+- 零前端测试（无单测/Playwright，W4）；compass 无 CI、`launch` 直接执行 UI 可编辑的程序名、下载全量入内存无进度/校验
 
 **工程化**
 - 无 E2E/契约字段级测试；无性能/负载数据；无 Helm/K8s（overview §6 的 C/D 档只是纸面）；无 CHANGELOG/release/tag（除 shared 1 个）；Caddyfile 无 TLS、不路由 web
@@ -89,7 +88,7 @@
 
 目标：一个陌生人按文档部署后，能完成 注册→验证→登录→传皮肤→皮肤库浏览互动 全流程。**范围=产品功能补齐**；生产化正确性（多实例/存储加固）归 Phase 2。
 
-> **进度（2026-10-23）**：W1 后端✅（详情/评论读删/搜索排序分页/apply 全部落地，单测+真 PG 集成+11 项运行时冒烟全过，spec 同步且漂移门绿）；W2 皮肤库两页✅（RSC SSR + 搜索/排序/分页/评论区/apply，SSR 真渲染验证过，`API_URL_INTERNAL` 已进 compose）。W2 剩余：toast、error.tsx/loading.tsx、admin 页组件化。W3/W4 未动。
+> **进度（2026-10-23）**：W1 后端✅（详情/评论读删/搜索排序分页/apply 全部落地，单测+真 PG 集成+11 项运行时冒烟全过，spec 同步且漂移门绿）；W2✅（皮肤库两页 RSC SSR + 搜索/排序/分页/评论区/apply + toast(sonner) + error/loading 边界 + admin 页 Tabs/Table 组件化，SSR 真渲染验证过，`API_URL_INTERNAL` 已进 compose）；W3✅（admin **会话登录**上线：后端 AdminAuth 本就支持 role=admin 会话，web 管理面板改用登录会话、手贴 token 降级为救援通道、hoard token 独立输入；CORS 收窄为可配白名单 `*_CORS_ORIGINS`，mirror 回退 WEB_URL，运行时验证允许/拒绝/PATCH 预检/会话 200/非管理员 403 五项全过）。**W4 未动**（Playwright E2E、gofmt 门、CHANGELOG、v0.1.0 tag）。
 
 后端（W1，先行，前端依赖它）：✅
 - `GET /skinlib/{id}` 详情端点（现状：前端拉 `listSkinLib(0,1000)` 客户端 find，必须废掉）
