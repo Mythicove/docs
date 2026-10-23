@@ -131,6 +131,8 @@
 
 目标：普通用户不需要管理员 token 就能发布 mod；在此之前 Hoard 不宣传为 Modrinth 替代。按上方身份架构决策执行：
 
+**状态（2026-10-23）：W1–W8 全部完成 ✅，`v0.3.0` 已发布**（hoard/web/api；mirror 无变更不重打）；剩余 Prism 人工安装验收待部署窗口。
+
 后端：
 - ~~Hoard OIDC RP~~✅（W1，2026-10-23）：`internal/oidcrp`（go-oidc v3：discovery/JWKS 轮换/签名/iss/aud/exp/nonce 全校验，机密客户端）；migration 00002（`users` 投影 + `sessions`）；`/auth/oidc/login|callback`、`/auth/logout`、`/auth/me`；state/nonce 短期 httpOnly cookie；会话 cookie `hoard_session`（httpOnly+Lax，7d，服务端可撤销）；投影 upsert **重登不覆盖已提升的 role**；`HOARD_ADMIN_SUBJECTS` 白名单幂等映射 admin；CORS 白名单允许凭证；spec 漂移门绿；mem+PG 测试；**真机 SSO 全流程打通**（mirror IdP：login→consent→code→callback→me(role=admin)→logout→401，投影/会话落 PG 验证）
 - ~~迁移：`users` 投影表、`teams`/`team_members`、`personal_access_tokens`~~✅（W2，migration 00002/00003）：投影表 + 服务端会话（W1）；teams 两级角色（owner 管成员/删项目，member 传版本）；PAT `mhp_` 前缀明文仅创建时返回一次、sha256 哈希存储、scopes、过期、last_used、可撤销；`projects.team_id` 可空兼容存量；mem+PG 集成 + HTTP 全链路测试（401/403/撤销即失效/明文不泄漏）
@@ -140,10 +142,10 @@
 - ~~搜索 facets 透传 + Meili `total_hits`~~✅（W6）：facets 解析已在位（内层 OR/外层 AND，补单测）；shared/search `Query` 返回 total（v0.1.2，破坏性签名——仅 hoard 消费）；Meili 分支 total_hits 用 estimatedTotalHits 且修复同键多值 filter 被 AND 的语义 bug；hoard go.mod 升 shared v0.1.2
 
 前端：
-- mod 详情页（版本列表/changelog/文件/依赖）、创建项目+发版向导、teams 管理、PAT 管理
-- mods 模块登录改走 Hoard 会话（OIDC 跳转），与 skins 模块的 Yggdrasil Bearer 并存于统一 auth context
+- ~~mod 详情页（版本列表/changelog/文件/依赖）、创建项目+发版向导、teams 管理、PAT 管理~~✅（W7）：`/mods/[id]`（icon/license/冲突旗标/版本/依赖/成员内联发版/admin 删除）、`/mods/upload`（jar 元数据自动填充）、`/mods/settings`（团队+PAT，明文仅一次）
+- ~~mods 模块登录改走 Hoard 会话（OIDC 跳转），与 skins 模块的 Yggdrasil Bearer 并存~~✅（W7）：`useHoardUser` hook + mods 页登录态区；hoardClient 全量 credentials（httpOnly cookie）
 
-验收：SSO 注册→建项目→传 jar（元数据自动填充）→发依赖→生成 mrpack→Prism 安装，全程零管理员 token。
+验收：~~SSO 注册→建项目→传 jar（元数据自动填充）~~✅（W8，`mods-sso.spec.ts` 真机全链路 2.4s：注册→验证→SSO 授权码流+consent→上传 jar→详情页断言 license MIT/loader fabric/版本 1.0.0/游戏版本 1.20.1→建团队→建 PAT）；~~发依赖→生成 mrpack~~✅（后端集成测试覆盖：依赖存取 + mrpack minecraft/env/overrides）；Prism 实际安装为人工验收项（待部署窗口）；全程零管理员 token ✅
 
 ### Phase 4 — 生态扩展（持续，按需启动）
 
