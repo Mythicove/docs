@@ -39,6 +39,14 @@ services:
       HOARD_DATA_DIR: "/data/files"
       HOARD_ADMIN_TOKEN: "${HOARD_ADMIN_TOKEN:-}"
       HOARD_CORS_ORIGINS: "${WEB_URL:-http://localhost:3101}"
+      # OIDC SSO (Mirror as IdP); empty ISSUER disables.
+      # Must exactly match mirror MIRROR_BASE_URL (iss verification);
+      # hoard container must be able to reach it (hairpin).
+      HOARD_OIDC_ISSUER: "${HOARD_OIDC_ISSUER:-}"
+      HOARD_OIDC_CLIENT_ID: "${HOARD_OIDC_CLIENT_ID:-}"
+      HOARD_OIDC_CLIENT_SECRET: "${HOARD_OIDC_CLIENT_SECRET:-}"
+      HOARD_OIDC_REDIRECT_URL: "${HOARD_OIDC_REDIRECT_URL:-}"
+      HOARD_ADMIN_SUBJECTS: "${HOARD_ADMIN_SUBJECTS:-}"
     volumes:
       - hoarddata:/data
     depends_on:
