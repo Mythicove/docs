@@ -23,6 +23,7 @@ services:
       MIRROR_TEXTURES_BASE_URL: "${API_URL:-http://localhost:8080}"
       MIRROR_BASE_URL: "${API_URL:-http://localhost:8080}"
       MIRROR_WEB_URL: "${WEB_URL:-http://localhost:3101}"
+      MIRROR_CORS_ORIGINS: "${WEB_URL:-http://localhost:3101}"
     volumes:
       - mirrordata:/data
     depends_on:
@@ -37,6 +38,7 @@ services:
       HOARD_BASE_URL: "${API_URL:-http://localhost:8080}"
       HOARD_DATA_DIR: "/data/files"
       HOARD_ADMIN_TOKEN: "${HOARD_ADMIN_TOKEN:-}"
+      HOARD_CORS_ORIGINS: "${WEB_URL:-http://localhost:3101}"
     volumes:
       - hoarddata:/data
     depends_on:
