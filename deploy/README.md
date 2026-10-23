@@ -6,7 +6,7 @@
 
 - `docker-compose.yml`：`db`(Postgres) + `mirror` + `hoard` + `caddy`(单 API 域名反代) + `web`。
 - `Caddyfile`：单 API 域名路由——`/v2/*`、`/api/mods*` → hoard；其余 → mirror。
-- `.env.example`：`API_URL`（浏览器访问的 API 域名）、`HOARD_ADMIN_TOKEN` 等。
+- `.env.example`：`API_URL`（浏览器访问的 API 域名）、`WEB_URL`（前端地址，邮件链接指向它）、`HOARD_ADMIN_TOKEN` 等。
 
 ## 使用
 
@@ -17,7 +17,7 @@ cp docs/deploy/.env.example .env   # 按需改
 docker compose up -d --build
 ```
 
-单 API 域名：`http://localhost:8080`（mirror + hoard 统一入口），前端 `http://localhost:3000`。
+单 API 域名：`http://localhost:8080`（mirror + hoard 统一入口），前端 `http://localhost:3101`。
 
 ## 镜像发布（GHCR）
 

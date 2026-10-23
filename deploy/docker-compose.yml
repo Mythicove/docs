@@ -22,6 +22,7 @@ services:
       MIRROR_TEXTURES_DIR: "/data/textures"
       MIRROR_TEXTURES_BASE_URL: "${API_URL:-http://localhost:8080}"
       MIRROR_BASE_URL: "${API_URL:-http://localhost:8080}"
+      MIRROR_WEB_URL: "${WEB_URL:-http://localhost:3101}"
     volumes:
       - mirrordata:/data
     depends_on:
@@ -32,10 +33,15 @@ services:
     build: ./mythic-hoard
     environment:
       HOARD_LISTEN_ADDR: ":8081"
+      HOARD_DATABASE_URL: "postgres://mirror:mirror@db:5432/mirror?sslmode=disable"
+      HOARD_BASE_URL: "${API_URL:-http://localhost:8080}"
       HOARD_DATA_DIR: "/data/files"
       HOARD_ADMIN_TOKEN: "${HOARD_ADMIN_TOKEN:-}"
     volumes:
       - hoarddata:/data
+    depends_on:
+      db:
+        condition: service_healthy
 
   caddy:
     image: caddy:2-alpine

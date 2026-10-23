@@ -76,12 +76,14 @@ Mythicove/                          # 本地 workspace 根
 
 | 能力 | 接口 | 低档实现 | 高档实现 |
 |---|---|---|---|
-| 认证 | `Auth` | 内建 JWT/session | OIDC（Zitadel / Fosite） |
 | 存储 | `Storage` | 本地磁盘 | MinIO → S3（R2/OSS） |
 | 搜索（Hoard） | `Search` | PostgreSQL `pg_trgm` | Meilisearch |
-| 缓存/限流 | `Cache`/`RateLimiter` | 进程内内存 | Redis |
+| 缓存 | `Cache` | 进程内内存 | Redis |
+| 限流 | `Limiter` | 进程内固定窗口（`ratelimit.Memory`，已内置） | Redis（待实现） |
 | 队列（Hoard） | `Queue` | 内联执行 | asynq（Redis） |
 | 邮件 | `Mailer` | SMTP | 服务商 API |
+
+> 认证不走 shared 抽象接口：Yggdrasil 会话与 OIDC Provider 直接在 `mythic-mirror` 内实现（见 ADR-0007 / ADR-0010），跨产品统一登录靠 OIDC 协议而非共享 Go 接口。原先的 `shared/auth` 接口是无人引用的死代码，已移除。
 
 > 这就是"Zitadel 可选、Meili 可选、Redis 可选"的架构保证：**小部署单二进制 + Postgres 即可跑，大部署无痛切到完整全家桶。**
 
