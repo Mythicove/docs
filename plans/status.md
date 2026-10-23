@@ -114,16 +114,18 @@
 
 目标：敢开一个 A/B 档公共小站并持续运营。**范围=正确性与可运维性**（Phase 3 依赖其中的 IdP 加固）。
 
+**状态（2026-10-23）：全部工程项完成 ✅，`v0.2.0` 已发布**；剩余"两周无手工干预运维"验收待真实部署窗口。
+
 - 多实例正确性：~~fosite storage 落 Postgres~~✅（`pgstore.OIDCStore`，JSONB 全量会话 + 惰性 GC；双副本真机验证：A 发码 B 换 token、跨副本 refresh 轮换、重放拒绝、userinfo claims 完整；顺带修复两个存量 bug——consent 后从未 GrantScope 导致 id_token 永远发不出、userinfo sub 恒为空；客户端缓存未命中节流重载解决跨副本注册感知）；~~`mojangStates` 落 cache~~✅；~~`ratelimit` Redis 实现~~✅（`internal/redislimit`，Lua 原子 INCR+PEXPIRE，双副本共享计数真机验证 10 过/14 拒）；**goose 迁移加 advisory lock**（双副本并发启动竞态，真机复现后修复）
-- web 会话加固：access token 移出 localStorage → httpOnly cookie + CSRF double-submit（Yggdrasil Bearer 保留给启动器/游戏客户端）**【未做】**
+- ~~web 会话加固~~✅：access token 移出 localStorage → httpOnly cookie（`mythic_session`，SameSite=Lax+Secure，7d）；Next route handlers `/api/auth/login|logout|session`（BFF：token 只在服务端经手，响应仅回非敏感 meta）；mirror `BearerToken` cookie 回退（Auth/AdminAuth 共用；启动器 Bearer 头不受影响）；CORS 白名单时 AllowCredentials；登出服务端 invalidate；CSRF=SameSite Lax+JSON-only 双层阻断（cookie 路径无表单可达端点）；E2E 增断言：localStorage 无 token、document.cookie 读不到会话
 - ~~Caddyfile 生产模板~~✅：`docs/deploy/Caddyfile.prod`（自动 TLS、双域名路由、安全头兜底、mirror 会话亲和作 OIDC 过渡措施，`caddy validate` 通过）
 - ~~审计日志~~✅：`audit_log` 表（migration 00008），全部管理操作记录 actor（token/user:id）+ 来源 IP（clientip），`GET /api/admin/audit` + 后台"审计日志"页签；集成测试 + 运行时验证
 - ~~配额（上传数量/大小）~~✅：mirror 存储配额（migration 00010 `files` 登记表按上传者归属 + sha256 去重、`users.storage_tier` 分级、`MIRROR_QUOTA_STORAGE_BYTES/TIERS/PUBLISHED`；登记→检查→超限回滚，重传同图不误拒）+ 发布数量配额（413）；hoard 单文件上限 `HOARD_MAX_FILE_BYTES`（默认 512MiB，413）；memstore/PG 双实现测试
 - ~~举报 + 皮肤审核队列~~✅：migration 00011（`reports` 表 + `skinlib_items.status`）；`POST /reports`（登录用户，同目标唯一 409）；`MIRROR_SKIN_REVIEW=true` 发布进 under_review（公开列表零泄漏）；admin `reports`/`skins` 端点 + 后台"举报/皮肤审核"页签（驳回/删除并结案/批准/下架/退回）；全部落审计；memstore+PG 集成测试 + 真机 HTTP 全流程验证（204/409/404/队列过滤/批准上架/审计记录）
 - ~~HTML 邮件模板~~✅：multipart/alternative（SMTP）+ html（Resend），i18n intro/button/footer 三段式；**E2E 抓出并修复 SMTP 从未送达**（go-mail host/port 误用 + 强制 STARTTLS + 吞错）
 - ~~备份/恢复~~✅：`docs/deploy/backup.sh` + `backup.md`（pg_dump custom + 卷打包 + 保留策略 + 恢复演练要求）
-- ~~Prometheus/Grafana~~✅：`docs/deploy/observability/`（告警规则 promtool 校验过、dashboard JSON、抓取配置；hoard 补齐 /metrics）；k6 压测基线**【未做】**
-- 验收：按文档从零运维小站两周无手工干预；~~双副本部署登录态/限流/OIDC 正确~~✅（限流/OIDC/正版绑定/迁移均已双副本真机验证）；发布 `v0.2.0`（待剩余项完成）
+- ~~Prometheus/Grafana~~✅：`docs/deploy/observability/`（告警规则 promtool 校验过、dashboard JSON、抓取配置；hoard 补齐 /metrics）；~~k6 压测基线~~✅：`docs/deploy/k6/`（读 20→50VU p95=4.5ms 0 错误；写 5VU 登录+上传+发布 checks 100% p95=63ms；阈值即 SLO 草案，生产验收在目标硬件重跑记录）
+- 验收：按文档从零运维小站两周无手工干预（待真实部署窗口）；~~双副本部署登录态/限流/OIDC 正确~~✅（限流/OIDC/正版绑定/迁移均已双副本真机验证）；~~发布 `v0.2.0`~~✅（mirror/hoard/web/api 同步 tag；web 会话为破坏性变更：AuthState 不再含 accessToken）
 
 ### Phase 3 — Hoard 用户体系与开放上传（预计 6–8 周）
 
