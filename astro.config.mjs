@@ -4,6 +4,8 @@ import starlight from "@astrojs/starlight";
 // https://starlight.astro.build/
 export default defineConfig({
   site: "https://docs.mythicove.com",
+  // 当前部署在 mythicove.github.io/docs/ 子路径；DNS 配好自定义域名后移除 base
+  base: "/docs",
   integrations: [
     starlight({
       title: "Mythicove",
