@@ -133,8 +133,8 @@
 
 后端：
 - ~~Hoard OIDC RP~~✅（W1，2026-10-23）：`internal/oidcrp`（go-oidc v3：discovery/JWKS 轮换/签名/iss/aud/exp/nonce 全校验，机密客户端）；migration 00002（`users` 投影 + `sessions`）；`/auth/oidc/login|callback`、`/auth/logout`、`/auth/me`；state/nonce 短期 httpOnly cookie；会话 cookie `hoard_session`（httpOnly+Lax，7d，服务端可撤销）；投影 upsert **重登不覆盖已提升的 role**；`HOARD_ADMIN_SUBJECTS` 白名单幂等映射 admin；CORS 白名单允许凭证；spec 漂移门绿；mem+PG 测试；**真机 SSO 全流程打通**（mirror IdP：login→consent→code→callback→me(role=admin)→logout→401，投影/会话落 PG 验证）
-- 迁移：~~`users` 投影表~~✅（W1）；`teams`/`team_members`、`personal_access_tokens`（sha256 哈希存储、scopes、过期、last_used）；`projects.team_id`（可空，兼容存量管理员上传）**【W2】**
-- 用户级上传：`POST /v2/project`（Modrinth 形 multipart）经会话/PAT 鉴权 + 所有权校验；管理员队列保留
+- ~~迁移：`users` 投影表、`teams`/`team_members`、`personal_access_tokens`~~✅（W2，migration 00002/00003）：投影表 + 服务端会话（W1）；teams 两级角色（owner 管成员/删项目，member 传版本）；PAT `mhp_` 前缀明文仅创建时返回一次、sha256 哈希存储、scopes、过期、last_used、可撤销；`projects.team_id` 可空兼容存量；mem+PG 集成 + HTTP 全链路测试（401/403/撤销即失效/明文不泄漏）
+- ~~用户级上传~~✅（W3）：`POST /v2/project`（Modrinth 形 multipart data+file，自动建团队归属）、`POST /v2/version`（团队成员校验）、`DELETE /v2/project/{id}`（owner/admin）；PAT scopes 强制（声明 scopes 须含 UPLOAD）；`HOARD_REQUIRE_REVIEW` 审核开关接线；管理员 `/api/mods` 队列保留；spec 漂移门绿
 - mod 元数据解析：读 jar 内 `fabric.mod.json` / `(neo)forge mods.toml` / `quilt.mod.json` → 自动 loaders/game_versions/license/icon/名称描述，与表单冲突时标旗
 - 版本依赖：`version_dependencies`（required/optional/incompatible/embedded）+ `GET /v2/project/{id}/dependencies`；mrpack 完全合规（dependencies 版本、overrides、env）
 - 搜索 facets 透传 + Meili `total_hits` 补全（旧 TODO）
