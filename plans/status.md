@@ -36,7 +36,7 @@
 ## 部署模式
 
 - **皮肤站**：`web`(`modules=["skin"]`) + `mythic-mirror`
-- **mod 站**：`web`(`modules=["mods"]`) + `mythic-hoard`
+- **mod 站**：`web`(`modules=["mods"]`) + `mythic-mirror`（身份中心）+ `mythic-hoard`。Hoard 不自建账号体系，经 Mirror OIDC 登录（见下"身份架构决策"）；Mirror 是单二进制 + 同一 Postgres，代价可忽略
 - **混合站**：`web`(`modules=["skin","mods"]`) + 两后端，共享同一 Postgres（mirror 用默认 goose 表，hoard 用 `hoard_goose_version`，不冲突）
 - 单 API 域名经 Caddy 分流：`/v2/*`、`/api/mods*` → hoard，其余 → mirror
 - 邮件链接依赖 `MIRROR_WEB_URL`/`WEB_URL` 指向前端（compose 已配）
@@ -65,40 +65,83 @@
 
 原则：先把 **Mirror 单产品**做到"能给陌生人用"，再补生产运维基线，然后才动 Hoard 的用户体系（重写级）。每阶段有独立验收标准，做完打 tag 发版。
 
+### 身份架构决策（Phase 3 的前提，2026-10-23 定）
+
+问题：Hoard 缺用户系统。共享 Mirror 的 users 表？还是把账号体系放进 shared？
+
+**决策：都不是。Mirror = 生态身份中心（OIDC Provider，已建成），Hoard = OIDC 客户端（RP），只存用户投影 + teams + API Token。**
+
+| 方案 | 结论 | 理由 |
+|---|---|---|
+| 共享 users 表（同库同表） | 否决 | 两服务 schema/迁移互相锁死；独立 mod 站模式直接坏掉；双写方破坏服务边界 |
+| 账号体系放 shared | 否决 | shared 章程是零依赖接口/纯实现；账号要 PG/bcrypt/mailer/captcha，塞进去必然膨胀；只放接口就是刚删掉的 `shared/auth` 死代码重演 |
+| Hoard 自建完整账号 | 否决 | 重复 Mirror 约 1.5k 行账号/邮件/验证码逻辑，双倍安全面与维护成本 |
+| **Hoard 作 OIDC RP + 投影表** | **采纳** | 复用已建成的 `/oauth2/*`（ADR-0010 就是为此）；Hoard 不存密码不发邮件，账号安全面为零；投影表从 ID token claims（sub/username/email）登录时 upsert，无手工同步；C/D 档换 Zitadel 只改 issuer 配置 |
+
+要点：
+- 两服务可同库实例（compose 便利），但**表绝不共享**；关联键 = OIDC `sub`（即 mirror users.id 字符串），不建跨服务外键
+- Hoard 侧：`users`（投影：sub/username/email/avatar/role）+ `teams`/`team_members` + `personal_access_tokens`（哈希存储，上传/管理用）；`HOARD_ADMIN_TOKEN` 保留作 bootstrap/救援通道
+- 管理员映射：Hoard 自管角色（admin UI 提升 + `HOARD_ADMIN_SUBJECTS` 环境变量白名单自动映射），不隐式信任 Mirror 的 role
+- 唯一值得重新考虑的情形：若坚持"mod 站必须是单二进制（无 Mirror）"，则退路是把 Mirror 账号核心抽成独立 library 模块（不进 shared）——当前不接受该约束，故不抽
+- 待 docs 仓库迁移落定后补 ADR-0011（身份架构）正式记录
+
 ### Phase 1 — Mirror 可交付（预计 4–6 周）
 
-目标：一个陌生人按文档部署后，能完成 注册→验证→登录→传皮肤→皮肤库浏览互动 全流程。
+目标：一个陌生人按文档部署后，能完成 注册→验证→登录→传皮肤→皮肤库浏览互动 全流程。**范围=产品功能补齐**；生产化正确性（多实例/存储加固）归 Phase 2。
 
-- 皮肤库闭环：评论**读取**端点 + UI、列表分页/排序（最新/点赞）、标签或搜索
-- 前端基建：列表/详情页改 SSR/RSC（SEO + 首屏）、数据层（tanstack-query 或 RSC fetch）、toast/错误边界、补 table/tabs/dialog 组件（admin 页去手搓）
-- 后台正规化：admin 用 role=admin **会话登录**，替代手贴 token；access token 移出 localStorage（httpOnly cookie 会话，或内存 + refresh）
-- CORS 从 `*` 收窄为可配置白名单（默认前端 origin）
-- 多实例正确性：fosite storage 落 Postgres、`mojangStates` 落 cache 接口（Redis/内存可切）
-- E2E：Playwright 冒烟（注册→验证→登录→上传→皮肤库可见）进 CI
-- 验收：compose 一键部署通过上述全流程；`web` CI 含 E2E；打 `v0.1.0`（mirror/web/shared/api 同步 tag，CHANGELOG 起步）
+后端（W1，先行，前端依赖它）：
+- `GET /skinlib/{id}` 详情端点（现状：前端拉 `listSkinLib(0,1000)` 客户端 find，必须废掉）
+- `GET /skinlib/{id}/comments` 评论读取 + 管理端删除；皮肤库 `q` 搜索 + 排序（最新/点赞）+ 分页 total
+- `POST /skinlib/{id}/apply` "应用到我的皮肤"（认证，将库条目纹理设为自己玩家的皮肤）
+- 每项同步改 spec → `pnpm gen:api` → 漂移门自动兜底
 
-### Phase 2 — 生产运维基线（预计 2–4 周）
+前端（W2）：
+- 皮肤库列表/详情改 RSC/SSR（SEO+首屏），废弃客户端全量拉取
+- 分页/排序/搜索 UI、评论展示+发表、apply 按钮、toast/`error.tsx`/`loading.tsx`/skeleton
+- 补 shadcn table/tabs/dialog/pagination/skeleton（admin 页去手搓 div）
 
-目标：敢开一个 A/B 档公共小站并持续运营。
+认证与安全（W3）：
+- **admin 会话登录**：role=admin 账号经 authenticate 换会话，替代手贴 `adminToken`（token 通道保留为救援）；web 管理后台改造
+- CORS 从 `*` 收窄为 `MIRROR_CORS_ORIGINS`/`HOARD_CORS_ORIGINS` 白名单（默认前端 origin）
 
-- Caddyfile 生产模板：自动 TLS、路由 web、安全头兜底；**CDN 场景文档化 `*_TRUSTED_PROXIES` 配置（Cloudflare 段）**
-- 审计日志（管理操作）、配额（上传数量/大小）、举报 + 审核队列
-- HTML 邮件模板；备份/恢复 runbook
-- Prometheus 告警规则 + Grafana dashboard 模板；k6 压测基线并记录 §6 分级数据
-- 验收：按文档从零运维一个小站两周无手工干预；发布 `v0.2.0`
+质量与发布（W4）：
+- Playwright E2E 进 CI：compose 起栈 + mailpit 收验证邮件 → 注册→验证→登录→上传→皮肤库可见→评论
+- gofmt 门（顺带格式化 5 个既有未格式化文件）；CHANGELOG 起步
+- 打 `v0.1.0`（mirror/web/shared/api 同步 tag），compose 提供 pin GHCR 镜像版本
+- 验收：陌生人按文档部署并走完全流程；CI 全绿含 E2E
 
-### Phase 3 — Hoard 用户体系（重写级，预计 6–8 周）
+### Phase 2 — 生产化与运维基线（预计 3–4 周）
 
-目标：普通用户不需要管理员 token 就能发布 mod；在此之前 Hoard 不宣传为 Modrinth 替代。
+目标：敢开一个 A/B 档公共小站并持续运营。**范围=正确性与可运维性**（Phase 3 依赖其中的 IdP 加固）。
 
-- users/teams/orgs/API Token（认证复用 Mirror OIDC，单点登录）
-- 用户级上传流 + mod 元数据解析（fabric.mod.json / mods.toml → loaders/版本/license/icon 自动填充）
-- 版本依赖（required/optional/incompatible）+ 完全合规 mrpack（overrides、env、dependencies 版本号）
-- 搜索 facets 透传 UI；下载统计按日明细
-- 验收：注册→上传→被 Prism/ferium 安装全链路通过（对应 hoard 计划 M4–M5）
+- 多实例正确性：fosite storage 落 Postgres（替换 MemoryStore）、`mojangStates` 落 cache 接口、`ratelimit` Redis 实现（高档）
+- web 会话加固：access token 移出 localStorage → httpOnly cookie + CSRF double-submit（Yggdrasil Bearer 保留给启动器/游戏客户端）
+- Caddyfile 生产模板：自动 TLS、路由 web、安全头兜底；CDN 场景 `*_TRUSTED_PROXIES` 配置文档化（Cloudflare 段）
+- 审计日志（管理操作 + clientip 记录的来源 IP）、配额（上传数量/大小）、举报 + 皮肤审核队列
+- HTML 邮件模板（mailer.Message.HTML 已预留）；备份/恢复 runbook + 脚本
+- Prometheus 告警规则 + Grafana dashboard 模板；k6 压测基线并回填 overview §6 分级数据
+- 验收：按文档从零运维小站两周无手工干预；双副本部署登录态/限流/OIDC 正确；发布 `v0.2.0`
+
+### Phase 3 — Hoard 用户体系与开放上传（预计 6–8 周）
+
+目标：普通用户不需要管理员 token 就能发布 mod；在此之前 Hoard 不宣传为 Modrinth 替代。按上方身份架构决策执行：
+
+后端：
+- Hoard OIDC RP：授权码流（发现文档/JWKS 校验/nonce）、web 会话 cookie；配置 `HOARD_OIDC_ISSUER/CLIENT_ID/SECRET`
+- 迁移：`users` 投影表、`teams`/`team_members`、`personal_access_tokens`（sha256 哈希存储、scopes、过期、last_used）；`projects.team_id`（可空，兼容存量管理员上传）
+- 用户级上传：`POST /v2/project`（Modrinth 形 multipart）经会话/PAT 鉴权 + 所有权校验；管理员队列保留
+- mod 元数据解析：读 jar 内 `fabric.mod.json` / `(neo)forge mods.toml` / `quilt.mod.json` → 自动 loaders/game_versions/license/icon/名称描述，与表单冲突时标旗
+- 版本依赖：`version_dependencies`（required/optional/incompatible/embedded）+ `GET /v2/project/{id}/dependencies`；mrpack 完全合规（dependencies 版本、overrides、env）
+- 搜索 facets 透传 + Meili `total_hits` 补全（旧 TODO）
+
+前端：
+- mod 详情页（版本列表/changelog/文件/依赖）、创建项目+发版向导、teams 管理、PAT 管理
+- mods 模块登录改走 Hoard 会话（OIDC 跳转），与 skins 模块的 Yggdrasil Bearer 并存于统一 auth context
+
+验收：SSO 注册→建项目→传 jar（元数据自动填充）→发依赖→生成 mrpack→Prism 安装，全程零管理员 token。
 
 ### Phase 4 — 生态扩展（持续，按需启动）
 
 - i18n 扩语言（目标 15+，接 Crowdin/Weblate）
-- Compass 原生启动（piston-meta + assets + authlib-injector 注入）或先做 Prism 账号深度集成；补 CI/自动更新
+- Compass 原生启动（piston-meta + assets + authlib-injector 注入）或先做 Prism 账号深度集成；补 CI/自动更新；`launch` 白名单化
 - 上游镜像代理（Modrinth/CurseForge 冷启动）；插件/Webhook；Isles/Atlas 建仓评估
