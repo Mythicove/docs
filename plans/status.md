@@ -118,7 +118,7 @@
 - web 会话加固：access token 移出 localStorage → httpOnly cookie + CSRF double-submit（Yggdrasil Bearer 保留给启动器/游戏客户端）**【未做】**
 - ~~Caddyfile 生产模板~~✅：`docs/deploy/Caddyfile.prod`（自动 TLS、双域名路由、安全头兜底、mirror 会话亲和作 OIDC 过渡措施，`caddy validate` 通过）
 - ~~审计日志~~✅：`audit_log` 表（migration 00008），全部管理操作记录 actor（token/user:id）+ 来源 IP（clientip），`GET /api/admin/audit` + 后台"审计日志"页签；集成测试 + 运行时验证
-- 配额（上传数量/大小）、举报 + 皮肤审核队列**【未做】**
+- ~~配额（上传数量/大小）~~✅：mirror 存储配额（migration 00010 `files` 登记表按上传者归属 + sha256 去重、`users.storage_tier` 分级、`MIRROR_QUOTA_STORAGE_BYTES/TIERS/PUBLISHED`；登记→检查→超限回滚，重传同图不误拒）+ 发布数量配额（413）；hoard 单文件上限 `HOARD_MAX_FILE_BYTES`（默认 512MiB，413）；memstore/PG 双实现测试。举报 + 皮肤审核队列**【未做】**
 - ~~HTML 邮件模板~~✅：multipart/alternative（SMTP）+ html（Resend），i18n intro/button/footer 三段式；**E2E 抓出并修复 SMTP 从未送达**（go-mail host/port 误用 + 强制 STARTTLS + 吞错）
 - ~~备份/恢复~~✅：`docs/deploy/backup.sh` + `backup.md`（pg_dump custom + 卷打包 + 保留策略 + 恢复演练要求）
 - ~~Prometheus/Grafana~~✅：`docs/deploy/observability/`（告警规则 promtool 校验过、dashboard JSON、抓取配置；hoard 补齐 /metrics）；k6 压测基线**【未做】**
