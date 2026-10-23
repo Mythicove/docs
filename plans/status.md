@@ -44,9 +44,8 @@
 ## 已知差距（距成熟产物，未在本轮处理）
 
 **后端深度**
-- OIDC token 仍存内存（`fosite` MemoryStore），多实例/重启失效 → 需 Postgres/Redis storage
-- `account.mojangStates` 仍是进程内 map → 多副本下 Microsoft 正版绑定失效
-- 皮肤库评论**读取已实现**（列表端点 + UI + 管理删除）；列表已有搜索/排序（最新/点赞）/分页（total）；仍缺：标签体系、2FA、举报、配额、审计日志
+- ~~OIDC token 仍存内存~~ ✅ 已落 Postgres（含客户端跨副本感知）；~~`account.mojangStates` 进程内~~ ✅ 已落 cache
+- 皮肤库仍缺：标签体系、2FA、举报、配额
 - 邮箱校验 `validEmail` 仍偏宽松；多数请求体未跑 validator
 - Hoard **无用户/组织/团队/API Token**（只有管理员 token）→ 不是 Modrinth 替代品；无版本依赖关系、上传不解析 mod 元数据、无上游镜像代理、搜索无 facets 透传到 UI
 - Meili 分支 `total_hits` 仍是近似
@@ -115,13 +114,15 @@
 
 目标：敢开一个 A/B 档公共小站并持续运营。**范围=正确性与可运维性**（Phase 3 依赖其中的 IdP 加固）。
 
-- 多实例正确性：fosite storage 落 Postgres（替换 MemoryStore）、`mojangStates` 落 cache 接口、`ratelimit` Redis 实现（高档）
-- web 会话加固：access token 移出 localStorage → httpOnly cookie + CSRF double-submit（Yggdrasil Bearer 保留给启动器/游戏客户端）
-- Caddyfile 生产模板：自动 TLS、路由 web、安全头兜底；CDN 场景 `*_TRUSTED_PROXIES` 配置文档化（Cloudflare 段）
-- 审计日志（管理操作 + clientip 记录的来源 IP）、配额（上传数量/大小）、举报 + 皮肤审核队列
-- HTML 邮件模板（mailer.Message.HTML 已预留）；备份/恢复 runbook + 脚本
-- Prometheus 告警规则 + Grafana dashboard 模板；k6 压测基线并回填 overview §6 分级数据
-- 验收：按文档从零运维小站两周无手工干预；双副本部署登录态/限流/OIDC 正确；发布 `v0.2.0`
+- 多实例正确性：~~fosite storage 落 Postgres~~✅（`pgstore.OIDCStore`，JSONB 全量会话 + 惰性 GC；双副本真机验证：A 发码 B 换 token、跨副本 refresh 轮换、重放拒绝、userinfo claims 完整；顺带修复两个存量 bug——consent 后从未 GrantScope 导致 id_token 永远发不出、userinfo sub 恒为空；客户端缓存未命中节流重载解决跨副本注册感知）；~~`mojangStates` 落 cache~~✅；~~`ratelimit` Redis 实现~~✅（`internal/redislimit`，Lua 原子 INCR+PEXPIRE，双副本共享计数真机验证 10 过/14 拒）；**goose 迁移加 advisory lock**（双副本并发启动竞态，真机复现后修复）
+- web 会话加固：access token 移出 localStorage → httpOnly cookie + CSRF double-submit（Yggdrasil Bearer 保留给启动器/游戏客户端）**【未做】**
+- ~~Caddyfile 生产模板~~✅：`docs/deploy/Caddyfile.prod`（自动 TLS、双域名路由、安全头兜底、mirror 会话亲和作 OIDC 过渡措施，`caddy validate` 通过）
+- ~~审计日志~~✅：`audit_log` 表（migration 00008），全部管理操作记录 actor（token/user:id）+ 来源 IP（clientip），`GET /api/admin/audit` + 后台"审计日志"页签；集成测试 + 运行时验证
+- 配额（上传数量/大小）、举报 + 皮肤审核队列**【未做】**
+- ~~HTML 邮件模板~~✅：multipart/alternative（SMTP）+ html（Resend），i18n intro/button/footer 三段式；**E2E 抓出并修复 SMTP 从未送达**（go-mail host/port 误用 + 强制 STARTTLS + 吞错）
+- ~~备份/恢复~~✅：`docs/deploy/backup.sh` + `backup.md`（pg_dump custom + 卷打包 + 保留策略 + 恢复演练要求）
+- ~~Prometheus/Grafana~~✅：`docs/deploy/observability/`（告警规则 promtool 校验过、dashboard JSON、抓取配置；hoard 补齐 /metrics）；k6 压测基线**【未做】**
+- 验收：按文档从零运维小站两周无手工干预；~~双副本部署登录态/限流/OIDC 正确~~✅（限流/OIDC/正版绑定/迁移均已双副本真机验证）；发布 `v0.2.0`（待剩余项完成）
 
 ### Phase 3 — Hoard 用户体系与开放上传（预计 6–8 周）
 
