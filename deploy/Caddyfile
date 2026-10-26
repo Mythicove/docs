@@ -1,8 +1,13 @@
 :8080 {
-	# Mod 托管路由（Hoard）
+	# Mod 托管（Hoard）：Modrinth 兼容读子集 + 用户级上传
 	reverse_proxy /v2/* hoard:8081
 	reverse_proxy /api/mods* hoard:8081
 
-	# 其余走皮肤站（Mirror）
+	# Hoard 用户体系（SSO 会话 / 团队 / PAT）
+	reverse_proxy /auth/* hoard:8081
+	reverse_proxy /api/team* hoard:8081
+	reverse_proxy /api/user* hoard:8081
+
+	# 其余走皮肤站（Mirror）：Yggdrasil(/authserver/*)、账号、皮肤库、管理、OIDC Provider(/oauth2/*)
 	reverse_proxy mirror:8080
 }

@@ -21,9 +21,13 @@ services:
       MIRROR_KEY_PATH: "/data/private.pem"
       MIRROR_TEXTURES_DIR: "/data/textures"
       MIRROR_TEXTURES_BASE_URL: "${API_URL:-http://localhost:8080}"
-      MIRROR_BASE_URL: "${API_URL:-http://localhost:8080}"
+      # OIDC issuer 必须对「浏览器」与「hoard 容器」同时可达：默认用 host.docker.internal
+      # （Docker Desktop 宿主与容器均可解析；Linux 需 hoard 的 extra_hosts 兜底）。
+      MIRROR_BASE_URL: "${OIDC_ISSUER_URL:-${API_URL:-http://localhost:8080}}"
+      MIRROR_ADMIN_TOKEN: "${MIRROR_ADMIN_TOKEN:-}"
       MIRROR_WEB_URL: "${WEB_URL:-http://localhost:3101}"
-      MIRROR_CORS_ORIGINS: "${WEB_URL:-http://localhost:3101}"
+      # CORS 白名单可独立于 WEB_URL 覆盖（逗号分隔多 origin：dev server + compose web 并存时）
+      MIRROR_CORS_ORIGINS: "${MIRROR_CORS_ORIGINS:-${WEB_URL:-http://localhost:3101}}"
     volumes:
       - mirrordata:/data
     depends_on:
@@ -34,18 +38,21 @@ services:
     build: ./mythic-hoard
     environment:
       HOARD_LISTEN_ADDR: ":8081"
-      HOARD_DATABASE_URL: "postgres://mirror:mirror@db:5432/mirror?sslmode=disable"
+      # 与 mirror 同库时用 schema 隔离（hoard 对象全在 hoard schema），避免 users/sessions/files 同名碰撞
+      HOARD_DATABASE_URL: "postgres://mirror:mirror@db:5432/mirror?sslmode=disable&options=-csearch_path%3Dhoard"
       HOARD_BASE_URL: "${API_URL:-http://localhost:8080}"
       HOARD_DATA_DIR: "/data/files"
       HOARD_ADMIN_TOKEN: "${HOARD_ADMIN_TOKEN:-}"
-      HOARD_CORS_ORIGINS: "${WEB_URL:-http://localhost:3101}"
+      HOARD_CORS_ORIGINS: "${HOARD_CORS_ORIGINS:-${WEB_URL:-http://localhost:3101}}"
       # OIDC SSO (Mirror as IdP); empty ISSUER disables.
       # Must exactly match mirror MIRROR_BASE_URL (iss verification);
       # hoard container must be able to reach it (hairpin).
-      HOARD_OIDC_ISSUER: "${HOARD_OIDC_ISSUER:-}"
+      HOARD_OIDC_ISSUER: "${HOARD_OIDC_ISSUER:-${OIDC_ISSUER_URL:-}}"
       HOARD_OIDC_CLIENT_ID: "${HOARD_OIDC_CLIENT_ID:-}"
       HOARD_OIDC_CLIENT_SECRET: "${HOARD_OIDC_CLIENT_SECRET:-}"
       HOARD_OIDC_REDIRECT_URL: "${HOARD_OIDC_REDIRECT_URL:-}"
+      # 服务端侧 IdP 基址（容器内可达）；issuer 保持浏览器面地址
+      HOARD_OIDC_INTERNAL_BASE_URL: "${HOARD_OIDC_INTERNAL_BASE_URL:-http://host.docker.internal:8080}"
       HOARD_ADMIN_SUBJECTS: "${HOARD_ADMIN_SUBJECTS:-}"
     volumes:
       - hoarddata:/data
@@ -68,9 +75,13 @@ services:
       context: ./web
       args:
         NEXT_PUBLIC_API_URL: "${API_URL:-http://localhost:8080}"
+        NEXT_PUBLIC_LOCALE_PREFIX: "${LOCALE_PREFIX:-never}"
+        NEXT_PUBLIC_INDEXABLE: "${INDEXABLE:-false}"
     environment:
       # SSR/RSC 服务端取数走 compose 内部网络
       API_URL_INTERNAL: "http://caddy:8080"
+      # 非索引部署的 UA 黑名单开关（留空=跟随 INDEXABLE 推导）
+      BLOCK_BOTS: "${BLOCK_BOTS:-}"
     ports:
       - "${WEB_PORT:-3101}:3000"
     depends_on:

@@ -9,8 +9,8 @@
 #
 # 多副本扩展：把 mirror:8080 / hoard:8081 / web:3000 换成多个上游即可，
 # 例如 reverse_proxy mirror-1:8080 mirror-2:8080。
-# 注意：OIDC token 目前存 mirror 进程内存（落库前排期见 docs/plans/status.md P2-B），
-# mirror 多副本时下方 lb_policy cookie 会把 /oauth2/* 流程粘在同一副本，保证授权码流可用；
+# OIDC 授权码/会话已落 Postgres（mirror migration 00009，fosite 持久化存储），
+# 故 mirror 多副本无需粘性会话；下方 lb_policy cookie 仅为减少跨副本缓存未命中，可删。
 # Yggdrasil/皮肤/API 均无状态（Postgres + Redis），不受影响。
 
 {$API_DOMAIN:api.localhost} {
@@ -30,6 +30,13 @@
 	# Mod 路由 → Hoard
 	reverse_proxy /v2/* hoard:8081
 	reverse_proxy /api/mods* hoard:8081
+
+	# Hoard 用户体系（SSO 会话 / 团队 / PAT）→ Hoard
+	# 注意勿与 Mirror 的 /authserver/*（Yggdrasil）与 /oauth2/*（OIDC Provider）混淆；
+	# 缺这三条会让生产环境的 SSO 登录、团队与令牌管理落到 mirror 而 404。
+	reverse_proxy /auth/* hoard:8081
+	reverse_proxy /api/team* hoard:8081
+	reverse_proxy /api/user* hoard:8081
 
 	# 其余（Yggdrasil/账号/皮肤库/管理/OIDC）→ Mirror，OIDC 会话亲和
 	reverse_proxy mirror:8080 {
