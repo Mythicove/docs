@@ -76,6 +76,11 @@ services:
       db:
         condition: service_healthy
 
+  # 统一入口网关：单端口聚合 web 前端 + mirror + hoard（路径分流规则见 ./Caddyfile）。
+  # 宿主反代/TLS 只需把域名整体指向 ${API_PORT}，无需自己写分流。
+  # 分离部署（web 放 Pages 等独立宿主）时跳过 web 服务：
+  #   docker compose up -d db mirror hoard caddy
+  # 此时网关的 web 兜底路由返回 502，API 路径不受影响。
   caddy:
     image: caddy:2-alpine
     ports:
@@ -83,7 +88,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     healthcheck:
-      # /healthz 未被 hoard 的路径规则命中 → 由 mirror 应答；上游就绪前会得到 502（wget 判为不健康）
+      # /healthz 由 mirror 应答；上游就绪前会得到 502（wget 判为不健康）
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 5s
       timeout: 3s
@@ -103,11 +108,12 @@ services:
         NEXT_PUBLIC_LOCALE_PREFIX: "${LOCALE_PREFIX:-never}"
         NEXT_PUBLIC_INDEXABLE: "${INDEXABLE:-false}"
     environment:
-      # SSR/RSC 服务端取数走 compose 内部网络
+      # SSR/RSC 服务端取数走 compose 内部网络（经网关统一分流）
       API_URL_INTERNAL: "http://caddy:8080"
       # 非索引部署的 UA 黑名单开关（留空=跟随 INDEXABLE 推导）
       BLOCK_BOTS: "${BLOCK_BOTS:-}"
     ports:
+      # 直连调试用；统一入口模式下浏览器流量走 caddy 网关，可不发布此端口
       - "${WEB_PORT:-3101}:3000"
     healthcheck:
       # 探 /icon.png：带点的路径被 proxy 的 matcher 排除，因而不受 BLOCK_BOTS 影响

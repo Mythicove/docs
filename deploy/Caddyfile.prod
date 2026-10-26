@@ -1,22 +1,25 @@
-# Mythicove 生产 Caddyfile 模板
+# Mythicove 生产反代模板（宿主 Caddy）。
+#
+# 栈内 caddy 网关已完成 前端/mirror/hoard 的路径分流（见 ./Caddyfile），
+# 宿主侧只需把域名整体指向网关发布端口，无需再写任何路径规则。
 #
 # 用法：
-#   export API_DOMAIN=api.example.com WEB_DOMAIN=www.example.com
+#   export DOMAIN=www.example.com GATEWAY=localhost:8080
 #   caddy run --config Caddyfile.prod
+# （GATEWAY：宿主 Caddy 用 localhost:${API_PORT}；若宿主 Caddy 与栈同 docker 网络则填 caddy:8080）
 #
-# 前提：两个域名解析到本机，80/443 可达（Caddy 自动签发/续期 Let's Encrypt）。
 # 本地验证语法：caddy validate --config Caddyfile.prod --adapter caddyfile
+# 前提：域名解析到本机，80/443 可达（Caddy 自动签发/续期 Let's Encrypt）。
+# DNS-01（CDN/内网场景）自行加 tls { dns ... }。
 #
-# 多副本扩展：把 mirror:8080 / hoard:8081 / web:3000 换成多个上游即可，
-# 例如 reverse_proxy mirror-1:8080 mirror-2:8080。
-# OIDC 授权码/会话已落 Postgres（mirror migration 00009，fosite 持久化存储），
-# 故 mirror 多副本无需粘性会话；下方 lb_policy cookie 仅为减少跨副本缓存未命中，可删。
-# Yggdrasil/皮肤/API 均无状态（Postgres + Redis），不受影响。
+# 信任边界：Caddy 是应用的可信代理（compose 默认私网可信已覆盖 docker 网络）。
+# 若 Caddy 前还有 CDN/云 LB，需在应用侧把边缘网段配进 MIRROR_/HOARD_TRUSTED_PROXIES，
+# 否则限流/日志解析到的是边缘 IP。
 
-{$API_DOMAIN:api.localhost} {
+{$DOMAIN:localhost} {
 	encode zstd gzip
 
-	# 安全头兜底（应用层也各自设置；此处保证反代直出的 404/5xx 也带）
+	# 安全头兜底（应用层各自也设置；此处保证反代直出的 404/5xx 也带）
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
@@ -24,35 +27,5 @@
 		-Server
 	}
 
-	# 信任边界：Caddy 是应用的可信代理（默认私网可信已覆盖 docker 网络）。
-	# 若 Caddy 前还有 CDN/LB，需在应用侧配置 *_TRUSTED_PROXIES 加入其网段。
-
-	# Mod 路由 → Hoard
-	reverse_proxy /v2/* hoard:8081
-	reverse_proxy /api/mods* hoard:8081
-
-	# Hoard 用户体系（SSO 会话 / 团队 / PAT）→ Hoard
-	# 注意勿与 Mirror 的 /authserver/*（Yggdrasil）与 /oauth2/*（OIDC Provider）混淆；
-	# 缺这三条会让生产环境的 SSO 登录、团队与令牌管理落到 mirror 而 404。
-	reverse_proxy /auth/* hoard:8081
-	reverse_proxy /api/team* hoard:8081
-	reverse_proxy /api/user* hoard:8081
-
-	# 其余（Yggdrasil/账号/皮肤库/管理/OIDC）→ Mirror，OIDC 会话亲和
-	reverse_proxy mirror:8080 {
-		lb_policy cookie mythicove-affinity
-	}
-}
-
-{$WEB_DOMAIN:app.localhost} {
-	encode zstd gzip
-
-	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "no-referrer"
-		-Server
-	}
-
-	reverse_proxy web:3000
+	reverse_proxy {$GATEWAY:localhost:8080}
 }

@@ -23,8 +23,8 @@ docker compose up -d --build
 
 | 服务 | 地址 |
 |---|---|
-| 单 API 域名（Caddy 分流） | `http://localhost:8080` |
-| 前端（Next.js） | `http://localhost:3101` |
+| **统一入口网关**（前端 + 皮肤站 + Mod 站，Caddy 按路径分流） | `http://localhost:8080` |
+| 前端直连（调试用） | `http://localhost:3101` |
 | Postgres | `localhost:5432` |
 
 ## 2. 验证
@@ -42,11 +42,11 @@ curl http://localhost:8080/.well-known/openid-configuration # OIDC
 
 | 变量 | 作用 |
 |---|---|
-| `API_URL` | 浏览器访问的单 API 域名 |
-| `API_PORT` / `WEB_PORT` | 宿主机端口 |
+| `API_URL` | 浏览器访问的站点地址（统一入口=对外域名） |
+| `API_PORT` / `WEB_PORT` | 网关 / 前端直连的宿主机端口 |
 | `HOARD_ADMIN_TOKEN` | Mod 上传鉴权（留空则开放上传） |
 | `MIRROR_ADMIN_TOKEN` | 皮肤站后台鉴权 |
 
-皮肤站、Mod 站共享同一个 Postgres（各自独立的 goose 版本表），经 Caddy 按路径分流：`/v2/*`、`/api/mods*` → Hoard，其余 → Mirror。
+皮肤站、Mod 站共享同一个 Postgres（各自独立的 goose 版本表）。compose 内置的 Caddy 网关按路径分流：`/v2/*`、`/api/mods*`、`/auth/*`、`/api/team*`、`/api/user*` → Hoard；`/api/auth/*`（BFF）与页面兜底 → Web；其余 API 与纹理路径 → Mirror。宿主反代只需把域名整体指向网关（见 [部署](/deploy/)）。
 
 > 生产级的分级部署（Redis / S3 / Meilisearch 等）见 [部署](/deploy/)。

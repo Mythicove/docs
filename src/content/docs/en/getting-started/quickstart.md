@@ -23,8 +23,8 @@ Default ports:
 
 | Service | URL |
 |---|---|
-| Single API domain (Caddy routed) | `http://localhost:8080` |
-| Frontend (Next.js) | `http://localhost:3101` |
+| **Unified gateway** (frontend + skin station + mod hosting, path-routed by Caddy) | `http://localhost:8080` |
+| Frontend direct (debugging) | `http://localhost:3101` |
 | Postgres | `localhost:5432` |
 
 ## 2. Verify
@@ -42,11 +42,11 @@ Key environment variables (see `.env.example`):
 
 | Variable | Purpose |
 |---|---|
-| `API_URL` | The single API domain the browser talks to |
-| `API_PORT` / `WEB_PORT` | Host ports |
+| `API_URL` | The site address the browser talks to (unified entry = public domain) |
+| `API_PORT` / `WEB_PORT` | Host ports for the gateway / direct frontend |
 | `HOARD_ADMIN_TOKEN` | Mod upload auth (empty = open upload) |
 | `MIRROR_ADMIN_TOKEN` | Skin station admin auth |
 
-The skin station and mod hosting share one Postgres (separate goose version tables) and are routed by Caddy: `/v2/*`, `/api/mods*` → Hoard, everything else → Mirror.
+The skin station and mod hosting share one Postgres (separate goose version tables). The bundled Caddy gateway routes by path: `/v2/*`, `/api/mods*`, `/auth/*`, `/api/team*`, `/api/user*` → Hoard; `/api/auth/*` (BFF) and the page fallback → Web; remaining API and texture paths → Mirror. Your edge proxy only needs to forward the whole domain to the gateway (see [Deploy](/en/deploy/)).
 
 > See [Deploy](/en/deploy/) for tiered production deployment (Redis / S3 / Meilisearch).

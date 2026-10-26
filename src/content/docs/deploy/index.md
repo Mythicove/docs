@@ -6,9 +6,10 @@ title: 部署（Docker Compose）
 
 ## 结构
 
-- `docker-compose.yml`：`db`(Postgres) + `mirror` + `hoard` + `caddy`(单 API 域名反代) + `web`。
-- `Caddyfile`：单 API 域名路由——`/v2/*`、`/api/mods*` → hoard；其余 → mirror。
-- `.env.example`：`API_URL`（浏览器访问的 API 域名）、`WEB_URL`（前端地址，邮件链接指向它）、`HOARD_ADMIN_TOKEN` 等。
+- `docker-compose.yml`：`db`(Postgres) + `mirror` + `hoard` + `caddy`(**统一入口网关**) + `web`。
+- `Caddyfile`：网关分流规则——hoard（`/v2/*`、`/api/mods*`、`/auth/*`、`/api/team*`、`/api/user*`）、web（`/api/auth/*` BFF、GET 邮件落地页、其余页面兜底）、mirror（其余 API 与纹理路径）。**分流规则随产品维护，宿主反代无需再写路径规则。**
+- `Caddyfile.prod`：宿主 Caddy 生产模板——单域名整体指向网关端口（`DOMAIN` + `GATEWAY` 两个变量）。
+- `.env.example`：`API_URL`（浏览器访问的站点地址）、`WEB_URL`（前端地址，邮件链接指向它）、`HOARD_ADMIN_TOKEN` 等。
 
 ## 使用
 
@@ -19,7 +20,18 @@ cp docs/deploy/.env.example .env   # 按需改
 docker compose up -d --build
 ```
 
-单 API 域名：`http://localhost:8080`（mirror + hoard 统一入口），前端 `http://localhost:3101`。
+**统一入口**：`http://localhost:8080`（网关：前端 + 两后端同域）；`http://localhost:3101` 为 web 直连调试端口。生产把域名整体反代到网关即可（`Caddyfile.prod`）。
+
+**分离部署**（前端放 Pages 等独立宿主，后端单独部署）：
+
+```bash
+docker compose up -d db mirror hoard caddy   # 跳过 web 服务
+```
+
+- 网关的 web 兜底路由因上游缺失返回 502，API 路径不受影响；
+- 前端构建时设 `NEXT_PUBLIC_API_URL=https://api.example.com`、运行时设 `API_URL_INTERNAL`（SSR/BFF 服务端取数）；
+- 前端宿主必须支持 **Next 服务端路由**（BFF：`/api/auth/*` route handlers 承载 httpOnly cookie 会话），纯静态托管不可用；
+- 浏览器必须**同域**访问 API：优先用前端宿主的 path rewrite/redirect 把 API 路径代理到网关（保持 cookie SameSite=Lax 生效）；若改为跨域直连，需配 `*_CORS_ORIGINS`，且会话 cookie 为 Lax、跨站 fetch 不携带——登录态将不可用，不推荐。
 
 ## 反向代理与客户端 IP
 
@@ -33,7 +45,7 @@ docker compose up -d --build
 
 ## 生产部署（TLS 域名）
 
-开发用根目录 `Caddyfile`（HTTP、localhost）。生产用 [`Caddyfile.prod`](../../../deploy/Caddyfile.prod)：设置 `API_DOMAIN` / `WEB_DOMAIN` 后 Caddy 自动签发 Let's Encrypt 证书，含安全头兜底与 mirror 会话亲和（OIDC token 落库前的多副本过渡措施）。
+开发直接访问网关端口（HTTP、localhost）。生产用 [`Caddyfile.prod`](../../../deploy/Caddyfile.prod)：设置 `DOMAIN` / `GATEWAY` 后 Caddy 自动签发 Let's Encrypt 证书，单域名整体指向统一入口网关，含安全头兜底。
 
 配套运维件（`docs/deploy/`）：
 
