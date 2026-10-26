@@ -11,7 +11,7 @@ Mythicove is an open-source Minecraft ecosystem for offline / private / modded s
 |---|---|
 | Blessing Skin stuck on PHP 8.1 EOL, dated UI | **Mythic Mirror** — Go, Yggdrasil-compatible |
 | CurseForge closed source | **Mythic Hoard** — open, Modrinth-compatible |
-| Modrinth changed to source-available | **Mythic Hoard** — AGPL-3.0 |
+| Modrinth changed to source-available | **Mythic Hoard** — Elastic License 2.0 (ELv2) |
 
 ## Tech stack
 

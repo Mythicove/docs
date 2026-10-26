@@ -239,6 +239,12 @@ export default {
 
 ---
 
+## 7.4 落地状态注（2026-10-24）
+
+- **已落地**：Tailwind 4 + shadcn/ui(base-ui) + next-intl + openapi-typescript 契约生成 + skinview3d；token 三层中的 Semantic/Component 层（CSS 变量 + Tailwind 语义类 + 阴影/圆角/字体 token）；stylelint/ESLint/Prettier(tailwindcss 插件)/commitlint/husky 门禁；图标统一 lucide；反 AI 味规范执行（无渐变文字、无非等宽三列卡片、像素网格锚点）。
+- **未落地（仍为规划）**：§2 的 TanStack Query 与 Zod（当前以 `lib/api.ts` 边界归一化 + `lib/errors.ts` 映射替代运行时校验）；§6 的 monorepo/`packages/ui`/style-dictionary token 生成（当前 token 单文件 `globals.css` + `lib/themes.ts`）；§7.2 的 `custom-property-pattern`（语义 token 命名与该 pattern 冲突，已在 stylelint 配置注释说明）。
+- 取舍理由：单仓单 app 阶段引入 monorepo 与 token 代码生成属于提前抽象；待第二个 app（Compass 复用设计系统）启动时再执行 §6。
+
 ## 8. 长期优势
 
 1. **契约优先端到端**：OpenAPI → 生成 TS client + Zod，Go 后端与前端类型零漂移。

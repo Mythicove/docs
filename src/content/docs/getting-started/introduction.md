@@ -51,8 +51,8 @@ title: Mythicove 生态总规划
 | 部署 | Docker Compose（小）→ K8s（大） | 见 §6 |
 
 **许可证策略**（Modrinth 前车之鉴）：
-- `mythic-hoard`（Mod 托管）：**AGPL-3.0**，防"白嫖源码改闭源跑竞品"。
-- `mythic-mirror`（皮肤站）：**AGPL-3.0 或 MIT**，看是否介意被人闭源二次分发。
+- `mythic-hoard`（Mod 托管）：**Elastic License 2.0（ELv2）**，禁止他人托管牟利。
+- `mythic-mirror`（皮肤站）：**Elastic License 2.0（ELv2）**，与 hoard 一致。
 
 ## 4. 目录结构
 
