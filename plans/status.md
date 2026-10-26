@@ -51,8 +51,29 @@
 - Meili 分支 `total_hits` 仍是近似
 
 **前端 / 启动器**
-- 全客户端渲染问题已在皮肤库解决（列表/详情 RSC SSR）；其余页面（mods/profile/登录注册）仍为客户端渲染；无 mod 详情页；token 仍存 localStorage（P2 换 httpOnly cookie）；~~管理后台手贴 token~~ 已改会话登录（token 为救援通道）
-- 零前端测试（无单测/Playwright，W4）；compass 无 CI、`launch` 直接执行 UI 可编辑的程序名、下载全量入内存无进度/校验
+- 皮肤库列表/详情为 RSC SSR；**mods 列表/详情于 2026-10-24 整改中改为 RSC**（见下）；profile/登录注册/管理后台为客户端岛（有意为之：登录态控制台）；token 已换 httpOnly cookie（0.2.0）；管理后台会话登录（token 为救援通道，改存 sessionStorage）
+- 前端测试：Playwright E2E 已进 CI（`web/e2e/`，skin-flow + mods-sso）；仍无组件单测与视觉回归
+- compass 无 CI、`launch` 直接执行 UI 可编辑的程序名、下载全量入内存无进度/校验
+
+## 2026-10-24 前端整改（web，台账见根目录 FRONTEND-REMEDIATION.md）
+
+一次针对"dev 预览廉价感/粗糙"的专项审计与整改，要点：
+
+- **运行时断裂修复**：主题系统因 `custom-theme.json` 空值整体失效（换肤/亮色全空操作）→ token 过滤收口；`/skins` 因后端形状漂移白屏 → API 边界形状归一化 + 契约错误码；错误边界保留站点 chrome 并本地化；mirror `404 误报 500` 修复；裸跑 CORS 文档化
+- **设计系统落地**：CJK 字体策略（Noto Sans SC + 系统回退栈）、shadcn 语义变量别名层、`color-scheme`、阴影/动效 token 与 `prefers-reduced-motion`、品牌标识（icon.svg + logo 组件，删脚手架残留）、3D 预览器重写（响应式/DPR/减弱动效/回退）、图标体系与空状态/骨架
+- **交互**：全站表单语义化（form/autocomplete/label 关联）、提交 pending 防重复、base-ui 确认对话框接入全部破坏性操作、死链接与注册入口、移动端导航、自定义文件选择 + 上传进度、搜索改 URL 提交消除竞态
+- **架构**：每页 `generateMetadata`（locale 感知 + OG）、移除全站 `force-dynamic`、`/admin` `/profile` 路由守卫、site-config 服务端单一来源、主题 FOUC 内联脚本、mods 列表/详情 RSC、`cn` 换 clsx+tailwind-merge
+- **治理**：stylelint 去全文件 disable（原语层现场注解豁免）、eslint-disable 清零（仅余 3 处 no-img-element 现场注解）、Prettier + tailwindcss 插件接入、死代码/死键/依赖清理
+
+同日晚二轮（用户复看反馈，台账见根目录 FRONTEND-REMEDIATION.md §G）：locale 前缀改部署级开关（默认 never 同路径 + 非索引部署 noindex + bot UA 403；`always` 供 SEO 站）；滚动条扰动（scrollbar-gutter 经主题通道落地）；皮肤库占位几何锁比例；品牌标识换回仓库内真实 logo（light/dark 双版本 + favicon + OG）。
+
+同日晚三轮：列表页加载骨架统一（`list-page-skeleton`）；设置入口仅登录后账户菜单可见；**OIDC 登录/同意 UI 迁至前端**（mirror 仅留 JSON API + HMAC 无状态 challenge，删除内嵌 HTML 页）；**许可证 AGPL-3.0 → Elastic License 2.0（ELv2）**（产品五仓；api 保持 MIT、docs 保持 CC BY-SA 4.0；ADR-0004 修订记录决策与后果）。
+
+同日晚四轮：**n 合一共享登录**——mirror IdP 识别 web 会话 cookie、第一方客户端（`first_party`）免同意、hoard 支持 `next` 回跳（CORS 白名单校验）；mixed 部署下 mods 静默同步登录态、不再显示"登录 Mod 站"，仅单模块 mods 部署保留显式跳转（台账见根目录 FRONTEND-REMEDIATION.md §G7）。
+
+2026-10-25 三轮 backlog（台账 §H）：注册前置要求（邀请码/验证码）+ 公告横幅 + 按名头像 + mods facets 过滤 + 页码分页 + Microsoft 绑定 + 多玩家管理（mirror/hoard 共 5 个新端点）；web 安全头（CSP/HSTS 等）+ robots/sitemap；`/legal/*` 法务页。剩余 backlog 与不可会话内完成项见台账 §H4。
+
+2026-10-25 四轮（台账 §H5）：admin 校验收紧（role/status/枚举/长度 + 邮箱正则单测）；admin 四面板搜索+分页、审计 `q` 过滤、PAT scopes 复选；e2e 新增 ui-misc / consent-thirdparty / moderation 三 spec（共 7 tests）并修正旧按钮名；皮肤详情 OG 图改渲染头像。markdown changelog、Meili total、团队邀请流、标签、2FA、Compass、镜像代理、i18n 基建、webhook、Isles/Atlas 评估留待后续轮次。
 
 **工程化**
 - 无 E2E/契约字段级测试；无性能/负载数据；无 Helm/K8s（overview §6 的 C/D 档只是纸面）；无 CHANGELOG/release/tag（除 shared 1 个）；Caddyfile 无 TLS、不路由 web
@@ -81,7 +102,7 @@
 - Hoard 侧：`users`（投影：sub/username/email/avatar/role）+ `teams`/`team_members` + `personal_access_tokens`（哈希存储，上传/管理用）；`HOARD_ADMIN_TOKEN` 保留作 bootstrap/救援通道
 - 管理员映射：Hoard 自管角色（admin UI 提升 + `HOARD_ADMIN_SUBJECTS` 环境变量白名单自动映射），不隐式信任 Mirror 的 role
 - 唯一值得重新考虑的情形：若坚持"mod 站必须是单二进制（无 Mirror）"，则退路是把 Mirror 账号核心抽成独立 library 模块（不进 shared）——当前不接受该约束，故不抽
-- 待 docs 仓库迁移落定后补 ADR-0011（身份架构）正式记录
+- ADR-0011（身份架构）已补：`src/content/docs/architecture/adr-0011-identity-architecture.md`（2026-10-26）
 
 ### Phase 1 — Mirror 可交付（预计 4–6 周）
 
@@ -152,3 +173,26 @@
 - i18n 扩语言（目标 15+，接 Crowdin/Weblate）
 - Compass 原生启动（piston-meta + assets + authlib-injector 注入）或先做 Prism 账号深度集成；补 CI/自动更新；`launch` 白名单化
 - 上游镜像代理（Modrinth/CurseForge 冷启动）；插件/Webhook；Isles/Atlas 建仓评估
+
+---
+
+### 补记（2026-10-26）：工作区换树事故 + canonical 树上的修复轮
+
+**事故**：会话中途工作区被换成另一棵树（Q: 是文件支持的 VHDX；系统时钟同时被回拨约 8 小时，`Get-Date`=05:08 而当日写入文件 mtime=12:31–12:51）。旧树的部分目录（根 `hoard`/`mods`/`isles`/`atlas`、`docs/adr|plans|specs`、`web/src/app/[locale]/teams`、`mirror/internal/api`、`hoard/internal/httpapi`）在当前树不存在；回收站无近期删除、`Q:\Backups` 无本项目备份、`opencode.db` 无本项目会话记录 ⇒ **会话内不可还原**，唯一完整来源在宿主侧快照。经用户决定：不还原，在当前（canonical，7 个独立 git 仓库）树上重做缺失项。详见工作区根 `FRONTEND-REMEDIATION.md` §J/§K。
+
+**复核结论**：多数被判"丢失"的能力其实只是换了位置/命名（注册要求端点=`/api/register-requirements`、公告=`/api/announcement`+admin、Microsoft 绑定=`/mojang/oauth/*`、按名头像=`/avatars/by-name/{name}`、举报+皮肤审核队列在 **mirror** 而非 hoard、法务文在 `web/messages` 的 `legal.*`、admin i18n 54 键齐全）。真缺口只剩：团队邀请接受/拒绝、玩家改名/删除与"当前玩家"、Microsoft 解绑、ADR-0011。
+
+**本轮修复**（全部有门禁与测试）：
+- **后台不可用（P0）**：`admin/client.tsx` 在登录态把 token 置空串（=用会话 cookie），但 7 个面板一律 `if (!token) return needToken`，且此时令牌输入框被隐藏 ⇒ 会话管理员**完全无法使用后台**。凭据语义显式化为 `token: string | null`（null=无凭据/""=会话/非空=手贴），面板与全部变更处理函数改判 `=== null`。
+- **鉴权语义统一（P0）**：`/api/admin/*` 认"静态 token 或 role=admin 会话"，而 `/admin/batch-import`、`/api/admin/oauth-clients` 只认静态 token。新增 `yggdrasil.AdminRole(store, token)` + `AdminActor`，三处统一；删除只认静态 token 的 `yggdrasil.Admin`；审计 actor 不再硬编码 `"token"`。新增 `TestAdminRoleAcceptsTokenAndAdminSession`。
+- **CI 必红（P0）**：`e2e/moderation.spec.ts` 夹具指向 `../docs/deploy/k6/skin.png`（CI 不 checkout docs）→ 改用 web 自带 `public/skins/steve.png`；`e2e.yml` 缺 `MIRROR_CORS_ORIGINS` ⇒ 浏览器带凭据跨源被拦（三个 spec 第一步就挂）→ 已补；web CI/e2e 的 node 22 与 `.nvmrc`/Dockerfile 的 24 不一致 → 统一 24。
+- **生产反代漏路由（P0）**：根 `Caddyfile.prod` 只转 `/v2/*`、`/api/mods*` 给 hoard，缺 `/auth/*`、`/api/team*`、`/api/user*` ⇒ 生产 SSO/团队/PAT 全落 mirror 404（dev Caddyfile 是对的）→ 补齐，并修正"OIDC token 存进程内存"的过期注释（fosite 已落 PG，migration 00009，多副本无需粘性）。
+- **部署模板分叉（P1）**：`docs/deploy/{docker-compose.yml,Caddyfile,.env.example}` 落后于根副本，而 `docs/deploy/index.md` 声称一致；照它部署会让 hoard 落进 mirror 的 `public` schema（同名表碰撞）、缺 `HOARD_OIDC_INTERNAL_BASE_URL`（容器内 hairpin 失败）、web 缺 `LOCALE_PREFIX/INDEXABLE/BLOCK_BOTS` 构建参数 → 已同步，`Caddyfile.prod` 两侧取并集后完全一致，`caddy validate` 通过。注意根副本不在任何 git 仓库内（根无 .git），`docs/deploy` 才是可追溯版本。
+- **末位 owner 保护（P1）**：唯一 owner 退出或被降级会让团队永久无人可管 → 两条路径均 409（须先移交）；新增 `TestTeamLastOwnerGuard`。
+- **契约与配置（P1）**：`/api/register-requirements` 增 `minPasswordLength`/`emailDomains`，密码长度收敛为单一常量 `account.MinPasswordLength`（去掉两处 `validate:"min=8"` 标签防漂移）；同步 `api/specs/mirror.openapi.yaml` + `pnpm gen:api`；注册页 `minLength` 读契约值并渲染规则提示（新增 `auth.passwordMin{n}`/`auth.emailDomains{domains}`）。`go.work` 的 `go 1.27.0` 与模块/CI 的 1.26 不一致 → 改回；`api/specs/hoard.openapi.yaml` 的 `info.version` 0.2.0 → 0.3.0；`mythic-hoard/.env.example` 补 `HOARD_OIDC_INTERNAL_BASE_URL`。
+- **i18n/UI（P1）**：`modSettings.patScopes` 键被错放在 `admin` 下 ⇒ 界面直出原始键名 → 归位；主题名硬编码中文（英文界面显示中文）→ 改 id 驱动 `theme.name.<id>`（中英各 6 条），删 `Theme.label`；mod 更新日志 `max-h-16 overflow-hidden` 静默截断 → 原生 `<details>` 折叠；删 `markdown.tsx` 未定义的 `prose-mythic` 死类；中文 ADR 索引链接写成大写 `ADR-000N-*.md`（文件名小写，GitHub Pages 区分大小写 ⇒ 死链）且漏 0010 → 修正。
+- **其它**：`/metrics` 由 `r.Handle`（对所有方法响应）改 `r.Get`；hoard Meili 索引懒开通（filterableAttributes + `maxTotalHits=1e6` 使总数精确），并修掉 `Mythicose`→`Mythicove` 坏 import（此前 meili 驱动编译不过）；死代码清理（hoard `CountTeamMembers`、mirror 生成的 `ListAudit`/`CountAudit`、web `api.ts` 6 个零调用者导出）+ `sqlc generate` 无漂移；`mythic-hoard/README.md` 重写（此前仍称"无用户体系/团队/PAT"，端点表缺 12 条）；补 **ADR-0011 身份架构**（Mirror 唯一 IdP / RP+投影表 / `sub` 关联不建跨服务外键 / 同库 schema 隔离 / 权限不隐式继承 / PAT 与 issuer 分离视界），中英 ADR 索引同步。
+
+**门禁**：web `typecheck`/`lint`/`stylelint`/`build` 全绿；mirror、hoard `go build ./...` + `go test ./... -count=1` 全绿（含 2 个新增测试）；`gofmt -l` 干净；`caddy validate` 通过；`sqlc generate` 无漂移。
+
+**遗留（下一轮）**：团队邀请接受/拒绝流；玩家改名/删除 + 当前玩家选择（会话目前硬绑第一个玩家）；Microsoft 解绑；`mods` 管理面板仍用独立 hoard 静态 token（与 hoard 已有 `/auth/me` role=admin 并存两套管理员模型）；OAuth 回调把 token 放 URL fragment（会留在浏览历史）；`POST /mojang/verify` 在生产恒失败（`main.go` 未 `SetResolver`）；`providerLabels` 预列 microsoft/google/discord/qq/wechat/weibo 但只实现了 github；`/api/admin/oauth-clients` 未进 OpenAPI 契约；未提交改动量很大（web 67 改 + 47 未跟踪、mirror 17、hoard 10、docs 12），**建议尽快落分支**以免再次丢失。
