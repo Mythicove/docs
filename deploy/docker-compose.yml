@@ -30,6 +30,13 @@ services:
       MIRROR_CORS_ORIGINS: "${MIRROR_CORS_ORIGINS:-${WEB_URL:-http://localhost:3101}}"
     volumes:
       - mirrordata:/data
+    healthcheck:
+      # alpine 基础镜像自带 busybox wget；wget 对 4xx/5xx 返回非零，正好用作健康语义
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy
@@ -51,11 +58,20 @@ services:
       HOARD_OIDC_CLIENT_ID: "${HOARD_OIDC_CLIENT_ID:-}"
       HOARD_OIDC_CLIENT_SECRET: "${HOARD_OIDC_CLIENT_SECRET:-}"
       HOARD_OIDC_REDIRECT_URL: "${HOARD_OIDC_REDIRECT_URL:-}"
-      # 服务端侧 IdP 基址（容器内可达）；issuer 保持浏览器面地址
-      HOARD_OIDC_INTERNAL_BASE_URL: "${HOARD_OIDC_INTERNAL_BASE_URL:-http://host.docker.internal:8080}"
+      # 服务端侧 IdP 基址（容器内可达）；issuer 保持浏览器面地址。
+      # 默认直连 compose 内网的 mirror：走 host.docker.internal:8080 会绕到宿主发布的 caddy 端口，
+      # 而 caddy 又要等 hoard healthy 才启动 → 启动死锁（hoard 在 discovery 阶段退出）。
+      # rewrite transport 会保留 issuer 的 Host 头，故 iss 校验不受影响。
+      HOARD_OIDC_INTERNAL_BASE_URL: "${HOARD_OIDC_INTERNAL_BASE_URL:-http://mirror:8080}"
       HOARD_ADMIN_SUBJECTS: "${HOARD_ADMIN_SUBJECTS:-}"
     volumes:
       - hoarddata:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy
@@ -66,9 +82,18 @@ services:
       - "${API_PORT:-8080}:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    healthcheck:
+      # /healthz 未被 hoard 的路径规则命中 → 由 mirror 应答；上游就绪前会得到 502（wget 判为不健康）
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
     depends_on:
-      - mirror
-      - hoard
+      mirror:
+        condition: service_healthy
+      hoard:
+        condition: service_healthy
 
   web:
     build:
@@ -84,8 +109,19 @@ services:
       BLOCK_BOTS: "${BLOCK_BOTS:-}"
     ports:
       - "${WEB_PORT:-3101}:3000"
+    healthcheck:
+      # 探 /icon.png：带点的路径被 proxy 的 matcher 排除，因而不受 BLOCK_BOTS 影响
+      # （busybox wget 的 UA 会被反爬规则 403，探页面路径会误判为不健康）。
+      # 用 127.0.0.1 而非 localhost：容器内 localhost 会先解析到 ::1，
+      # 而 Next standalone 只监听 0.0.0.0（IPv4）→ 探针 connection refused。
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/icon.png"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s
     depends_on:
-      - caddy
+      caddy:
+        condition: service_healthy
 
 volumes:
   pgdata:
