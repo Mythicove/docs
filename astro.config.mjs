@@ -56,6 +56,11 @@ export default defineConfig({
           translations: { en: "Deploy" },
           items: [{ autogenerate: { directory: "deploy" } }],
         },
+        {
+          label: "社区",
+          translations: { en: "Community" },
+          items: [{ autogenerate: { directory: "community" } }],
+        },
       ],
     }),
   ],
