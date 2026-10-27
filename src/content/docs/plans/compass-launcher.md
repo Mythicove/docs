@@ -18,6 +18,15 @@ title: Compass 启动器开发计划
 ## 前置决策（各 Phase 的前提，先定死再动手）
 
 1. **技术栈沿用 Tauri 2 + Rust 核心 + React 前端。** 不换 JavaFX（HMCL 路线，体积与观感差）也不换 Electron（内存与体积）。理由：仓库已在 Tauri 上、三平台一份代码、单包体积个位数 MB、下载/解压/进程管理本来就要写系统层代码，Rust 是顺手的选择。**代价**：Rust 侧要自己实现版本解析与参数构造（HMCL 有十几年积累的 Java 生态可直接借用），所以本计划把"参数构造正确性"作为最大的测试投入点。
+
+   **2026-10-27 复核**（用户提出"GPUI 或 Go 写的 Wails 是否更好"后重新评估，结论：维持 Tauri）。实测事实：`tauri` crates.io 稳定 2.x、下载量 3960 万；`gpui` 仅 **0.2.2**、下载量 40 万、仓库即 zed-industries/zed（跟着 Zed 自己的需求演进）；Wails 是 Go + webview（36.7k★），不是 Rust crate。
+   - **换框架的成本不在已写的代码**：Rust 核心（下载器、版本 JSON 解析、库/资源规划、Java 探测、安装编排、实例模型）与 UI 框架无关，一行都不用扔；贵的是下面三件事，而这三件 GPUI 都要从零造。
+   - **3D 皮肤预览**：skinview3d + three.js 在 webview 里是免费的（已在用）；GPUI 要自己写 wgpu 渲染 + 皮肤贴图 + 旋转动画，Fyne/Gio 的 3D 能力更弱。
+   - **控件层**：启动器 90% 的界面是表单/列表/进度条/日志视图/对话框。web 侧有现成组件，且能直接复用 web 站的设计 token 与组件风格（同一批人维护两个前端）；GPUI 没有组件生态。
+   - **打包/签名/公证/自动更新**：`tauri-action` + `tauri-plugin-updater` 现成，三平台 CI 已跑通并出过 draft release；GPUI 这条链要自己搭，P5/P6 明显变重。
+   - **GPUI 的额外代价**：0.2.x 意味着 API 会随 Zed 变动；文档以 Zed 内部用法为主；无 i18n、无障碍成熟度未知。**而用户看不到收益**——启动器不是代码编辑器，不需要自定义 GPU 渲染管线。它真正合适的场景是"游戏内覆盖层"这类极度自定义的绘制面，将来那一块可以单独用 wgpu，不必换外壳。
+   - **Go/Wails 的诱惑与真相**：好处是与后端同语言、能复用 `shared/mc`、交叉编译更省事（不需 MSVC 工具链）。但启动器与后端的**共享面很窄**：只有离线 UUID 派生（`UUID.nameUUIDFromBytes("OfflinePlayer:"+name)`，Rust 侧 20 行等价实现，并用契约测试与 mirror 的输出逐字节对齐——比"共用一个库"更可靠）与几个数据结构。而 Wails 仍然是 webview，三平台不一致的代价一分不少，却少了 Tauri 的 capabilities/更新/打包体系。
+   - **Tauri 的真实缺点与缓解**：三平台 webview 不一致，Linux 的 WebKitGTK 最弱（渲染怪癖、WebGL 可能不可用、老发行版版本旧）；多一个 webview 进程约 100–200MB 内存；跨 IPC 调试比同进程麻烦。缓解：UI 不碰前沿 web API；**WebGL 不可用时 3D 预览降级为 2D 平面贴图**（P1 实现）；安装文档写明 WebKitGTK 版本要求；CI 已有 ubuntu-latest 这条腿。
 2. **重逻辑放 Rust，前端只做视图。** 版本/资源/库的解析、下载调度、Java 探测、参数拼装、进程管理全部在 Rust；React 通过 `invoke` 取状态、通过 Tauri event 收进度。不在前端拼启动参数（前端拼一次就得在三平台各错一次）。
 3. **全局缓存 + 实例隔离。** `assets/objects`、`libraries`、`versions/<id>`（version json + client jar）、`java/`（自动下载的 JRE）、`authlib-injector.jar` 全局共享（按 sha1/Maven 坐标天然去重，多实例不重复下载）；实例只存自己的 `instance.json` + `.minecraft/`（游戏目录：mods/config/saves/resourcepacks/options.txt/logs）。目录布局：
    ```
