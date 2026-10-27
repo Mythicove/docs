@@ -31,7 +31,7 @@ export default defineConfig({
       favicon: "/favicon.png",
       lastUpdated: true,
       editLink: {
-        baseUrl: "https://github.com/Mythicove/docs/edit/main/src/content/docs/",
+        baseUrl: "https://github.com/Mythicove/docs/edit/main/",
       },
       components: {
         Footer: "./src/components/Footer.astro",
