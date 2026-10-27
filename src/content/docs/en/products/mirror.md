@@ -11,4 +11,4 @@ Mythic Mirror is a Yggdrasil-compatible skin station, a modern replacement for B
 - **Premium compatibility**: bind a Microsoft account, keep the real UUID, fall back to Mojang textures.
 - **OIDC provider** (Fosite) for SSO across the ecosystem.
 
-See the full [plan](/products/mirror/) (Chinese) or [quickstart](/en/getting-started/quickstart/).
+See the full [plan](../../products/mirror.md) (Chinese) or [quickstart](../getting-started/quickstart.md).

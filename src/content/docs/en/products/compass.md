@@ -10,4 +10,4 @@ Mythic Compass is the Tauri-based launcher.
 - **Modpack browsing** and one-click `.mrpack` download.
 - **Launch** by importing into an external launcher (Prism Launcher by default).
 
-See [Mythic Compass](/products/compass/) (Chinese) for the architecture.
+See [Mythic Compass](../../products/compass.md) (Chinese) for the architecture.

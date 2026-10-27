@@ -47,6 +47,6 @@ Key environment variables (see `.env.example`):
 | `HOARD_ADMIN_TOKEN` | Mod upload auth (empty = open upload) |
 | `MIRROR_ADMIN_TOKEN` | Skin station admin auth |
 
-The skin station and mod hosting share one Postgres (separate goose version tables). The bundled Caddy gateway routes by path: `/v2/*`, `/api/mods*`, `/auth/*`, `/api/team*`, `/api/user*` → Hoard; `/api/auth/*` (BFF) and the page fallback → Web; remaining API and texture paths → Mirror. Your edge proxy only needs to forward the whole domain to the gateway (see [Deploy](/en/deploy/)).
+The skin station and mod hosting share one Postgres (separate goose version tables). The bundled Caddy gateway routes by path: `/v2/*`, `/api/mods*`, `/auth/*`, `/api/team*`, `/api/user*` → Hoard; `/api/auth/*` (BFF) and the page fallback → Web; remaining API and texture paths → Mirror. Your edge proxy only needs to forward the whole domain to the gateway (see [Deploy](../deploy/index.md)).
 
-> See [Deploy](/en/deploy/) for tiered production deployment (Redis / S3 / Meilisearch).
+> See [Deploy](../deploy/index.md) for tiered production deployment (Redis / S3 / Meilisearch).

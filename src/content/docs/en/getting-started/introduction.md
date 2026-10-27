@@ -28,4 +28,4 @@ Mythicove is an open-source Minecraft ecosystem for offline / private / modded s
 | C | 1k–5k | + S3 + CDN + asynq |
 | D | 5k–10k+ | K8s + HA + multi-region |
 
-See the Chinese [overview](/getting-started/introduction/) for the full plan.
+See the Chinese [overview](../../getting-started/introduction.md) for the full plan.

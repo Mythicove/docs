@@ -21,4 +21,4 @@ MIRROR_OAUTH_MICROSOFT_CLIENT_SECRET=...
 ## 注意
 
 - 需在 Azure 应用注册里配置回调 URL：`{BaseURL}/mojang/oauth/callback`。
-- 完整设计见 [ADR-0007 认证设计](/architecture/adr-0007-auth-design/)。
+- 完整设计见 [ADR-0007 认证设计](../architecture/adr-0007-auth-design.md)。
