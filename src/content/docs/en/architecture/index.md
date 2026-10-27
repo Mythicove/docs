@@ -19,4 +19,4 @@ Architecture Decision Records capture the "why" behind key technical choices.
 | ADR-0010 | OIDC provider + login-methods registry |
 | ADR-0011 | Identity: Mirror as sole IdP, other products as OIDC RP + projection table |
 
-The full records (with context and consequences) are available in the [Chinese architecture section](../../architecture/index.md).
+The full records (with context and consequences) are available in the [Chinese architecture section](/architecture/).

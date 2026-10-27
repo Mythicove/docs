@@ -17,9 +17,9 @@ This page is the canonical contributing guide for all Mythicove repositories. Th
 
 ## How to contribute
 
-1. Open an issue in the relevant repository for bugs and feature requests; cross-product topics belong in docs. Report security vulnerabilities through the private flow in the [security policy](./security.md), never in a public issue.
+1. Open an issue in the relevant repository for bugs and feature requests; cross-product topics belong in docs. Report security vulnerabilities through the private flow in the [security policy](/en/community/security/), never in a public issue.
 2. Small changes can go straight into a pull request. For changes that touch architecture, data models or cross-repo contracts, open an issue or add an ADR to docs first.
-3. Taking part means you agree to the [code of conduct](./code-of-conduct.md).
+3. Taking part means you agree to the [code of conduct](/en/community/code-of-conduct/).
 
 ## Commit conventions
 
@@ -44,4 +44,4 @@ A decision that spans repositories or has long-term impact needs an ADR under do
 
 ## Licensing and contribution ownership
 
-Submitting a contribution to a repository means it is released under that repository's current license; see the table above and each repo's LICENSE. The product repositories are source-available (ELv2) rather than OSI-approved open source, so word external descriptions accordingly. The licensing philosophy, ELv2 boundaries and an intended-use FAQ live in the [licensing policy](./licensing.md); relicense history lives in each repo's LICENSE.history.
+Submitting a contribution to a repository means it is released under that repository's current license; see the table above and each repo's LICENSE. The product repositories are source-available (ELv2) rather than OSI-approved open source, so word external descriptions accordingly. The licensing philosophy, ELv2 boundaries and an intended-use FAQ live in the [licensing policy](/en/community/licensing/); relicense history lives in each repo's LICENSE.history.

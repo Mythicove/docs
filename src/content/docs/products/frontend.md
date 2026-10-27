@@ -93,6 +93,6 @@ export default {
 
 ## 相关文档
 
-- 设计：[设计 Token 体系](../design/tokens.md)、[视觉与文案规范](../design/visual-rules.md)
-- 调研：[前端竞品调研与长期优势](../research/frontend-competitors.md)
-- 架构决策：[ADR-0001 语言选型](../architecture/adr-0001-language.md)
+- 设计：[设计 Token 体系](/design/tokens/)、[视觉与文案规范](/design/visual-rules/)
+- 调研：[前端竞品调研与长期优势](/research/frontend-competitors/)
+- 架构决策：[ADR-0001 语言选型](/architecture/adr-0001-language/)

@@ -34,4 +34,4 @@ Mythicove 有多个需要"知道用户是谁"的产品：Mirror（皮肤站/账�
   - 两套管理员模型并存（Mirror 的 `role=admin` 会话 / Hoard 的 `HOARD_ADMIN_TOKEN` + `HOARD_ADMIN_SUBJECTS`），运维需要理解各自边界；文档与 `.env.example` 必须写清。
   - 多产品各自的会话 cookie 意味着"登出全站"需要逐产品调用（当前 Compass/Hoard 各自 `POST /auth/logout`），没有全局登出。
   - 团队角色可变更、所有权可移交（末位 owner 受保护，降级/退出均 409），邀请有接受/拒绝流且 7 天过期（2026-10-27 补齐，此前只有"owner 直接加人"）。
-  - Mirror 的"第三方 OAuth 绑定"在 ADR-0012 之前只是登录时按 email 匹配、不落库；绑定关系与由此产生的策略见 [ADR-0012](./adr-0012-credential-separation.md)。
+  - Mirror 的"第三方 OAuth 绑定"在 ADR-0012 之前只是登录时按 email 匹配、不落库；绑定关系与由此产生的策略见 [ADR-0012](/architecture/adr-0012-credential-separation/)。

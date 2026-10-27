@@ -3,7 +3,7 @@ title: Licensing
 description: The licensing philosophy of the Mythicove ecosystem
 ---
 
-This page is the canonical statement of the Mythicove licensing philosophy. The selection rationale and revision history live in [ADR-0004](../../architecture/adr-0004-license.md) (Chinese); the binding terms are the LICENSE file in each repository. Nothing here is legal advice.
+This page is the canonical statement of the Mythicove licensing philosophy. The selection rationale and revision history live in [ADR-0004](/architecture/adr-0004-license/) (Chinese); the binding terms are the LICENSE file in each repository. Nothing here is legal advice.
 
 ## License matrix
 

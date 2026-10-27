@@ -16,9 +16,9 @@ title: 贡献指南
 
 ## 如何贡献
 
-1. Bug 与需求先在对应仓库提 issue，跨产品的问题提到 docs。安全漏洞走[安全策略](./security.md)的私密上报流程，不要开公开 issue。
+1. Bug 与需求先在对应仓库提 issue，跨产品的问题提到 docs。安全漏洞走[安全策略](/community/security/)的私密上报流程，不要开公开 issue。
 2. 小改动可以直接发 Pull Request。涉及架构、数据模型或跨仓库契约的改动，先提 issue 或在 docs 补一份 ADR 再动手。
-3. 参与即表示同意[行为准则](./code-of-conduct.md)。
+3. 参与即表示同意[行为准则](/community/code-of-conduct/)。
 
 ## 提交规范
 
@@ -43,4 +43,4 @@ title: 贡献指南
 
 ## 许可证与贡献归属
 
-向任何仓库提交贡献，即同意你的贡献按该仓库的现行许可证发布，见上表与各仓库 LICENSE。产品仓库属于 source-available（ELv2），不是 OSI 定义的开源项目，对外描述时注意措辞。许可理念、ELv2 边界与预期用法 FAQ 见[许可政策](./licensing.md)，换证历史见各仓库 LICENSE.history。
+向任何仓库提交贡献，即同意你的贡献按该仓库的现行许可证发布，见上表与各仓库 LICENSE。产品仓库属于 source-available（ELv2），不是 OSI 定义的开源项目，对外描述时注意措辞。许可理念、ELv2 边界与预期用法 FAQ 见[许可政策](/community/licensing/)，换证历史见各仓库 LICENSE.history。

@@ -30,4 +30,4 @@ The compose `caddy` service is a single-port gateway for the whole stack — fro
 
 **Split deployment** (frontend on a Pages-style host, backends on your server): run `docker compose up -d db mirror hoard caddy` (skip `web`), point the frontend build at the API domain (`NEXT_PUBLIC_API_URL`) and set `API_URL_INTERNAL` for SSR/BFF. The host must run Next.js server routes (BFF), and the browser should reach the API same-origin via the host's path rewrites — cross-site cookie sessions (SameSite=Lax) won't work otherwise.
 
-See the full [deployment guide](../../deploy/index.md) (Chinese) or [storage tiers](../../deploy/storage.md).
+See the full [deployment guide](/deploy/) (Chinese) or [storage tiers](/deploy/storage/).

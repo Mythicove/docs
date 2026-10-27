@@ -173,7 +173,7 @@ title: 当前进度
 ### Phase 4 — 生态扩展（持续，按需启动）
 
 - i18n 扩语言（目标 15+，接 Crowdin/Weblate）
-- ~~Compass 原生启动（piston-meta + assets + authlib-injector 注入）或先做 Prism 账号深度集成；补 CI/自动更新；`launch` 白名单化~~ → 已展开为独立计划：**[`plans/2026-10-27-compass-launcher.md`](./2026-10-27-compass-launcher.md)**（P0 骨架与仓库卫生 → P1 原生启动最小闭环 → P2 实例与内容管理 → P3 mod loader 与整合包 → P4 账号与令牌安全 → P5 诊断/Java 自动下载/自动更新 → P6 三平台打包签名发布；每阶段含周任务、验收与版本号，Forge processor pipeline 为最大单点风险并已写下降级验收标准）。决策：**直接全量对标 HMCL/PCL，三平台**，不再走"先做 Prism 账号深度集成"的过渡路线。
+- ~~Compass 原生启动（piston-meta + assets + authlib-injector 注入）或先做 Prism 账号深度集成；补 CI/自动更新；`launch` 白名单化~~ → 已展开为独立计划：**[`plans/compass-launcher.md`](/plans/compass-launcher/)**（P0 骨架与仓库卫生 → P1 原生启动最小闭环 → P2 实例与内容管理 → P3 mod loader 与整合包 → P4 账号与令牌安全 → P5 诊断/Java 自动下载/自动更新 → P6 三平台打包签名发布；每阶段含周任务、验收与版本号，Forge processor pipeline 为最大单点风险并已写下降级验收标准）。决策：**直接全量对标 HMCL/PCL，三平台**，不再走"先做 Prism 账号深度集成"的过渡路线。
 - 上游镜像代理（Modrinth/CurseForge 冷启动）；插件/Webhook；Isles/Atlas 建仓评估
 
 ---

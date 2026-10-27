@@ -11,4 +11,4 @@ Mythic Hoard hosts mods and modpacks with a Modrinth-compatible API.
 - **Search** pg_trgm (default) or Meilisearch; **queue** inline or asynq.
 - **Review** status (`listed` / `under_review` / `rejected` / `archived`).
 
-See the [product reference](../../products/hoard.md) and the [plan](../../plans/hoard.md) (both Chinese), or the [quickstart](../getting-started/quickstart.md).
+See the [product reference](/products/hoard/) and the [plan](/plans/hoard/) (both Chinese), or the [quickstart](/en/getting-started/quickstart/).

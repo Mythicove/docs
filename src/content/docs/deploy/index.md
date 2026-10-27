@@ -45,12 +45,12 @@ docker compose up -d db mirror hoard caddy   # 跳过 web 服务
 
 ## 生产部署（TLS 域名）
 
-开发直接访问网关端口（HTTP、localhost）。生产用 [`Caddyfile.prod`](../../../deploy/Caddyfile.prod)：设置 `DOMAIN` / `GATEWAY` 后 Caddy 自动签发 Let's Encrypt 证书，单域名整体指向统一入口网关，含安全头兜底。
+开发直接访问网关端口（HTTP、localhost）。生产用 [`Caddyfile.prod`](https://github.com/Mythicove/docs/blob/main/deploy/Caddyfile.prod)：设置 `DOMAIN` / `GATEWAY` 后 Caddy 自动签发 Let's Encrypt 证书，单域名整体指向统一入口网关，含安全头兜底。
 
 配套运维件（`docs/deploy/`）：
 
-- [`backup.md`](../../../deploy/backup.md) + [`backup.sh`](../../../deploy/backup.sh)：Postgres dump + 纹理/文件卷备份、保留策略、恢复步骤与演练要求
-- [`observability/`](../../../deploy/observability/)：Prometheus 抓取片段、告警规则（promtool 校验过）、Grafana 面板
+- [`backup.md`](https://github.com/Mythicove/docs/blob/main/deploy/backup.md) + [`backup.sh`](https://github.com/Mythicove/docs/blob/main/deploy/backup.sh)：Postgres dump + 纹理/文件卷备份、保留策略、恢复步骤与演练要求
+- [`observability/`](https://github.com/Mythicove/docs/tree/main/deploy/observability)：Prometheus 抓取片段、告警规则（promtool 校验过）、Grafana 面板
 
 ## 镜像发布（GHCR）
 

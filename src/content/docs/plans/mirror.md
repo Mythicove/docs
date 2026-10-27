@@ -2,7 +2,7 @@
 title: Mythic Mirror 计划
 ---
 
-> 仓库：`Mythicove/mythic-mirror`。产品现状与 API 面见[产品参考](../products/mirror.md)，调研结论见[为何自研](../research/why-self-built.md)。
+> 仓库：`Mythicove/mythic-mirror`。产品现状与 API 面见[产品参考](/products/mirror/)，调研结论见[为何自研](/research/why-self-built/)。
 
 ## 核心功能（P0 必做 / P1 应有 / P2 加分）
 
@@ -49,7 +49,7 @@ title: Mythic Mirror 计划
 
 ## 部署分级（Mirror 视角）
 
-Mirror 不需要搜索组件，分级更简单。全局分级见[部署](../deploy/index.md)。
+Mirror 不需要搜索组件，分级更简单。全局分级见[部署](/deploy/)。
 
 | 层级 | 规模 | 资源 | 组件（必选到可选） |
 |---|---|---|---|

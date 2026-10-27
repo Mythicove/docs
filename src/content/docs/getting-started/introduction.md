@@ -54,7 +54,7 @@ title: Mythicove 生态总规划
 - `mythic-hoard`（Mod 托管）：**Elastic License 2.0（ELv2）**，禁止他人托管牟利。
 - `mythic-mirror`（皮肤站）：**Elastic License 2.0（ELv2）**，与 hoard 一致。
 
-理念、边界与预期用法 FAQ 见[许可政策](../community/licensing.md)，选型论证见 [ADR-0004](../architecture/adr-0004-license.md)。
+理念、边界与预期用法 FAQ 见[许可政策](/community/licensing/)，选型论证见 [ADR-0004](/architecture/adr-0004-license/)。
 
 ## 4. 目录结构
 

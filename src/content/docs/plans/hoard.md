@@ -2,7 +2,7 @@
 title: Mythic Hoard 计划
 ---
 
-> 仓库：`Mythicove/mythic-hoard`。产品现状与 API 面见[产品参考](../products/hoard.md)，调研结论见[为何自研](../research/why-self-built.md)。
+> 仓库：`Mythicove/mythic-hoard`。产品现状与 API 面见[产品参考](/products/hoard/)，调研结论见[为何自研](/research/why-self-built/)。
 
 ## 核心功能（P0 / P1 / P2）
 
@@ -50,7 +50,7 @@ title: Mythic Hoard 计划
 
 ## 部署分级（Hoard 视角）
 
-全局分级见[部署](../deploy/index.md)。
+全局分级见[部署](/deploy/)。
 
 | 层级 | 规模 | 资源 | 组件（必选到可选） |
 |---|---|---|---|

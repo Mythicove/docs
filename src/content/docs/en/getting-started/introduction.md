@@ -13,7 +13,7 @@ Mythicove is a source-available Minecraft ecosystem for offline / private / modd
 | CurseForge closed source | **Mythic Hoard** — source-available, Modrinth-compatible |
 | Modrinth changed to source-available | **Mythic Hoard** — Elastic License 2.0 (ELv2) |
 
-The licensing philosophy, ELv2 boundaries and an intended-use FAQ: see the [licensing policy](../community/licensing.md).
+The licensing philosophy, ELv2 boundaries and an intended-use FAQ: see the [licensing policy](/en/community/licensing/).
 
 ## Tech stack
 
@@ -30,4 +30,4 @@ The licensing philosophy, ELv2 boundaries and an intended-use FAQ: see the [lice
 | C | 1k–5k | + S3 + CDN + asynq |
 | D | 5k–10k+ | K8s + HA + multi-region |
 
-See the Chinese [overview](../../getting-started/introduction.md) for the full plan.
+See the Chinese [overview](/getting-started/introduction/) for the full plan.

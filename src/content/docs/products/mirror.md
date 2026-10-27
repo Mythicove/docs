@@ -22,7 +22,7 @@ title: Mythic Mirror（皮肤站）
 | 前端 | Next.js 或 Vite + React |
 | 3D 预览 | bs-community/skinview3d |
 | 验证码 | Cloudflare Turnstile |
-| 部署 | Docker + Caddy（分级见[计划](../plans/mirror.md)） |
+| 部署 | Docker + Caddy（分级见[计划](/plans/mirror/)） |
 
 ## 架构设计
 
@@ -68,8 +68,8 @@ title: Mythic Mirror（皮肤站）
 
 ## 相关文档
 
-- 计划：[Mythic Mirror 计划](../plans/mirror.md)（功能分级、数据模型草案、里程碑、部署分级、风险）
-- 调研：[为何自研](../research/why-self-built.md)
-- 架构决策：[ADR-0007 认证设计](../architecture/adr-0007-auth-design.md)、[ADR-0008 RSA 密钥管理](../architecture/adr-0008-rsa-key-management.md)、[ADR-0012 凭证分离](../architecture/adr-0012-credential-separation.md)
-- 接入指南：[authlib-injector 接入](../guides/authlib-injector.md)
-- 部署：[部署](../deploy/index.md)
+- 计划：[Mythic Mirror 计划](/plans/mirror/)（功能分级、数据模型草案、里程碑、部署分级、风险）
+- 调研：[为何自研](/research/why-self-built/)
+- 架构决策：[ADR-0007 认证设计](/architecture/adr-0007-auth-design/)、[ADR-0008 RSA 密钥管理](/architecture/adr-0008-rsa-key-management/)、[ADR-0012 凭证分离](/architecture/adr-0012-credential-separation/)
+- 接入指南：[authlib-injector 接入](/guides/authlib-injector/)
+- 部署：[部署](/deploy/)

@@ -18,7 +18,7 @@ title: ADR-0007 认证设计
 - **Zitadel/OIDC 可选替换** `Authenticate` 的数据源，但保持同一 `Auth` 接口与 token 语义。
 
 > 2026-10-27 修订：本 ADR 写就时全站只有一个口令凭据、一个 `Authenticate` 原语。
-> [ADR-0012](./adr-0012-credential-separation.md) 把它拆成"网站主密码"与"启动器按玩家发放的独立密码"两条互不相通的校验路径，
+> [ADR-0012](/architecture/adr-0012-credential-separation/) 把它拆成"网站主密码"与"启动器按玩家发放的独立密码"两条互不相通的校验路径，
 > 并规定网站会话不再代表任何玩家。token 形态（不透明随机串 + 服务端会话 + 即时撤销）不变。
 
 ## 后果

@@ -2,7 +2,7 @@
 title: 许可政策
 ---
 
-本页是 Mythicove 生态许可理念的正本说明。选型论证与历次修订见 [ADR-0004](../architecture/adr-0004-license.md)；具体条款以各仓库根目录的 LICENSE 为准，本页不构成法律意见。
+本页是 Mythicove 生态许可理念的正本说明。选型论证与历次修订见 [ADR-0004](/architecture/adr-0004-license/)；具体条款以各仓库根目录的 LICENSE 为准，本页不构成法律意见。
 
 ## 许可证矩阵
 

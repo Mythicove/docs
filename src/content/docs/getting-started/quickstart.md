@@ -47,6 +47,6 @@ curl http://localhost:8080/.well-known/openid-configuration # OIDC
 | `HOARD_ADMIN_TOKEN` | Mod 上传鉴权（留空则开放上传） |
 | `MIRROR_ADMIN_TOKEN` | 皮肤站后台鉴权 |
 
-皮肤站、Mod 站共享同一个 Postgres（各自独立的 goose 版本表）。compose 内置的 Caddy 网关按路径分流：`/v2/*`、`/api/mods*`、`/auth/*`、`/api/team*`、`/api/user*` → Hoard；`/api/auth/*`（BFF）与页面兜底 → Web；其余 API 与纹理路径 → Mirror。宿主反代只需把域名整体指向网关（见 [部署](../deploy/index.md)）。
+皮肤站、Mod 站共享同一个 Postgres（各自独立的 goose 版本表）。compose 内置的 Caddy 网关按路径分流：`/v2/*`、`/api/mods*`、`/auth/*`、`/api/team*`、`/api/user*` → Hoard；`/api/auth/*`（BFF）与页面兜底 → Web；其余 API 与纹理路径 → Mirror。宿主反代只需把域名整体指向网关（见 [部署](/deploy/)）。
 
-> 生产级的分级部署（Redis / S3 / Meilisearch 等）见 [部署](../deploy/index.md)。
+> 生产级的分级部署（Redis / S3 / Meilisearch 等）见 [部署](/deploy/)。

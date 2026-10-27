@@ -21,7 +21,7 @@ title: Mythic Hoard（Mod 托管）
 | 任务队列 | asynq（`Queue` 接口，A 档内联） |
 | 前端 | Next.js 或 Vite + React |
 | 限流 | Redis（`RateLimiter` 接口） |
-| 部署 | Docker + Caddy（分级见[计划](../plans/hoard.md)） |
+| 部署 | Docker + Caddy（分级见[计划](/plans/hoard/)） |
 
 ## 架构设计
 
@@ -68,6 +68,6 @@ title: Mythic Hoard（Mod 托管）
 
 ## 相关文档
 
-- 计划：[Mythic Hoard 计划](../plans/hoard.md)（功能分级、数据模型草案、里程碑、部署分级、风险）
-- 调研：[为何自研](../research/why-self-built.md)
-- 部署：[部署](../deploy/index.md)
+- 计划：[Mythic Hoard 计划](/plans/hoard/)（功能分级、数据模型草案、里程碑、部署分级、风险）
+- 调研：[为何自研](/research/why-self-built/)
+- 部署：[部署](/deploy/)
