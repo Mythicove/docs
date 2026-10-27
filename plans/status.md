@@ -196,3 +196,20 @@
 **门禁**：web `typecheck`/`lint`/`stylelint`/`build` 全绿；mirror、hoard `go build ./...` + `go test ./... -count=1` 全绿（含 2 个新增测试）；`gofmt -l` 干净；`caddy validate` 通过；`sqlc generate` 无漂移。
 
 **遗留（下一轮）**：团队邀请接受/拒绝流；玩家改名/删除 + 当前玩家选择（会话目前硬绑第一个玩家）；Microsoft 解绑；`mods` 管理面板仍用独立 hoard 静态 token（与 hoard 已有 `/auth/me` role=admin 并存两套管理员模型）；OAuth 回调把 token 放 URL fragment（会留在浏览历史）；`POST /mojang/verify` 在生产恒失败（`main.go` 未 `SetResolver`）；`providerLabels` 预列 microsoft/google/discord/qq/wechat/weibo 但只实现了 github；`/api/admin/oauth-clients` 未进 OpenAPI 契约；未提交改动量很大（web 67 改 + 47 未跟踪、mirror 17、hoard 10、docs 12），**建议尽快落分支**以免再次丢失。
+
+---
+
+### 补记（2026-10-27）：凭证分离——网站主密码 vs 启动器独立密码（ADR-0012）
+
+用户决策：启动器登录密码从主密码里拆出来（每玩家可设若干条），管理员可强制"必须有独立密码才能从启动器登录"，从而在第三方登录可用后彻底关掉账号密码登录；随后开始做启动器（全量对标 HMCL/PCL，全平台）。
+
+- **拆分的必要性**：此前全站只有一个凭据（`users.password_hash`）和一个校验原语（`Store.Authenticate`），被网站登录、启动器登录、`signout`、IdP 登录表单四处共用 ⇒ 关掉密码登录就等于切断启动器。且 `login_methods` 的 `password` 开关**纯装饰**（只有 `internal/admin` 读它），"禁用账号密码登录"这个能力此前根本不存在。
+- **数据**（migration 00013）：`player_credentials`（每玩家 ≤3 条，Argon2id；`player_uuid` 用 `ON UPDATE CASCADE` 让凭证跟随改名后的新 uuid）、`user_identities`（第三方绑定；此前 GitHub 登录只按 email 匹配且不留痕，"绑过第三方吗"无从判定）、`sessions.credential_id`（`ON DELETE CASCADE` ⇒ 撤销凭证立即销毁其会话）。**删除** `users.active_player_uuid` 整套机制（列、`Player.active`、`/account/players/{name}/activate`、`Store.PlayerByUser`/`SetActivePlayer`、web"设为当前玩家"）。
+- **语义**：`/authserver/authenticate` 与 `signout` 的 `username` 改为**玩家名**、`password` 为该玩家**独立密码**（主密码在协议端点上完全不被查询，邮箱也不能作用户名）；`availableProfiles` 只含认证到的那个玩家；网站/OIDC 会话 `player_id` 为空串（不代表任何玩家，也就不能 join 服务器），`/account/login` 响应改为 `{accessToken, clientToken}`；玩哪个玩家改为**浏览器本地选择**（AuthProvider 登录后从玩家列表补齐，存 localStorage）。`signout` 从"校验完密码什么都不删"的 no-op 改为真正销毁该玩家的游戏会话。
+- **策略**（`admin.AuthPolicy`，三处共用同一份实现）：`password` 开关取自 `login_methods`（不新增第二个开关）——关闭后账号密码注册立即停止，主密码登录只对**未绑定第三方**的历史账号放行（宽限），已绑定者 403 + 稳定错误码；`require_third_party_binding` 拦皮肤上传/皮肤库发布与应用/启动器登录/SSO，但**不**拦账号管理、绑定流程本身、举报与评论（否则用户被锁在"必须先绑定才能进绑定页"）；`max_players` 默认 1，存量超额不回收。
+- **"纯密码账号还有多少"如何优雅实现**（用户担心查询昂贵）：**不进登录热路径**。热路径上的判定是"这个账号自己有没有绑定"（登录本来就要读用户行，一次索引查询）；全站计数 `CountPasswordOnlyUsers`（走 `users_password_only` 部分索引）只在管理面板打开时算一次，纯作决策提示。于是宽限集合自然收缩，归零那一刻主密码登录已无人可用——不需要第二个开关、不需要自动切换状态、不需要定时任务。
+- **顺带修掉三个既有缺口**：`GetUserAuth` 加 `status='active'` 过滤（banned/suspended 此前照样能拿会话）；`/oauth2/login/accept`（校验的正是主密码）挂上 `auth` 限流桶（此前是全站唯一能无限速试密码的端点）；`login_methods` 真正强制生效。另修两个探针抓出的 500：`POST /account/players` 超上限（错误未映射，改为复用 `writePlayerErr`）、策略关闭时的账号密码注册与密码重置。
+- **成本与上限**：Argon2id 无快速查找键，登录要对候选哈希逐条校验 ⇒ 每玩家上限 3 条（常量，非配置项）+ `last_used_at DESC` 让常用凭证先命中。要放宽条数应加服务端 pepper 的 HMAC 快查列，而不是调大常量。
+- **未处理（记入台账）**：`sessions` TTL 24h vs web cookie 7d 不一致；memstore 会话不过期；`email_verified` 仍不参与任何门禁（无 SMTP 的部署会因此把所有人锁在门外，属独立策略决定）。
+- **验证**：内存 + PG 双实现测试全绿（新增 7 个测试）；**部署级探针**逐条验证（真容器 + 真 PG）：主密码/邮箱进不了启动器、玩家名+独立密码可进、撤销后旧游戏会话立即失效而网站会话不受影响、玩家数上限 409、关主密码后未绑定者可登录（宽限）而注册 403、落库绑定后登录 403、开强制绑定后启动器登录 403 `binding_required` 而读玩家列表 200。e2e 新增 `launcher-auth.spec.ts`（10 tests）。
+- **协作事故**：收尾时另一会话在 mirror 合并 `feat/site-info`，解冲突时吃掉一个 `}`，把**不能编译的合并提交推上了 main**（mirror CI 与 web e2e 双双变红，e2e 是因为它从 mirror main 构建）。对方随后用前向修复提交 `a46035f` 补齐（未改写历史）。教训：**合并后必须 build+test 再推**。另：本机 `gofmt -l` 因 `core.autocrlf` 把所有文件都报成未格式化，真凶（`memstore.go` 的注释对齐）要把文件转成 LF 副本、在 Linux 容器里跑 gofmt 才看得见。
