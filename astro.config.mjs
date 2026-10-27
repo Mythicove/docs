@@ -17,6 +17,7 @@ export default defineConfig({
         replacesTitle: true,
       },
       favicon: "/favicon.png",
+      lastUpdated: true,
       defaultLocale: "root",
       locales: {
         root: { label: "简体中文", lang: "zh-CN" },

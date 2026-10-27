@@ -2,7 +2,7 @@
 title: Mythic Hoard（Mod 托管）完整计划
 ---
 
-> 仓库：`Mythicove/mythic-hoard`　品牌名：Mythic Hoard（秘藏）　定位：开源 Minecraft Mod 托管/分发平台，Modrinth 兼容。
+> 仓库：`Mythicove/mythic-hoard`　品牌名：Mythic Hoard（秘藏）　定位：源码可得的 Minecraft Mod 托管/分发平台，Modrinth 兼容。
 
 ## 1. 定位与目标
 

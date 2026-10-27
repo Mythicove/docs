@@ -44,4 +44,4 @@ A decision that spans repositories or has long-term impact needs an ADR under do
 
 ## Licensing and contribution ownership
 
-Submitting a contribution to a repository means it is released under that repository's current license; see the table above and each repo's LICENSE. The product repositories are source-available (ELv2) rather than OSI-approved open source, so word external descriptions accordingly. Relicense history lives in each repo's LICENSE.history.
+Submitting a contribution to a repository means it is released under that repository's current license; see the table above and each repo's LICENSE. The product repositories are source-available (ELv2) rather than OSI-approved open source, so word external descriptions accordingly. The licensing philosophy, ELv2 boundaries and an intended-use FAQ live in the [licensing policy](./licensing.md); relicense history lives in each repo's LICENSE.history.

@@ -3,14 +3,14 @@ title: Mythicove 生态总规划
 ---
 
 > 品牌：**Mythicove** = Mythic（神话）+ Cove（港湾）。
-> 面向离线服 / 私服 / 模组服玩家的开源 Minecraft 生态套件，所有产品共享同一隐喻（航海/港湾）、同一技术栈与同一套基础设施。
+> 面向离线服 / 私服 / 模组服玩家的 Minecraft 生态套件（产品源码可得），所有产品共享同一隐喻（航海/港湾）、同一技术栈与同一套基础设施。
 
 ## 1. 愿景
 
 从零构建一套现代化、UI 美观、长期可维护的 Minecraft 玩家生态，替代老化（Blessing Skin 卡在 PHP 8.1 EOL）、闭源（CurseForge）、停更或改许可证（Modrinth 转为 source-available）的现有方案。
 
 核心原则：
-- **开源优先**，许可证一开始就定清楚（见下）。
+- **许可证先行**：一开始就定清楚（见下），产品源码可得（ELv2，非 OSI 开源），契约与文档宽松许可。
 - **协议对齐**：复用 Minecraft 圈事实标准（Yggdrasil API、Modrinth API、`.mrpack`、crafatar），不做孤岛。
 - **现代化技术栈**：Go 后端 + TypeScript 前端，摆脱 PHP EOL 风险，单二进制自托管友好。
 - **按规模部署**：从 10 人私服到 10k 公共平台给分级资源方案，组件可增可选（见 §6）。
@@ -53,6 +53,8 @@ title: Mythicove 生态总规划
 **许可证策略**（Modrinth 前车之鉴）：
 - `mythic-hoard`（Mod 托管）：**Elastic License 2.0（ELv2）**，禁止他人托管牟利。
 - `mythic-mirror`（皮肤站）：**Elastic License 2.0（ELv2）**，与 hoard 一致。
+
+理念、边界与预期用法 FAQ 见[许可政策](../community/licensing.md)，选型论证见 [ADR-0004](../architecture/adr-0004-license.md)。
 
 ## 4. 目录结构
 

@@ -3,15 +3,17 @@ title: Introduction
 description: Why Mythicove exists and what it replaces
 ---
 
-Mythicove is an open-source Minecraft ecosystem for offline / private / modded servers: a skin station, a mod host, and a launcher that share one metaphor, one tech stack, and one set of infrastructure.
+Mythicove is a source-available Minecraft ecosystem for offline / private / modded servers: a skin station, a mod host, and a launcher that share one metaphor, one tech stack, and one set of infrastructure.
 
 ## What it replaces
 
 | Problem | Mythicove answer |
 |---|---|
 | Blessing Skin stuck on PHP 8.1 EOL, dated UI | **Mythic Mirror** — Go, Yggdrasil-compatible |
-| CurseForge closed source | **Mythic Hoard** — open, Modrinth-compatible |
+| CurseForge closed source | **Mythic Hoard** — source-available, Modrinth-compatible |
 | Modrinth changed to source-available | **Mythic Hoard** — Elastic License 2.0 (ELv2) |
+
+The licensing philosophy, ELv2 boundaries and an intended-use FAQ: see the [licensing policy](../community/licensing.md).
 
 ## Tech stack
 
