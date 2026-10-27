@@ -24,7 +24,7 @@
 
 	# ---- Mirror：Yggdrasil / 账号 / 皮肤库 / 纹理 / 渲染 / 管理 / OIDC Provider ----
 	# /metrics 有意不经网关暴露（Prometheus 在 compose 网络内直抓 mirror:8080/hoard:8081）
-	@mirror path /authserver/* /sessionserver/* /api/* /account/* /oauth/* /oauth2/* /mojang/* /skinlib* /skin/* /cape/* /textures/* /avatars/* /renders/* /usm/* /MinecraftSkins/* /MinecraftCloaks/* /admin/batch-import /.well-known/openid-configuration /.well-known/jwks.json /healthz
+	@mirror path /authserver/* /sessionserver/* /api/* /account/* /oauth/* /oauth2/* /mojang/* /skinlib* /skin/* /cape/* /textures/* /avatars/* /renders/* /usm/* /MinecraftSkins/* /MinecraftCloaks/* /admin/batch-import /site/* /.well-known/openid-configuration /.well-known/jwks.json /healthz
 	reverse_proxy @mirror mirror:8080
 
 	# ---- 其余（页面 / _next 静态资源 / favicon 等）→ Web 前端 ----
