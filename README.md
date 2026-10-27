@@ -1,56 +1,69 @@
 # Mythicove Docs
 
-Mythicove 生态的统一文档仓库。所有跨仓库、或"开发过程中需要版本化"的文档统一放这里，不散落到各产品仓库的随机子目录。
+**English** | [简体中文](./README.zh-CN.md)
 
-文档站基于 **Astro + Starlight** 构建（Markdown 为唯一内容源），支持 zh-CN（默认）/ en 双语、深浅色 logo、按分类的侧边栏与全文搜索（Pagefind）。
+Unified documentation repository for the Mythicove ecosystem. Everything cross-repo, or anything that "needs versioning during development", lives here — not scattered across random subdirectories of the product repos.
 
-## 约定
+The docs site is built with **Astro + Starlight** (Markdown as the single source of truth), supporting zh-CN (default) / en, light & dark logos, a categorized sidebar, and full-text search (Pagefind).
 
-| 放这里（`docs`） | 放产品仓库 | 放 `api` 仓库 | 不进仓库 |
+## Conventions
+
+| Lives here (`docs`) | Lives in product repos | Lives in `api` | Never committed |
 |---|---|---|---|
-| 产品计划、架构决策记录（ADR）、部署/运维文档、团队规范 | 与代码强绑定的 `README`、`CONTRIBUTING`、`CHANGELOG`、代码内注释 | API 契约（OpenAPI） | 一次性草稿、密钥、环境相关本地文件 |
+| Product plans, architecture decision records (ADRs), deploy/ops docs, team standards (the canonical security policy / code of conduct / contributing guide are pages in this site's "Community" section) | Code-bound `README`, `CHANGELOG`, in-code comments; English pointer files (`SECURITY.md` etc.) linking to this site's Community section; `LICENSE.history` in relicensed repos | API contracts (OpenAPI) | One-off drafts, secrets, environment-specific local files |
 
-## 目录
+Language convention: root-level repo documents (`README`, `CHANGELOG`, `LICENSE.history`, etc.) are **English by default**, with Chinese variants suffixed `.zh-CN.md`; each file links to the other at the top and no file mixes two languages. Site content defaults to zh-CN with English under `en/`.
+
+## Layout
 
 ```
 docs/
-├── astro.config.mjs          # Starlight 配置（logo / i18n / 侧边栏 / 品牌色）
-├── public/                   # favicon 等静态资源
+├── astro.config.mjs          # Starlight config (logo / i18n / sidebar / brand colors)
+├── LICENSE                   # content license (CC BY-SA 4.0)
+├── LICENSE-CODE              # site code license (MIT)
+├── SECURITY.md etc.          # English pointer files to this site's Community section
+├── public/                   # favicon and other static assets
 ├── src/
-│   ├── assets/               # logo（深/浅，圆角）
-│   ├── styles/custom.css     # 品牌蓝紫主题变量
-│   └── content/docs/         # 文档内容（Markdown / MDX）
-│       ├── index.mdx         # zh-CN 首页
-│       ├── getting-started/  # 简介、快速开始
-│       ├── products/         # Mirror / Hoard / Compass / 前端
-│       ├── guides/           # authlib-injector、正版绑定
-│       ├── architecture/     # ADR-0001..0010
-│       ├── deploy/           # Docker Compose、存储分级、多实例
-│       └── en/               # 英文内容（未翻译页回退到中文）
-└── deploy/                   # 可直接使用的部署产物（docker-compose / Caddyfile）
+│   ├── assets/               # logos (dark/light, rounded)
+│   ├── styles/custom.css     # brand blue-purple theme variables
+│   └── content/docs/         # documentation content (Markdown / MDX)
+│       ├── index.mdx         # zh-CN homepage
+│       ├── getting-started/  # introduction, quickstart
+│       ├── products/         # Mirror / Hoard / Compass / frontend
+│       ├── guides/           # authlib-injector, premium linking
+│       ├── architecture/     # ADR-0001..0012
+│       ├── deploy/           # Docker Compose, storage tiers, multi-instance
+│       ├── community/        # security policy, code of conduct, contributing (canonical)
+│       └── en/               # English content (untranslated pages fall back to Chinese)
+└── deploy/                   # ready-to-use deploy artifacts (docker-compose / Caddyfile)
 ```
 
-## 本地开发
+## Local development
 
 ```bash
 pnpm install
 pnpm dev      # http://localhost:4321
-pnpm build    # 产出 dist/
+pnpm build    # outputs dist/
 ```
 
-## 部署
+## Deployment
 
-GitHub Actions（`.github/workflows/deploy.yml`）构建并部署到 GitHub Pages。
+GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages.
 
-- 自定义域名（如 `docs.mythicove.com`）：保持 `astro.config.mjs` 的 `site` 与默认 `base: '/'`。
-- 项目站点（`<org>.github.io/docs/`）：在 `astro.config.mjs` 增加 `base: '/docs/'`。
+- Custom domain (e.g. `docs.mythicove.com`): keep `site` in `astro.config.mjs` and the default `base: '/'`.
+- Project site (`<org>.github.io/docs/`): add `base: '/docs/'` in `astro.config.mjs`.
 
-## 多语言
+## Internationalization
 
-- 默认（root）= zh-CN，英文在 `src/content/docs/en/`。
-- 未翻译的页面自动回退到中文，避免死链。
-- 侧边栏分类标签在 `astro.config.mjs` 的 `sidebar` 中通过 `translations` 提供双语。
+- Default (root) = zh-CN; English lives in `src/content/docs/en/`.
+- Untranslated pages automatically fall back to Chinese — no dead links.
+- Sidebar group labels are bilingual via `translations` in the `sidebar` config of `astro.config.mjs`.
 
-## 许可证
+## License
 
-文档采用 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)。
+This repository is dual-licensed by content type:
+
+- **Documentation content** (Markdown / MDX text and images under `src/content/docs/`): [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), see [LICENSE](./LICENSE).
+- **Site code** (`astro.config.mjs`, `src/styles/`, components, `public/` assets, build scripts, etc.): [MIT](https://opensource.org/license/mit), see [LICENSE-CODE](./LICENSE-CODE).
+
+Rationale: CC licenses are designed for creative content and explicitly discouraged for software; MIT keeps the code reusable and tool-friendly, while the text stays CC BY-SA to preserve attribution and share-alike requirements. See [ADR-0004](./src/content/docs/architecture/adr-0004-license.md).
