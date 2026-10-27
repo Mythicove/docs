@@ -48,10 +48,10 @@ pnpm build    # outputs dist/
 
 ## Deployment
 
-GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages.
+GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages under the custom domain **docs.gov.skin** (DNS CNAME → `mythicove.github.io`).
 
-- Custom domain (e.g. `docs.mythicove.com`): keep `site` in `astro.config.mjs` and the default `base: '/'`.
-- Project site (`<org>.github.io/docs/`): add `base: '/docs/'` in `astro.config.mjs`.
+- `astro.config.mjs` uses `site: "https://docs.gov.skin"` with a root deployment (no `base`); `public/CNAME` persists the domain binding so Actions deploys don't drop it.
+- Falling back to a project site (`<org>.github.io/docs/`): re-add `base: '/docs/'`, change `site` back, and update the external links to this site in the other repositories.
 
 ## Internationalization
 

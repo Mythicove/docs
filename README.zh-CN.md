@@ -48,10 +48,10 @@ pnpm build    # 产出 dist/
 
 ## 部署
 
-GitHub Actions（`.github/workflows/deploy.yml`）构建并部署到 GitHub Pages。
+GitHub Actions（`.github/workflows/deploy.yml`）构建并部署到 GitHub Pages，自定义域名 **docs.gov.skin**（DNS CNAME → `mythicove.github.io`）。
 
-- 自定义域名（如 `docs.mythicove.com`）：保持 `astro.config.mjs` 的 `site` 与默认 `base: '/'`。
-- 项目站点（`<org>.github.io/docs/`）：在 `astro.config.mjs` 增加 `base: '/docs/'`。
+- `astro.config.mjs` 为 `site: "https://docs.gov.skin"`，根路径部署（无 `base`）；`public/CNAME` 固化域名绑定，避免 Actions 部署后丢失。
+- 若回退到项目站点（`<org>.github.io/docs/`）：需重新加 `base: '/docs/'`、改回 `site`，并同步更新各仓库指向本站的外链。
 
 ## 多语言
 
