@@ -7,7 +7,7 @@ This page is the canonical security policy for all Mythicove repositories; `SECU
 
 ## Supported Versions
 
-Only the latest release of each repository receives security support. Older versions (including the AGPL-era v0.1.x–v0.3.x tags) no longer get dedicated security patches; please upgrade.
+Only the latest release of each repository receives security support. Older versions (including the AGPL-era v0.1.x to v0.3.x tags) no longer get dedicated security patches; please upgrade.
 
 ## Reporting a Vulnerability
 

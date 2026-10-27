@@ -3,45 +3,45 @@ title: Contributing
 description: How to contribute across the Mythicove repositories
 ---
 
-This page is the canonical contributing guide for all Mythicove repositories; `CONTRIBUTING.md` files in individual repositories are pointers to this page. Repo-specific build/test commands live in each repository's `README`.
+This page is the canonical contributing guide for all Mythicove repositories. The CONTRIBUTING.md file in each repository points here; repo-specific build and test commands live in that repository's README.
 
-## Repository Map
+## Repository map
 
 | Repository | Contents | License |
 |---|---|---|
-| `mythic-mirror` / `mythic-hoard` | Go backend products | Elastic License 2.0 |
-| `web` / `compass` | Frontend products (Next.js / Vite) | Elastic License 2.0 |
-| `shared` | Shared Go module (capability interfaces + domain types) | Elastic License 2.0 |
-| `api` | OpenAPI contracts and generated artifacts | MIT |
-| `docs` | Documentation site (Astro + Starlight), ADRs, deploy artifacts | Content CC BY-SA 4.0 / site code MIT |
+| mythic-mirror, mythic-hoard | Go backend products | Elastic License 2.0 |
+| web, compass | Frontend products (Next.js, Vite) | Elastic License 2.0 |
+| shared | Shared Go module (capability interfaces and domain types) | Elastic License 2.0 |
+| api | OpenAPI contracts and generated artifacts | MIT |
+| docs | Documentation site (Astro + Starlight), ADRs, deploy artifacts | Content CC BY-SA 4.0, site code MIT |
 
-## How to Contribute
+## How to contribute
 
-1. **Bugs & feature requests**: open an issue in the relevant repository; cross-product topics belong in `docs`. For security vulnerabilities use the private reporting flow in the [security policy](./security.md) — never a public issue.
-2. **Pull requests**: small changes can go straight to a PR; changes touching architecture, data models, or cross-repo contracts should start with an issue or an ADR in `docs`.
-3. **Participation = agreement**: all interactions follow the [Code of Conduct](./code-of-conduct.md).
+1. Open an issue in the relevant repository for bugs and feature requests; cross-product topics belong in docs. Report security vulnerabilities through the private flow in the [security policy](./security.md), never in a public issue.
+2. Small changes can go straight into a pull request. For changes that touch architecture, data models or cross-repo contracts, open an issue or add an ADR to docs first.
+3. Taking part means you agree to the [code of conduct](./code-of-conduct.md).
 
-## Commit Conventions
+## Commit conventions
 
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix:` / `docs:` / `chore:` / `refactor:` etc. (enforced by commitlint + lint-staged in `web`).
-- One logical change per commit; keep chores (relicensing, dependency bumps) separate from features.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/), with types such as feat, fix, docs, chore and refactor. The web repository enforces this with commitlint and lint-staged.
+- One logical change per commit. Keep chores such as relicensing and dependency bumps separate from features.
 
-## Code Style
+## Code style
 
-- **Go** (`shared` / `mythic-mirror` / `mythic-hoard`): `gofmt`; all SQL goes through `sqlc` — no hand-written scan code; CI runs `govulncheck`.
-- **TypeScript/frontend** (`web` / `compass`): ESLint + Prettier + Stylelint; components follow existing in-repo patterns (shadcn/ui).
-- **API contracts** (`api`): edit the OpenAPI spec first, then regenerate; never hand-edit generated artifacts.
+- Go (shared, mythic-mirror, mythic-hoard): run gofmt; write all SQL through sqlc instead of hand-written scan code; CI runs govulncheck.
+- TypeScript frontend (web, compass): ESLint, Prettier and Stylelint; components follow the existing in-repo patterns (shadcn/ui).
+- API contracts (api): edit the OpenAPI spec first and regenerate; never hand-edit generated artifacts.
 
-## Documentation & Language Conventions
+## Documentation and language conventions
 
-- Root-level repo documents (`README`, `CHANGELOG`, `LICENSE.history`, etc.) are **English by default** (e.g. `README.md`), with Chinese variants suffixed `.zh-CN.md` (e.g. `README.zh-CN.md`); each file links to the other at the top, and no file mixes two languages.
-- Docs-site content defaults to zh-CN (`src/content/docs/` root) with English under `src/content/docs/en/`; new pages should ideally ship in both languages — untranslated pages fall back to Chinese.
-- The canonical security policy / code of conduct / contributing guide are the pages in this "Community" section; individual repositories only keep English pointer files linking here.
+- Root-level repo documents (README, CHANGELOG, LICENSE.history and friends) are English by default, with Chinese variants suffixed .zh-CN.md. The two files link to each other at the top, and no file mixes two languages.
+- Site content defaults to zh-CN (the src/content/docs/ root), with English under src/content/docs/en/. Ship new pages in both languages where possible; untranslated pages fall back to Chinese.
+- The canonical security policy, code of conduct and contributing guide are the pages in this Community section. Individual repositories only keep English pointer files.
 
-## Architecture Decisions
+## Architecture decisions
 
-Decisions that span repositories or have long-term impact require an ADR under `docs/src/content/docs/architecture/` (next sequential number) covering context, decision, rationale, and consequences; when overturning an old decision, revise the original ADR with a dated revision note (see ADR-0004).
+A decision that spans repositories or has long-term impact needs an ADR under docs/src/content/docs/architecture/, with the next sequential number, covering context, decision, rationale and consequences. When you overturn an old decision, revise the original ADR and add a dated revision note; see ADR-0004.
 
-## Licensing & Contribution Ownership
+## Licensing and contribution ownership
 
-By submitting a contribution to any repository, you agree that it is released under that repository's current license (see table above and each repo's LICENSE). Product repositories are source-available (ELv2), not OSI-approved open source — please word external descriptions accordingly; relicense history lives in each repo's `LICENSE.history`.
+Submitting a contribution to a repository means it is released under that repository's current license; see the table above and each repo's LICENSE. The product repositories are source-available (ELv2) rather than OSI-approved open source, so word external descriptions accordingly. Relicense history lives in each repo's LICENSE.history.
