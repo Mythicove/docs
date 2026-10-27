@@ -10,7 +10,7 @@
 - `compass` 仓：Tauri 2 脚手架 + 单页 React（`src/App.tsx` 约 5.1KB、`src-tauri/src/lib.rs` 约 1.2KB），Rust 侧只有两个命令：`download_file`（存到当前目录）与 `launch`（**执行任意 program + args**）。
 - 启动实际委托 Prism Launcher（`.mrpack` + `--import`），自身不解析版本、不下载资源、不注入 authlib-injector。
 - 登录已按 ADR-0012 改为**玩家名 + 该玩家的独立密码**；accessToken 存在 webview 的 `localStorage`（比 web 的 httpOnly cookie 弱）。
-- **无 CI**、无自动更新、无多平台打包；`dist/`（74 万字节构建产物）在 git 里。
+- **无 CI**、无自动更新、无多平台打包。（`dist/` 有 74 万字节构建产物躺在工作树里，但**已在 `.gitignore` 中、并未进版本库**——计划初稿把这条记错了，P0 无需处理。）
 - 后端就绪：Mirror 提供 Yggdrasil 全套 + 皮肤/披风 + `/` meta（含 `skinDomains`、`signaturePublickey`）；Hoard 提供 Modrinth 兼容 API 与 `.mrpack` 导出。
 
 ## 前置决策（各 Phase 的前提，先定死再动手）
@@ -47,6 +47,17 @@
   - 前端骨架：路由（首页/实例/设置/账号/日志）、状态管理（Tauri event 订阅下载与启动进度）、i18n（复用 `next-intl`? 否——Vite 项目用 `react-i18next` 或直接自建 messages JSON，与 web 的键风格一致，先中英双语）、深浅色主题变量。
   - 安全：删 `launch` 任意命令执行；`tauri.conf.json` 的 `capabilities` 收敛到最小权限（不给 fs 全域读写，按数据目录授权）。
 - **验收**：`cargo test` 在三平台 CI 全绿；三平台各能下载到一个可安装、能打开、能显示空实例列表的包；仓库里不再有构建产物；不存在任何"执行前端传入的任意命令"的入口。
+
+### P0 实施记录（2026-10-27）
+
+按计划做完，四处与计划文本不同，都是实施时发现的更优/更诚实的做法：
+
+- **`dist/` 本来就没进版本库**（`.gitignore` 已含 `dist`）：基线那句记错了，"移出 git"无事可做。改为**提交 `Cargo.lock`**（脚手架漏了）——应用类项目要可复现构建，尤其三平台 CI 出包。
+- **`net`（下载器）顺延到 P1**：P0 没有任何调用者，先写就是"没有读者的代码"。与它的首个调用者（版本/资源下载）一起落地，届时才知道进度事件与镜像重写的确切形状。P0 落了 `paths`/`config`/`account`/`api`/`error`/`commands`/`state` 七个模块，17 个 Rust 单测。
+- **前端用视图状态而不是路由库**：5 个视图 + 一个侧栏，引 react-router 是净负担；`view` state + 侧栏按钮即可。日志视图顺延到 P5（那时才有日志可看），账号视图并入首页。
+- **Prism 委托与 `.mrpack` 下载提前删除**（计划里是 P1 才删）：保留它们就得保留那个不安全的 `launch` 任意命令执行入口，或临时造一个只能用于此处的受限下载器——两者都比直接删掉更贵。当前"模组"页只浏览不安装，并在 UI 上写明安装能力随 P2/P3 落地（不放假按钮）。
+- 顺带：所有后端 HTTP 移入 Rust（webview 不再出网，CSP 因此收紧到不放行任何远端 `connect-src`/`img-src`，皮肤以 `data:` URL 交付）；令牌不再进 localStorage；`identifier` 改 `com.mythicove.compass`（原为 `com.hsukqi-lee.compass`，与 `docs.mythicove.com` 的域名不一致，越晚改越贵）；i18n 自建 60 行 messages 表（不引 i18next）；`opener` 插件只用默认权限内的 `openUrl`/`revealItemInDir`（`openPath` 不在 `opener:default` 里）。
+- **Windows 打包暂不签名**（用户决定）：SmartScreen 会提示"未知发布者"，安装文档需说明；后续若拿到 SignPath 的开源项目证书，在 `package` 作业里补 `signCommand` 即可。macOS 有 Apple Developer 账号，签名与公证在 P6 接线。
 
 ## Phase 1 — 原生启动最小闭环（预计 3–4 周）
 
@@ -143,7 +154,7 @@
 
 - **W16 Windows**
   - NSIS 安装包（含桌面/开始菜单快捷方式、卸载、可选关联 `.mrpack`）；MSI 备选；x64 与 arm64（可选）。
-  - 代码签名：无证书时的 SmartScreen 提示应对文档；有证书时的 `signtool` 流程与 CI 密钥托管（GH Actions secrets + 硬件 token 的取舍写进文档）。
+  - 代码签名：**决定先发未签名包**（用户 2026-10-27 拍板），因此 SmartScreen 的"未知发布者"提示与绕行说明必须写进安装文档；若要签名，走 [SignPath](https://signpath.org/) 的开源项目免费证书（比自购 EV 证书便宜且能过 SmartScreen 信誉），届时在 `package` 作业里补 `signCommand` 与 CI 密钥托管。
   - 杀软误报与路径长度（`\\?\` 前缀）问题的处理与自检提示。
 - **W17 macOS**
   - 通用二进制或 arm64/x86_64 双包；`.dmg` + `pkg`；Gatekeeper：Developer ID 签名 + 公证（notarization）流程与 CI 集成；未签名包的"右键打开"说明。
@@ -162,7 +173,7 @@
 2. **参数构造的正确性（P1-W3）**：占位符/规则/特性开关组合极多，错一个就是"能启动但皮肤不出/存档找不到/natives 加载失败"。缓解：契约测试用真实版本 JSON 样本覆盖 5 个代表版本；把 HMCL 的启动参数作为对照基准（同一版本同一账号，比对参数集合）；冒烟测试跑真进程。
 3. **CI 无法验证图形界面**：所有 UI 验收都靠人工清单。缓解：UI 逻辑尽量下沉到 Rust 单测；每阶段的人工验收写成可勾选清单并留档（截图 + 版本 + 平台）。
 4. **下载体积与限流**：1.21 全量资源约 500MB+，官方 CDN 在部分地区很慢或被限。缓解：镜像源可配 + 并发可调 + 断点续传 + 全局去重缓存（多实例只下一次）；BMCLAPI 等镜像只作为可选默认值，写清合规与可用性风险。
-5. **签名与公证成本（P6）**：Apple Developer（$99/年）与 Windows 代码签名证书是**外部依赖**，没有就只能发未签名包。缓解：P6 开工前确认预算与账号归属；未签名路径的文档与用户体验提前写好。
+5. ~~**签名与公证成本（P6）**~~ **已定案（2026-10-27）**：macOS 有 Apple Developer 账号 ⇒ Developer ID 签名 + 公证按原计划做（P6-W17），只剩把证书/凭据接进 CI 的活；Windows 先发**未签名**包，安装文档写清 SmartScreen 提示与绕行方式，若要签名走 SignPath 的开源项目免费证书（P6-W16）。剩余风险只是 CI 密钥托管与公证排队时间。
 6. **authlib-injector 与新版本的兼容**：1.20.5+ 改了服务与 profile 签名，第三方认证依赖 authlib-injector 跟进。缓解：固定已验证的版本 + sha256；把"哪些游戏版本经我们实测可用"写进文档；升级前跑冒烟。
 7. **并行开发的合并冲突**（本轮已发生一次：另一会话把不能编译的合并提交推上了 mirror main）。缓解：本计划的每个 W 任务都以**独立分支 + 小步合并**推进，合并后必须 `cargo test` + `pnpm typecheck` 再推 main。
 
