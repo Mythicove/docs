@@ -17,12 +17,12 @@ const l = isEn
     <LastUpdated />
   </div>
   <Pagination />
-  <p class="legal">
-    © {year} Mythicove ·
-    <a href="https://github.com/Mythicove/docs/blob/main/LICENSE">{l.content} CC BY-SA 4.0</a> ·
-    <a href="https://github.com/Mythicove/docs/blob/main/LICENSE-CODE">{l.code} MIT</a> ·
+  <div class="legal">
+    <span>© {year} Mythicove</span>
+    <a href="https://github.com/Mythicove/docs/blob/main/LICENSE">{l.content} CC BY-SA 4.0</a>
+    <a href="https://github.com/Mythicove/docs/blob/main/LICENSE-CODE">{l.code} MIT</a>
     <a href={`https://github.com/Mythicove/docs/commit/${hash}`}>{l.build} <code>{hash}</code></a>
-  </p>
+  </div>
 </footer>
 
 <style>
@@ -42,10 +42,30 @@ const l = isEn
     margin-inline-start: auto;
   }
   .legal {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    row-gap: 0.35rem;
     margin: 1.5rem auto 0;
     font-size: var(--sl-text-xs);
     color: var(--sl-color-gray-3);
     text-align: center;
+  }
+  /* 宽屏：条目之间用 · 分隔 */
+  .legal > * + *::before {
+    content: "·";
+    margin-inline: 0.5em;
+  }
+  /* 窄屏：一行一个，去掉分隔符 */
+  @media (max-width: 30rem) {
+    .legal {
+      flex-direction: column;
+      align-items: center;
+    }
+    .legal > * + *::before {
+      content: none;
+    }
   }
   .legal a {
     color: inherit;
