@@ -107,6 +107,9 @@ services:
         NEXT_PUBLIC_API_URL: "${API_URL:-http://localhost:8080}"
         NEXT_PUBLIC_LOCALE_PREFIX: "${LOCALE_PREFIX:-never}"
         NEXT_PUBLIC_INDEXABLE: "${INDEXABLE:-false}"
+        # CSP 在构建期烘焙：driver=cap 时必须让 web 知道验证码实例地址，否则
+        # connect-src/worker-src 会拦掉控件与 WASM。默认复用 mirror 的同一变量（两者必须一致）。
+        CAPTCHA_CAP_URL: "${CAPTCHA_CAP_URL:-${MIRROR_CAPTCHA_CAP_URL:-}}"
     environment:
       # SSR/RSC 服务端取数走 compose 内部网络（经网关统一分流）
       API_URL_INTERNAL: "http://caddy:8080"
