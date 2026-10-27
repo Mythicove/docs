@@ -21,7 +21,7 @@ java -javaagent:authlib-injector-1.2.x.jar=https://<你的域名>/authserver -ja
 | 端点 | 作用 |
 |---|---|
 | `GET /` | 根 meta（`skinDomains`、`signaturePublickey`） |
-| `POST /authserver/authenticate` | 账号密码换 token |
+| `POST /authserver/authenticate` | 玩家名 + 该玩家的**独立密码**换 token（网站主密码在此无效，见 [ADR-0012](/architecture/adr-0012-credential-separation/)） |
 | `POST /sessionserver/session/minecraft/join` | 进服记录 serverId 会话 |
 | `GET /sessionserver/session/minecraft/hasJoined` | 服务端换取玩家资料 |
 | `GET /sessionserver/session/minecraft/profile/{uuid}` | 返回带 RSA 签名的 profile |

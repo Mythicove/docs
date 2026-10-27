@@ -17,5 +17,6 @@ title: 架构决策记录（ADR）
 | [ADR-0009](./adr-0009-codegen-workflow.md) | 代码生成工作流 | 已接受 |
 | [ADR-0010](./adr-0010-oidc-login-methods.md) | OIDC Provider 与登录方式注册表 | 已接受 |
 | [ADR-0011](./adr-0011-identity-architecture.md) | 身份架构：Mirror 为唯一 IdP，其余产品做 OIDC RP + 投影表 | 已接受 |
+| [ADR-0012](./adr-0012-credential-separation.md) | 凭证分离：网站主密码与启动器独立密码 | 已接受 |
 
 > 格式参照 [MADR](https://adr.github.io/madr/) 简化版；新决策追加 `adr-NNNN-<slug>.md`（文件名小写，GitHub Pages 区分大小写），并在上表补一行。

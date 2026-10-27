@@ -16,7 +16,7 @@ java -javaagent:authlib-injector-1.2.x.jar=https://<your-domain>/authserver -jar
 | Endpoint | Purpose |
 |---|---|
 | `GET /` | Root meta (`skinDomains`, `signaturePublickey`) |
-| `POST /authserver/authenticate` | Exchange credentials for a token |
+| `POST /authserver/authenticate` | Exchange a **player name + that player's launcher password** for a token (the site password is not accepted here — see [ADR-0012](/architecture/adr-0012-credential-separation/)) |
 | `POST /sessionserver/session/minecraft/join` | Record the serverId session |
 | `GET /sessionserver/session/minecraft/hasJoined` | Server fetches the profile |
 | `GET /sessionserver/session/minecraft/profile/{uuid}` | Signed profile |

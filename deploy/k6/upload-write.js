@@ -8,6 +8,9 @@ import { check, sleep } from "k6";
 const BASE = __ENV.BASE ?? "http://localhost:8080";
 const MAILPIT = __ENV.MAILPIT ?? "http://localhost:8025";
 const PASSWORD = "loadtest-password-123";
+// 启动器独立密码（ADR-0012）：/authserver/authenticate 只认「玩家名 + 独立密码」，
+// 主密码只能用于 /account/login，故 setup 里要先为每个玩家建一条独立密码。
+const LAUNCHER_PASSWORD = "loadtest-launcher-123";
 const JSON_HEADERS = { headers: { "Content-Type": "application/json" } };
 
 // 二进制皮肤（64x64 PNG，与本脚本同目录挂载）。
@@ -39,6 +42,24 @@ export function setup() {
     }
     if (!token) continue;
     http.post(`${BASE}/account/verify`, JSON.stringify({ token }), JSON_HEADERS);
+    // 用主密码拿一个网站会话，为该玩家建一条启动器独立密码
+    const login = http.post(
+      `${BASE}/account/login`,
+      JSON.stringify({ email, password: PASSWORD }),
+      JSON_HEADERS,
+    );
+    if (login.status !== 200) continue;
+    const cred = http.post(
+      `${BASE}/account/players/${playerName}/credentials`,
+      JSON.stringify({ name: "k6", password: LAUNCHER_PASSWORD }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${login.json("accessToken")}`,
+        },
+      },
+    );
+    if (cred.status !== 201) continue;
     users.push({ email, playerName });
   }
   if (users.length === 0) throw new Error("no load-test users seeded");
@@ -66,7 +87,7 @@ export default function (data) {
 
   const auth = http.post(
     `${BASE}/authserver/authenticate`,
-    JSON.stringify({ username: user.email, password: PASSWORD }),
+    JSON.stringify({ username: user.playerName, password: LAUNCHER_PASSWORD }),
     JSON_HEADERS,
   );
   const okAuth = check(auth, { "auth 200": (r) => r.status === 200 });
