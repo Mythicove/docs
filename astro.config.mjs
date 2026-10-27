@@ -1,10 +1,22 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import { execSync } from "node:child_process";
+
+// 构建时的 git short hash，注入页脚（src/components/Footer.astro）
+let buildHash = "dev";
+try {
+  buildHash = execSync("git rev-parse --short HEAD").toString().trim();
+} catch {
+  // 非 git 环境（如压缩包源码）下退回 "dev"
+}
 
 // https://starlight.astro.build/
 export default defineConfig({
   site: "https://docs.gov.skin",
   // GitHub Pages 自定义域名（public/CNAME），根路径部署，无需 base
+  vite: {
+    define: { __BUILD_HASH__: JSON.stringify(buildHash) },
+  },
   integrations: [
     starlight({
       title: "Mythicove",
@@ -18,6 +30,12 @@ export default defineConfig({
       },
       favicon: "/favicon.png",
       lastUpdated: true,
+      editLink: {
+        baseUrl: "https://github.com/Mythicove/docs/edit/main/src/content/docs/",
+      },
+      components: {
+        Footer: "./src/components/Footer.astro",
+      },
       defaultLocale: "root",
       locales: {
         root: { label: "简体中文", lang: "zh-CN" },
@@ -50,6 +68,19 @@ export default defineConfig({
           label: "架构决策",
           translations: { en: "Architecture" },
           items: [{ autogenerate: { directory: "architecture" } }],
+        },
+        {
+          label: "设计",
+          translations: { en: "Design" },
+          items: [{ autogenerate: { directory: "design" } }],
+        },
+        {
+          label: "调研与计划",
+          translations: { en: "Research & Plans" },
+          items: [
+            { autogenerate: { directory: "research" } },
+            { autogenerate: { directory: "plans" } },
+          ],
         },
         {
           label: "部署",

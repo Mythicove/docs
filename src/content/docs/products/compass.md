@@ -27,4 +27,4 @@ Compass (Tauri)
 
 当前版本把「实际拉起 Minecraft」委托给 Prism Launcher（支持 `--import` 导入 `.mrpack`），玩家在 Prism 里配置 authlib-injector 指向皮肤站即可加载皮肤。
 
-> 内建原生启动（自解析版本 / 资源 / 库、自动下载 Java、实例与整合包管理、三平台打包）已有分阶段计划，见仓库内 `docs/plans/2026-10-27-compass-launcher.md`；Phase 1 验收通过后，本文这条"委托 Prism"的说明会被删除——不保留两种启动方式。
+> 内建原生启动（自解析版本 / 资源 / 库、自动下载 Java、实例与整合包管理、三平台打包）已有分阶段计划，见 [Compass 启动器开发计划](../plans/compass-launcher.md)；Phase 1 验收通过后，本文这条"委托 Prism"的说明会被删除，不保留两种启动方式。
