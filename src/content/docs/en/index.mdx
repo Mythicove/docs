@@ -12,31 +12,110 @@ hero:
     - text: Products
       link: products/mirror/
       icon: open-book
+      variant: secondary
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import { Icon, LinkCard, CardGrid } from "@astrojs/starlight/components";
 
-## Products
-
-One "voyage / harbor" metaphor, one tech stack, one set of infrastructure.
-
-<CardGrid>
-  <Card title="Mythic Mirror" icon="open-book">
-    Skin station — Yggdrasil auth + skin / cape delivery, a modern Blessing Skin replacement.
-  </Card>
-  <Card title="Mythic Hoard" icon="seti:folder">
-    Mod hosting — Modrinth-compatible mod / modpack distribution.
-  </Card>
-  <Card title="Mythic Compass" icon="rocket">
-    Launcher — Yggdrasil login + 3D preview + one-click modpack download.
-  </Card>
-</CardGrid>
+<div class="harbor-grid">
+  <div class="harbor-card">
+    <div class="hc-head">
+      <span class="hc-icon"><Icon name="star" size={18} /></span>
+      <span class="hc-name">Mythic Mirror</span>
+      <span class="hc-zh">skin station</span>
+    </div>
+    <p class="hc-desc">Yggdrasil auth + skin / cape delivery.</p>
+    <div class="hc-links">
+      <a href="./products/mirror/">Docs</a>
+      <a class="hc-repo" href="https://github.com/Mythicove/mythic-mirror">GitHub</a>
+    </div>
+  </div>
+  <div class="harbor-card">
+    <div class="hc-head">
+      <span class="hc-icon"><Icon name="seti:folder" size={18} /></span>
+      <span class="hc-name">Mythic Hoard</span>
+      <span class="hc-zh">mod hosting</span>
+    </div>
+    <p class="hc-desc">Modrinth-compatible mod / modpack distribution.</p>
+    <div class="hc-links">
+      <a href="./products/hoard/">Docs</a>
+      <a class="hc-repo" href="https://github.com/Mythicove/mythic-hoard">GitHub</a>
+    </div>
+  </div>
+  <div class="harbor-card">
+    <div class="hc-head">
+      <span class="hc-icon"><Icon name="rocket" size={18} /></span>
+      <span class="hc-name">Mythic Compass</span>
+      <span class="hc-zh">launcher</span>
+    </div>
+    <p class="hc-desc">Yggdrasil login + 3D skin preview + one-click modpacks.</p>
+    <div class="hc-links">
+      <a href="./products/compass/">Docs</a>
+      <a class="hc-repo" href="https://github.com/Mythicove/compass">GitHub</a>
+    </div>
+  </div>
+  <div class="harbor-card">
+    <div class="hc-head">
+      <span class="hc-icon"><Icon name="laptop" size={18} /></span>
+      <span class="hc-name">Mythicove Web</span>
+      <span class="hc-zh">unified frontend</span>
+    </div>
+    <p class="hc-desc">Unified frontend — one codebase for the skin and mod stations.</p>
+    <div class="hc-links">
+      <a href="./products/frontend/">Docs</a>
+      <a class="hc-repo" href="https://github.com/Mythicove/web">GitHub</a>
+    </div>
+  </div>
+</div>
 
 ## Principles
 
-- **Source-available first**: ELv2 (Elastic License 2.0) products, MIT API contract, CC BY-SA 4.0 docs.
-- **Protocol aligned**: reuse Yggdrasil, Modrinth API, `.mrpack` and other de-facto standards.
-- **Modern stack**: Go backend + TypeScript frontend, self-host friendly.
-- **Scale with tiers**: from a 10-player private server to a 10k public platform.
+<div class="principle-grid">
+  <div class="principle">
+    <span class="p-icon"><Icon name="open-book" size={16} /></span>
+    <div>
+      <strong>Source-available</strong>
+      <p>Products under Elastic License 2.0 (ELv2), API contracts MIT, docs CC BY-SA 4.0.</p>
+    </div>
+  </div>
+  <div class="principle">
+    <span class="p-icon"><Icon name="puzzle" size={16} /></span>
+    <div>
+      <strong>Protocol aligned</strong>
+      <p>Reuses Yggdrasil, the Modrinth API, <code>.mrpack</code> and other de-facto standards.</p>
+    </div>
+  </div>
+  <div class="principle">
+    <span class="p-icon"><Icon name="laptop" size={16} /></span>
+    <div>
+      <strong>Modern stack</strong>
+      <p>Go backend + TypeScript frontend, single-binary self-hosting friendly.</p>
+    </div>
+  </div>
+  <div class="principle">
+    <span class="p-icon"><Icon name="setting" size={16} /></span>
+    <div>
+      <strong>Scale with tiers</strong>
+      <p>From a 10-player private server to a 10k public platform, components optional.</p>
+    </div>
+  </div>
+</div>
 
-> See the [introduction](./getting-started/introduction.md) for the full plan.
+## Start here
+
+<CardGrid>
+  <LinkCard title="Quickstart" href="./getting-started/quickstart/">
+    Bring up the full stack with one docker compose command.
+  </LinkCard>
+  <LinkCard title="Deploy" href="./deploy/">
+    Docker Compose, storage tiers, multi-instance and the gateway.
+  </LinkCard>
+  <LinkCard title="Community" href="./community/security/">
+    Security policy, code of conduct and contributing guide.
+  </LinkCard>
+  <LinkCard title="Architecture" href="./architecture/">
+    The full ADR record since ADR-0001.
+  </LinkCard>
+</CardGrid>
+
+> The full ecosystem plan and comparison with existing solutions: see the [introduction](./getting-started/introduction.md).

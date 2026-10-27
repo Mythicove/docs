@@ -12,31 +12,110 @@ hero:
     - text: 产品介绍
       link: products/mirror/
       icon: open-book
+      variant: secondary
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import { Icon, LinkCard, CardGrid } from "@astrojs/starlight/components";
 
-## 产品矩阵
-
-统一「航海 / 港湾」隐喻，共享同一技术栈与基础设施。
-
-<CardGrid>
-  <Card title="Mythic Mirror 幻镜" icon="open-book">
-    皮肤站 —— Yggdrasil 外置登录 + 皮肤 / 披风分发，替代 Blessing Skin。
-  </Card>
-  <Card title="Mythic Hoard 秘藏" icon="seti:folder">
-    Mod 托管 —— Modrinth 兼容的模组 / 整合包分发，替代闭源平台。
-  </Card>
-  <Card title="Mythic Compass 罗盘" icon="rocket">
-    启动器 —— Yggdrasil 登录 + 3D 预览 + 一键下载整合包。
-  </Card>
-</CardGrid>
+<div class="harbor-grid">
+  <div class="harbor-card">
+    <div class="hc-head">
+      <span class="hc-icon"><Icon name="star" size={18} /></span>
+      <span class="hc-name">Mythic Mirror</span>
+      <span class="hc-zh">幻镜</span>
+    </div>
+    <p class="hc-desc">皮肤站 —— Yggdrasil 外置登录 + 皮肤 / 披风分发。</p>
+    <div class="hc-links">
+      <a href="./products/mirror/">文档</a>
+      <a class="hc-repo" href="https://github.com/Mythicove/mythic-mirror">GitHub</a>
+    </div>
+  </div>
+  <div class="harbor-card">
+    <div class="hc-head">
+      <span class="hc-icon"><Icon name="seti:folder" size={18} /></span>
+      <span class="hc-name">Mythic Hoard</span>
+      <span class="hc-zh">秘藏</span>
+    </div>
+    <p class="hc-desc">Mod 托管 —— Modrinth 兼容的模组 / 整合包分发。</p>
+    <div class="hc-links">
+      <a href="./products/hoard/">文档</a>
+      <a class="hc-repo" href="https://github.com/Mythicove/mythic-hoard">GitHub</a>
+    </div>
+  </div>
+  <div class="harbor-card">
+    <div class="hc-head">
+      <span class="hc-icon"><Icon name="rocket" size={18} /></span>
+      <span class="hc-name">Mythic Compass</span>
+      <span class="hc-zh">罗盘</span>
+    </div>
+    <p class="hc-desc">启动器 —— Yggdrasil 登录 + 3D 皮肤预览 + 一键下载整合包。</p>
+    <div class="hc-links">
+      <a href="./products/compass/">文档</a>
+      <a class="hc-repo" href="https://github.com/Mythicove/compass">GitHub</a>
+    </div>
+  </div>
+  <div class="harbor-card">
+    <div class="hc-head">
+      <span class="hc-icon"><Icon name="laptop" size={18} /></span>
+      <span class="hc-name">Mythicove Web</span>
+      <span class="hc-zh">统一前端</span>
+    </div>
+    <p class="hc-desc">一个代码库经模块开关同时服务皮肤站与 mod 站，多主题多语言。</p>
+    <div class="hc-links">
+      <a href="./products/frontend/">文档</a>
+      <a class="hc-repo" href="https://github.com/Mythicove/web">GitHub</a>
+    </div>
+  </div>
+</div>
 
 ## 核心原则
 
-- **源码可用**：产品 Elastic License 2.0（ELv2），API 契约 MIT，文档 CC BY-SA 4.0。
-- **协议对齐**：复用 Yggdrasil、Modrinth API、`.mrpack` 等事实标准。
-- **现代化栈**：Go 后端 + TypeScript 前端，单二进制自托管友好。
-- **按规模部署**：10 人私服到 10k 公共平台，组件可增可选。
+<div class="principle-grid">
+  <div class="principle">
+    <span class="p-icon"><Icon name="open-book" size={16} /></span>
+    <div>
+      <strong>源码可用</strong>
+      <p>产品 Elastic License 2.0（ELv2），API 契约 MIT，文档 CC BY-SA 4.0。</p>
+    </div>
+  </div>
+  <div class="principle">
+    <span class="p-icon"><Icon name="puzzle" size={16} /></span>
+    <div>
+      <strong>协议对齐</strong>
+      <p>复用 Yggdrasil、Modrinth API、<code>.mrpack</code> 等事实标准。</p>
+    </div>
+  </div>
+  <div class="principle">
+    <span class="p-icon"><Icon name="laptop" size={16} /></span>
+    <div>
+      <strong>现代化栈</strong>
+      <p>Go 后端 + TypeScript 前端，单二进制自托管友好。</p>
+    </div>
+  </div>
+  <div class="principle">
+    <span class="p-icon"><Icon name="setting" size={16} /></span>
+    <div>
+      <strong>按规模部署</strong>
+      <p>10 人私服到 10k 公共平台，组件可增可选。</p>
+    </div>
+  </div>
+</div>
 
-> 详细规划见 [简介](./getting-started/introduction.md)。
+## 从这里开始
+
+<CardGrid>
+  <LinkCard title="快速开始" href="./getting-started/quickstart/">
+    docker compose 一条命令拉起全栈。
+  </LinkCard>
+  <LinkCard title="部署" href="./deploy/">
+    Docker Compose、存储分级、多实例与网关。
+  </LinkCard>
+  <LinkCard title="社区" href="./community/security/">
+    安全策略、行为准则与贡献指南。
+  </LinkCard>
+  <LinkCard title="架构决策" href="./architecture/">
+    ADR-0001 起的完整决策记录。
+  </LinkCard>
+</CardGrid>
+
+> 生态的完整规划与替代对象对比见[简介](./getting-started/introduction.md)。

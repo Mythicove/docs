@@ -1,17 +1,362 @@
-/* Mythicove 品牌蓝紫主题 */
+/* Mythicove docs —— 品牌主题（token 取自设计文档 §3，见 products/frontend.md）
+   Starlight 灰阶角色：white=最强前景 / gray-1,2=标题与正文 / gray-3,4=次级与弱化文字 /
+   gray-5=描边 / gray-6=hairline 与导航面 / gray-7=浅色导航面 / black=页面背景；
+   light 主题下 white/black 语义反转，故两套值按角色映射而非按字面颜色。 */
+
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
+
 :root {
-  --sl-color-accent: #4f46e5;
-  --sl-color-accent-high: #6366f1;
-  --sl-color-text-accent: #4f46e5;
-}
+  --mv-cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    "Source Han Sans SC", sans-serif;
 
-[data-theme="dark"] {
+  /* 深色（Starlight :root 默认）：night 系 */
+  --sl-color-white: #f8faff;
+  --sl-color-gray-1: #e6e9f5;
+  --sl-color-gray-2: #d3d8e8;
+  --sl-color-gray-3: #b4b9ce;
+  --sl-color-gray-4: #9aa0b8;
+  --sl-color-gray-5: #2a3150;
+  --sl-color-gray-6: #1a1f3a;
+  --sl-color-gray-7: #141936;
+  --sl-color-black: #0b1026;
+
+  --sl-color-accent-low: #262b57;
   --sl-color-accent: #6366f1;
-  --sl-color-accent-high: #818cf8;
-  --sl-color-text-accent: #818cf8;
+  --sl-color-accent-high: #a5b4fc;
+  --sl-color-text-accent: #a5b4fc;
+
+  --sl-border-radius: 10px;
+  --sl-font: "Inter Variable", "Inter", ui-sans-serif, system-ui, var(--mv-cjk);
+  --sl-font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "JetBrains Mono", Menlo,
+    Consolas, monospace;
 }
 
-/* 导航栏 logo 高度 */
+:root[data-theme="light"],
+[data-theme="light"] ::backdrop {
+  /* 浅色：white/black 反转 —— white 为最深前景，black 为页面背景 */
+  --sl-color-white: #0b1026;
+  --sl-color-gray-1: #0f172a;
+  --sl-color-gray-2: #2a3150;
+  --sl-color-gray-3: #475569;
+  --sl-color-gray-4: #64748b;
+  --sl-color-gray-5: #cbd5e1;
+  --sl-color-gray-6: #e2e8f0;
+  --sl-color-gray-7: #f1f5f9;
+  --sl-color-black: #ffffff;
+
+  --sl-color-accent-low: #e0e7ff;
+  --sl-color-accent: #4f46e5;
+  --sl-color-accent-high: #3730a3;
+  --sl-color-text-accent: #4338ca;
+}
+
+/* ---------- 排版 ---------- */
+
+h1,
+h2,
+h3,
+h4,
+.site-title,
+.hero h1 {
+  font-family: "Space Grotesk Variable", "Space Grotesk", var(--mv-cjk);
+  letter-spacing: -0.015em;
+}
+
+.site-title {
+  font-weight: 700;
+}
+
 .site-title img {
   height: 2rem;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--sl-color-accent) 28%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- 首页 hero：断环（呼应 logo 的开口圆环，全站唯一渐变） ---------- */
+
+.hero {
+  position: relative;
+  padding-block: 4.5rem 3.5rem;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  translate: -50% -50%;
+  width: min(400px, 78vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.35;
+  background: conic-gradient(
+    from 210deg,
+    transparent 0deg 30deg,
+    #38bdf8 70deg,
+    #4f46e5 170deg,
+    #8b5cf6 265deg,
+    transparent 300deg 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+}
+
+:root[data-theme="light"] .hero::before,
+[data-theme="light"] .hero::before {
+  opacity: 0.28;
+}
+
+.hero h1 {
+  color: var(--sl-color-white);
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 700;
+}
+
+.hero .tagline {
+  color: var(--sl-color-gray-4);
+  font-size: 1.06rem;
+  max-width: 34em;
+  margin-inline: auto;
+}
+
+/* 主 CTA：实色主色，不用渐变；文字恒白（设计文档 primary-fg） */
+.sl-link-button.primary {
+  background: var(--sl-color-accent);
+  border: none;
+  color: #ffffff;
+  border-radius: var(--sl-border-radius);
+}
+
+.sl-link-button.primary:hover {
+  background: var(--sl-color-accent-high);
+  color: #ffffff;
+}
+
+:root[data-theme="dark"] .sl-link-button.primary:hover,
+[data-theme="dark"] .sl-link-button.primary:hover {
+  background: #4f46e5;
+}
+
+/* 次按钮：ghost 描边，与主按钮区分 */
+.sl-link-button.secondary,
+.sl-link-button:not(.primary) {
+  background: transparent;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: var(--sl-border-radius);
+  color: var(--sl-color-gray-1);
+}
+
+.sl-link-button.secondary:hover,
+.sl-link-button:not(.primary):hover {
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-text-accent);
+  background: transparent;
+}
+
+/* ---------- 首页：港湾卡片（等高：描述区固定两行高度） ---------- */
+
+.harbor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  align-items: stretch;
+  gap: 1rem;
+  margin-block: 1.25rem 2rem;
+}
+
+/* Starlight 的兄弟 margin 会破坏网格对齐，归零 */
+.harbor-grid > *,
+.principle-grid > * {
+  margin-top: 0;
+}
+
+.harbor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.15rem 1.15rem 1rem;
+  background: var(--sl-color-gray-7);
+  border: 1px solid var(--sl-color-gray-6);
+  border-radius: 16px;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.harbor-card:hover {
+  border-color: var(--sl-color-gray-5);
+  box-shadow: var(--sl-shadow-sm);
+}
+
+.hc-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.hc-head .hc-icon {
+  color: var(--sl-color-text-accent);
+  align-self: center;
+}
+
+.hc-name {
+  font-family: "Space Grotesk Variable", "Space Grotesk", var(--mv-cjk);
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--sl-color-white);
+}
+
+.hc-zh {
+  color: var(--sl-color-gray-4);
+  font-size: 0.82rem;
+}
+
+.hc-desc {
+  color: var(--sl-color-gray-3);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin: 0;
+  min-height: 2.82rem; /* 两行，保证四卡等高 */
+}
+
+.hc-links {
+  margin-top: 0.25rem;
+  display: flex;
+  gap: 0.9rem;
+  font-size: 0.84rem;
+}
+
+.hc-links a {
+  color: var(--sl-color-text-accent);
+  text-decoration: none;
+}
+
+.hc-links a:hover {
+  text-decoration: underline;
+}
+
+.hc-links .hc-repo {
+  color: var(--sl-color-gray-4);
+}
+
+/* ---------- 首页：原则 ---------- */
+
+.principle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.9rem 1.5rem;
+  margin-block: 1rem 2rem;
+}
+
+.principle {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+
+.p-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--sl-color-text-accent);
+  background: var(--sl-color-accent-low);
+}
+
+.principle p {
+  margin: 0.15rem 0 0;
+  color: var(--sl-color-gray-3);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.principle strong {
+  font-size: 0.95rem;
+  color: var(--sl-color-gray-1);
+}
+
+/* ---------- 内容页组件 ---------- */
+
+.content-panel table th {
+  background: var(--sl-color-gray-7);
+  color: var(--sl-color-gray-1);
+}
+
+.content-panel table th,
+.content-panel table td {
+  border-color: var(--sl-color-gray-6);
+}
+
+.starlight-aside {
+  border-radius: var(--sl-border-radius);
+}
+
+.expressive-code,
+.expressive-code .frame {
+  border-radius: 12px;
+}
+
+/* Starlight 卡片 / LinkCard */
+.starlight-card,
+.card,
+.starlight-link-card {
+  border-radius: 16px;
+  border-color: var(--sl-color-gray-6);
+  background: var(--sl-color-gray-7);
+}
+
+.starlight-link-card:hover {
+  border-color: var(--sl-color-gray-5);
+}
+
+/* 侧边栏当前页 */
+.sidebar-pane a[aria-current="page"] {
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-text-accent);
+  border-radius: 6px;
+}
+
+/* 翻页卡片 */
+.pagination-links a {
+  border-radius: var(--sl-border-radius);
+  border-color: var(--sl-color-gray-6);
+}
+
+.pagination-links a:hover {
+  border-color: var(--sl-color-gray-5);
+}
+
+/* ---------- 动效克制 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .harbor-card,
+  .sl-link-button.primary {
+    transition: none;
+  }
+}
+
+@media (max-width: 50rem) {
+  .hero {
+    padding-block: 3rem 2.5rem;
+  }
+
+  .harbor-grid,
+  .principle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-desc {
+    min-height: 0;
+  }
 }
