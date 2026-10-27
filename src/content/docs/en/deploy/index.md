@@ -16,18 +16,20 @@ Mythicove deploys from a single 2C2G VPS to a 10k-player platform by swapping im
 
 ## Unified gateway
 
-The compose `caddy` service is a single-port gateway for the whole stack — frontend, Mirror and Hoard behind one origin. Path routing ships with the product (`Caddyfile`); your edge/TLS proxy just forwards the domain to it:
+The compose `caddy` service is a single-port gateway for the whole stack: frontend, Mirror and Hoard behind one origin. Path routing ships with the product (`Caddyfile`); your edge/TLS proxy just forwards the domain to it:
 
 ```
 :8080 {
     reverse_proxy /v2/* hoard:8081
     reverse_proxy /api/mods* hoard:8081
     reverse_proxy /auth/* hoard:8081
+    reverse_proxy /api/team* hoard:8081
+    reverse_proxy /api/user* hoard:8081
     reverse_proxy /api/auth/* web:3000   # Next.js BFF (httpOnly cookie session)
     # ...mirror API paths, then everything else falls through to web:3000
 }
 ```
 
-**Split deployment** (frontend on a Pages-style host, backends on your server): run `docker compose up -d db mirror hoard caddy` (skip `web`), point the frontend build at the API domain (`NEXT_PUBLIC_API_URL`) and set `API_URL_INTERNAL` for SSR/BFF. The host must run Next.js server routes (BFF), and the browser should reach the API same-origin via the host's path rewrites — cross-site cookie sessions (SameSite=Lax) won't work otherwise.
+**Split deployment** (frontend on a Pages-style host, backends on your server): run `docker compose up -d db mirror hoard caddy` (skip `web`), point the frontend build at the API domain (`NEXT_PUBLIC_API_URL`) and set `API_URL_INTERNAL` for SSR/BFF. The host must run Next.js server routes (BFF), and the browser should reach the API same-origin via the host's path rewrites; otherwise cross-site cookie sessions (SameSite=Lax) will not work.
 
 See the full [deployment guide](/deploy/) (Chinese) or [storage tiers](/deploy/storage/).

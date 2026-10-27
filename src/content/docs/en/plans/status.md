@@ -1,5 +1,5 @@
 ---
-title: Current progress
+title: Progress ledger (as of 2026-10-27)
 description: Audit-style status of every repository and the known gaps
 ---
 

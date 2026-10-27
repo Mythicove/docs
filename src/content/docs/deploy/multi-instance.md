@@ -16,8 +16,9 @@ Mirror 用缓存热路径 `profile`（`hasJoined` 进服热路径）；配置 Re
 
 ## 限流
 
-- 单实例：进程内令牌桶（`MIRROR_RATE_LIMIT_RPS` / `MIRROR_RATE_LIMIT_BURST`）。
-- 多实例：在反向代理（Caddy/Nginx）层做统一限流。
+- 单实例：进程内固定窗口（`MIRROR_RATE_LIMIT_RPS` / `MIRROR_RATE_LIMIT_BURST`）。
+- 多实例：配置 `MIRROR_REDIS_ADDR` / `HOARD_REDIS_ADDR` 后切换到 Redis 共享计数（各产品仓 `internal/redislimit` 实现 `shared/ratelimit` 接口），多副本共用同一限流桶。
+- 边缘层：CDN/云 LB 场景可按需在反向代理层再加统一限流。
 
 ## 队列（Hoard）
 

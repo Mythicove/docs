@@ -26,7 +26,7 @@ title: Compass 启动器开发计划
    - **打包/签名/公证/自动更新**：`tauri-action` + `tauri-plugin-updater` 现成，三平台 CI 已跑通并出过 draft release；GPUI 这条链要自己搭，P5/P6 明显变重。
    - **GPUI 的额外代价**：0.2.x 意味着 API 会随 Zed 变动；文档以 Zed 内部用法为主；无 i18n、无障碍成熟度未知。**而用户看不到收益**——启动器不是代码编辑器，不需要自定义 GPU 渲染管线。它真正合适的场景是"游戏内覆盖层"这类极度自定义的绘制面，将来那一块可以单独用 wgpu，不必换外壳。
    - **Go/Wails 的诱惑与真相**：好处是与后端同语言、能复用 `shared/mc`、交叉编译更省事（不需 MSVC 工具链）。但启动器与后端的**共享面很窄**：只有离线 UUID 派生（`UUID.nameUUIDFromBytes("OfflinePlayer:"+name)`，Rust 侧 20 行等价实现，并用契约测试与 mirror 的输出逐字节对齐——比"共用一个库"更可靠）与几个数据结构。而 Wails 仍然是 webview，三平台不一致的代价一分不少，却少了 Tauri 的 capabilities/更新/打包体系。
-   - **Tauri 的真实缺点与缓解**：三平台 webview 不一致，Linux 的 WebKitGTK 最弱（渲染怪癖、WebGL 可能不可用、老发行版版本旧）；多一个 webview 进程约 100–200MB 内存；跨 IPC 调试比同进程麻烦。缓解：UI 不碰前沿 web API；**WebGL 不可用时 3D 预览降级为 2D 平面贴图**（P1 实现）；安装文档写明 WebKitGTK 版本要求；CI 已有 ubuntu-latest 这条腿。
+   - **Tauri 的真实缺点与缓解**：三平台 webview 不一致，Linux 的 WebKitGTK 最弱（渲染怪癖、WebGL 可能不可用、老发行版版本旧）；多一个 webview 进程约 100~200MB 内存；跨 IPC 调试比同进程麻烦。缓解：UI 不碰前沿 web API；**WebGL 不可用时 3D 预览降级为 2D 平面贴图**（P1 实现）；安装文档写明 WebKitGTK 版本要求；CI 已有 ubuntu-latest 这条腿。
 2. **重逻辑放 Rust，前端只做视图。** 版本/资源/库的解析、下载调度、Java 探测、参数拼装、进程管理全部在 Rust；React 通过 `invoke` 取状态、通过 Tauri event 收进度。不在前端拼启动参数（前端拼一次就得在三平台各错一次）。
 3. **全局缓存 + 实例隔离。** `assets/objects`、`libraries`、`versions/<id>`（version json + client jar）、`java/`（自动下载的 JRE）、`authlib-injector.jar` 全局共享（按 sha1/Maven 坐标天然去重，多实例不重复下载）；实例只存自己的 `instance.json` + `.minecraft/`（游戏目录：mods/config/saves/resourcepacks/options.txt/logs）。目录布局：
    ```
@@ -37,7 +37,7 @@ title: Compass 启动器开发计划
      instances/<slug>/{instance.json,.minecraft/}
    ```
 4. **下载策略统一一处实现**：并发（默认 32，可配）、失败重试（指数退避）、sha1 与 size 校验、`Range` 断点续传、镜像源可切换（默认官方 `piston-meta.mojang.com` / `resources.download.minecraft.net` / `libraries.minecraft.net`，可选 BMCLAPI 等国内镜像）。**校验失败的文件一律丢弃重下**，不留半截文件（半截 jar 会让游戏以极难诊断的方式崩溃）。
-5. **版本兼容范围：1.21.x 优先，向下到 1.7.10。** 覆盖 `arguments`（1.13+）与 `minecraftArguments`（≤1.12）两套参数格式、legacy 资源的 `virtual`/`map_to_resources`、以及 Log4Shell 缓解（1.7–1.18.1 追加 `-Dlog4j2.formatMsgNoLookups=true`）。**不做**：Beta/Alpha 时代（`minecraftArguments` 之前的版本）——HMCL 也只是勉强能跑，投入产出比太差，写进文档而不是偷偷不支持。
+5. **版本兼容范围：1.21.x 优先，向下到 1.7.10。** 覆盖 `arguments`（1.13+）与 `minecraftArguments`（≤1.12）两套参数格式、legacy 资源的 `virtual`/`map_to_resources`、以及 Log4Shell 缓解（1.7~1.18.1 追加 `-Dlog4j2.formatMsgNoLookups=true`）。**不做**：Beta/Alpha 时代（`minecraftArguments` 之前的版本）——HMCL 也只是勉强能跑，投入产出比太差，写进文档而不是偷偷不支持。
 6. **验收怎么算**（CI 里没有显示器，不能"点开游戏看看"）：
    - Rust 单元测试为主：版本 JSON 解析、参数构造（用**真实版本 JSON 样本**做契约测试，含 1.21/1.20.1/1.16/1.12/1.7.10 各一份）、Maven 坐标→路径、natives 规则匹配、mrpack/mods 元数据解析。
    - 集成冒烟：真下载 1.21 客户端（assets/libraries 全量）→ 校验 sha1 → **真启动进程**，断言进程存活 >20s、stdout 出现 `Setting user:` 与 `Backend library: LWJGL`、无 `Exception`，然后终止。三平台 CI 各跑一次（Windows/macOS/Linux runner）。
@@ -47,7 +47,7 @@ title: Compass 启动器开发计划
 
 ---
 
-## Phase 0 — 骨架与仓库卫生（预计 1 周）
+## Phase 0: 骨架与仓库卫生（预计 1 周）
 
 目标：把一个玩具脚手架变成能承载上述架构的工程；CI 从 0 到"每次提交都能出三平台包"。
 
@@ -70,7 +70,7 @@ title: Compass 启动器开发计划
 - 顺带：所有后端 HTTP 移入 Rust（webview 不再出网，CSP 因此收紧到不放行任何远端 `connect-src`/`img-src`，皮肤以 `data:` URL 交付）；令牌不再进 localStorage；`identifier` 改 `com.mythicove.compass`（原为 `com.hsukqi-lee.compass`，与 `docs.mythicove.com` 的域名不一致，越晚改越贵）；i18n 自建 60 行 messages 表（不引 i18next）；`opener` 插件只用默认权限内的 `openUrl`/`revealItemInDir`（`openPath` 不在 `opener:default` 里）。
 - **Windows 打包暂不签名**（用户决定）：SmartScreen 会提示"未知发布者"，安装文档需说明；后续若拿到 SignPath 的开源项目证书，在 `package` 作业里补 `signCommand` 即可。macOS 有 Apple Developer 账号，签名与公证在 P6 接线。
 
-## Phase 1 — 原生启动最小闭环（预计 3–4 周）
+## Phase 1: 原生启动最小可用链路（预计 3~4 周）
 
 目标：能从我们的皮肤站登录，并把**原版** Minecraft（1.21.x，向下兼容到 1.7.10）真的启动起来，皮肤在离线服务器上可见。这一阶段结束时"委托 Prism"的路径被删除。
 
@@ -92,7 +92,7 @@ title: Compass 启动器开发计划
   - 删除委托 Prism 的整条路径（`download_file` 裸命令 + `launch` + UI 上的"Launcher command"输入框）。
 - **验收**：三平台各能在干净环境（无 Java、无 .minecraft）下完成"登录 → 装 1.21.x → 启动 → 进主菜单"；1.7.10 与 1.12.2 至少能启动到主菜单；离线服务器（用 authlib-injector 指向我们的 mirror）里其他玩家能看到正确皮肤；CI 的启动冒烟测试在三平台通过；仓库里已无任何 Prism 相关代码。
 
-## Phase 2 — 实例与内容管理（预计 3 周）
+## Phase 2: 实例与内容管理（预计 3 周）
 
 目标：从"能启动一个版本"到"能管理多个实例与它们的内容"，并把 Hoard 接成内容源。
 
@@ -109,7 +109,7 @@ title: Compass 启动器开发计划
   - 已安装 mod 的更新检查（对比 Hoard 上的最新版本号）与批量更新。
 - **验收**：能同时维护 3 个以上互不干扰的实例（不同游戏版本/不同 loader/不同 Java），各自 mods 与存档独立；mod 列表能正确显示 loader 与依赖并支持启停；能从 Hoard 搜到并装进当前实例；导出再导入的实例可正常启动。
 
-## Phase 3 — Mod loader 与整合包（预计 4–5 周，最大单点风险在此）
+## Phase 3: Mod loader 与整合包（预计 4~5 周，最大单点风险在此）
 
 目标：装得上主流 loader 与整合包。Forge 安装器是本阶段（也是整个计划）技术风险最高的一块。
 
@@ -132,7 +132,7 @@ title: Compass 启动器开发计划
   - 与 Hoard 的 `version_dependencies`（Phase 3 后端已实现）对齐语义，不自己发明第二套依赖模型。
 - **验收**：能从零装出并成功启动这四个实例——Fabric 1.21.x、Quilt 1.20.x、NeoForge 1.21.x、Forge 1.12.2；能安装一个含 overrides 与 loader 依赖的 `.mrpack` 并进游戏；缺依赖的 mod 会被明确拒绝并给出可执行的补救动作。
 
-## Phase 4 — 账号与令牌安全（预计 2 周）
+## Phase 4: 账号与令牌安全（预计 2 周）
 
 目标：多账号、令牌安全、以及把 ADR-0012 的独立密码体验补齐（现在用户必须回网站建独立密码，启动器里应当能直接看到状态并跳转）。
 
@@ -143,7 +143,7 @@ title: Compass 启动器开发计划
   - 皮肤：当前账号玩家的皮肤/披风实时预览（沿用 skinview3d），多玩家时可选预览对象。
 - **验收**：可同时保存三类账号并一键切换；退出登录后 localStorage 与磁盘上都不残留可用令牌（用文件级检查断言）；被管理员强制绑定第三方的账号在启动器里得到可操作的引导而不是一个 403。
 
-## Phase 5 — 诊断、Java 自动下载与自动更新（预计 3 周）
+## Phase 5: 诊断、Java 自动下载与自动更新（预计 3 周）
 
 目标：把"出了问题只能截图求助"变成"启动器自己说清楚"，并去掉最后两个人工前置（装 Java、手动升级启动器）。
 
@@ -159,7 +159,7 @@ title: Compass 启动器开发计划
   - 版本/资源清单的增量更新（版本 manifest 的 ETag/last-modified 缓存，避免每次启动全量拉）。
 - **验收**：干净机器上不装 Java 也能启动（自动下载并绑定）；人为制造 5 类常见崩溃，启动器都能给出具体的原因与补救动作而不是"退出码 1"；发布一个 0.0.x→0.0.y 的更新，三平台的已安装实例都能自动升级。
 
-## Phase 6 — 三平台打包、签名与发布（预计 2–3 周）
+## Phase 6: 三平台打包、签名与发布（预计 2~3 周）
 
 目标：让陌生人按文档装上就能用——这是"对标 HMCL/PCL"的最后一里，也是最容易被低估的一里。
 
@@ -202,7 +202,7 @@ title: Compass 启动器开发计划
 
 ## 同步要改的文档
 
-- `docs/src/content/docs/products/compass.md`：现在写着"Yggdrasil 登录：邮箱 + 密码"（已随 ADR-0012 变为玩家名 + 独立密码）与"委托 Prism 启动"（P1 后失效）——P0 就改，别等实现完再补。
+- `docs/src/content/docs/products/compass.md`：现在写着"Yggdrasil 登录：邮箱 + 密码"（已随 ADR-0012 变为玩家名 + 独立密码）与"委托 Prism 启动"（P1 后失效）。该条已随 P0 完成：ADR-0012 措辞与"仅浏览 + 原生启动开发中"均已同步。
 - `docs/src/content/docs/guides/authlib-injector.md`：P1-W4 之后补"Compass 自动注入"的说明。
-- `docs/plans/status.md`：Phase 4 第 2 条改为指向本文；每完成一个 Phase 在此记一行（含验收证据），沿用现有 `~~任务~~ ✅` 的写法。
+- `docs/src/content/docs/plans/status.md`：Phase 4 第 2 条改为指向本文；每完成一个 Phase 在此记一行（含验收证据），沿用现有 `~~任务~~ ✅` 的写法。
 - `web`：P6 需要加"下载启动器"页（平台检测 + 校验和 + 更新说明）。

@@ -22,19 +22,19 @@ title: 贡献指南
 
 ## 提交规范
 
-- 提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/)，使用 feat、fix、docs、chore、refactor 等类型。web 仓库由 commitlint 和 lint-staged 强制检查。
+- 提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/)，使用 feat, fix, docs, chore, refactor 等类型。web 仓库由 commitlint 和 lint-staged 强制检查。
 - 一个提交只做一件事。换证、依赖升级这类杂务与功能改动分开提交。
 
 ## 代码风格
 
 - Go（shared、mythic-mirror、mythic-hoard）：运行 gofmt；SQL 查询一律经 sqlc 生成，不手写扫描代码；CI 运行 govulncheck。
-- TypeScript 前端（web、compass）：ESLint、Prettier、Stylelint；组件遵循仓库内现有模式（shadcn/ui）。
+- TypeScript 前端（web、compass）：ESLint, Prettier, Stylelint；组件遵循仓库内现有模式（shadcn/ui）。
 - API 契约（api）：先改 OpenAPI 再跑代码生成，不要手改生成物。
 
 ## 文档与语言约定
 
-- 仓库根目录文档（README、CHANGELOG、LICENSE.history 等）默认英文，中文版加 .zh-CN.md 后缀，两个文件在顶部互相链接，单个文件不混排两种语言。
-- 文档站内容默认 zh-CN（src/content/docs/ 根目录），英文放在 src/content/docs/en/。新页面尽量双语，未翻译页自动回退中文。
+- 仓库根目录文档（README, CHANGELOG, LICENSE.history 等）默认英文，中文版加 .zh-CN.md 后缀，两个文件在顶部互相链接，单个文件不混排两种语言。
+- 文档站内容默认 zh-CN（src/content/docs/ 根目录），英文放在 src/content/docs/en/。新页面同时提供 en stub：没有英文版的页面会 404。
 - 安全策略、行为准则、贡献指南的正本是本站「社区」栏目页面，各仓库只放指向本站的英文指针文件。
 
 ## 架构决策

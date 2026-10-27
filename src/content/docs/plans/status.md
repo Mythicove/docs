@@ -1,27 +1,29 @@
 ---
-title: 当前进度
+title: 进度台账（截至 2026-10-27）
 ---
 
-> 本次更新同时是一次审计后的修复。措辞按"能跑通的最小闭环 + 已知差距"如实描述，
+本页是时点记录，最后更新 2026-10-27。最新进展以各仓库 CHANGELOG 为准。
+
+> 本次更新同时是一次审计后的修复。措辞按"能跑通的最小可用链路 + 已知差距"如实描述，
 > 不再用笼统的"可用"。距 Blessing Skin / Modrinth 的成熟度差距见文末"已知差距"。
 
 ## 成熟度总览
 
 代码量约 11.7k 行（mirror 6.3k Go / hoard 2.6k Go / shared 0.2k / web 2.1k TS / compass 0.5k）。
-定性：**打通了核心闭环的原型（M1–M3 为主），不是半成品，也远未到成熟产物。**
+定性：核心链路已跑通的原型（M1~M3 为主），不是半成品，也远未到成熟产物。
 两个后端能 build/vet/test 全绿，web 能 typecheck/lint/build，关键链路有真进程冒烟验证。
 
 ## 仓库状态
 
 | 仓库 | 实际状态 |
 |---|---|
-| `mythic-mirror` | Go 后端。Yggdrasil 全套端点 + RSA 签名、皮肤/披风上传校验与分发、crafatar 风格头像/渲染、账号体系（注册/邮箱验证/找回密码/GitHub OAuth/Microsoft 正版绑定/邀请码/验证码）、皮肤库（发布/点赞，**评论只写不读**）、管理后台、OIDC Provider（Fosite，**token 存内存**）。存储本地/S3、缓存内存/Redis、邮件 SMTP/Resend/日志可切。集成测试对真 Postgres 全绿。 |
-| `mythic-hoard` | Go 后端。Project→Version→File 三级模型（Postgres/sqlc 或内存）、本地/S3 存储、pg_trgm/Meili 搜索、inline/asynq 队列、下载统计、审核状态、Modrinth 兼容读子集、`.mrpack` 生成（含 dependencies + mods/ 路径）。**上传/审核仅靠 `HOARD_ADMIN_TOKEN`，无用户体系。** |
-| `web` | Next.js 16 App Router。**皮肤库列表/详情已改 RSC 服务端渲染**（搜索/排序/分页/评论区/应用到我的皮肤），其余页面仍为客户端渲染。landing/注册/登录(OAuth+忘记密码)/邮箱验证与重置落地页/上传皮肤披风(profile)/3D 预览/管理后台/mod 列表+上传。类型由 OpenAPI 契约生成。**零前端测试；token 存 localStorage；管理后台手贴 admin token。** |
-| `compass` | Tauri 2 原型（~500 行单页）。Yggdrasil 登录 + skinview3d 预览 + `.mrpack` 下载 + 委托 Prism 启动。**不原生启动 Minecraft**（无 Java 检测/版本清单/asset 下载/authlib-injector 注入/实例管理），无 CI、无自动更新。 |
-| `shared` | Go 能力接口 + 零依赖进程内实现：storage/search/cache/**ratelimit（Memory 固定窗口）**/**clientip（可信代理感知的客户端 IP 解析）**/queue/mailer/i18n/captcha/cdn/oauth/mc。**已删除无人引用的 `auth` 接口**（认证在各服务内直接实现，见 overview §5）。 |
+| `mythic-mirror` | Go 后端。Yggdrasil 全套端点 + RSA 签名、皮肤/披风上传校验与分发、crafatar 风格头像/渲染、账号体系（注册/邮箱验证/找回密码/GitHub OAuth/Microsoft 正版绑定/邀请码/验证码）、皮肤库（发布/点赞/评论读写 + 管理删除）、管理后台、OIDC Provider（Fosite，会话落 Postgres `oidc_sessions`，无 DB 时内存）。存储本地/S3、缓存内存/Redis、邮件 SMTP/Resend/日志可切。集成测试对真 Postgres 全绿。 |
+| `mythic-hoard` | Go 后端。Project→Version→File 三级模型（Postgres/sqlc 或内存）、本地/S3 存储、pg_trgm/Meili 搜索、inline/asynq 队列、下载统计、审核状态、Modrinth 兼容读子集、`.mrpack` 生成（含 dependencies + mods/ 路径）。用户体系已接通（OIDC SSO、团队、PAT、用户级上传）；管理 token 降级为 bootstrap/救援。 |
+| `web` | Next.js 16 App Router。**皮肤库列表/详情已改 RSC 服务端渲染**（搜索/排序/分页/评论区/应用到我的皮肤），其余页面仍为客户端渲染。landing/注册/登录(OAuth+忘记密码)/邮箱验证与重置落地页/上传皮肤披风(profile)/3D 预览/管理后台/mod 列表+上传。类型由 OpenAPI 契约生成。**无前端单测**；会话已加固为 httpOnly cookie；管理后台会话登录 + 救援 token；Playwright E2E 进 CI。 |
+| `compass` | Tauri 2。原生启动模块（版本解析、资源下载、Java 探测、参数构造、进程管理、实例）已在 Rust 实现并有测试，Tauri 命令与 UI 尚未接线；Prism 委托与 `.mrpack` 下载已删除。无 CI、无自动更新。 |
+| `shared` | Go 能力接口 + 零依赖进程内实现：storage/search/cache/**ratelimit（Memory 固定窗口）**/**clientip（可信代理感知的客户端 IP 解析）**/queue/mailer/i18n/captcha/cdn/oauth/mc。**已删除无人引用的 `auth` 接口**（认证在各服务内直接实现，见 [能力分层](../getting-started/introduction.md) §5）。 |
 | `api` | OpenAPI 契约（mirror + hoard + common），已对齐实现（见下）。 |
-| `docs` | 计划与架构决策（ADR-0001..0010）。 |
+| `docs` | 计划与架构决策（ADR-0001..0012）。 |
 
 ## 本轮已修（审计发现 → 修复）
 
@@ -33,7 +35,7 @@ title: 当前进度
 - **安全基线**：两个服务加安全响应头（`X-Content-Type-Options`/`X-Frame-Options`/`Referrer-Policy`/CSP，TLS 或 `X-Forwarded-Proto=https` 时加 HSTS）+ `http.Server` `ReadHeaderTimeout`/`IdleTimeout`（防 Slowloris）。
 - **DB 层 CI 覆盖**：CI 加 Postgres service + 测试自动跑迁移，pgstore 集成测试不再永久 skip（本地对真 PG17 全绿）。
 - **死代码**：删 `shared/auth`；`shared/ratelimit` 从死代码变为被两服务引用。
-- **仓库卫生**：web/compass 补 AGPL-3.0 LICENSE；把此前大量未提交的工作（mirror 18 / hoard 21 / web 16 / compass 8 文件）落入基线提交；README（mirror/hoard/web/compass）、overview §5、ADR-0009 修订、docs/deploy 同步为与现实一致。
+- **仓库卫生**：web/compass 补 AGPL-3.0 LICENSE；把此前大量未提交的工作（mirror 18 / hoard 21 / web 16 / compass 8 文件）落入基线提交；README（mirror/hoard/web/compass）、[能力分层](../getting-started/introduction.md) §5、ADR-0009 修订、docs/deploy 同步为与现实一致。
 
 ## 部署模式
 
@@ -78,7 +80,7 @@ title: 当前进度
 2026-10-25 四轮（台账 §H5）：admin 校验收紧（role/status/枚举/长度 + 邮箱正则单测）；admin 四面板搜索+分页、审计 `q` 过滤、PAT scopes 复选；e2e 新增 ui-misc / consent-thirdparty / moderation 三 spec（共 7 tests）并修正旧按钮名；皮肤详情 OG 图改渲染头像。markdown changelog、Meili total、团队邀请流、标签、2FA、Compass、镜像代理、i18n 基建、webhook、Isles/Atlas 评估留待后续轮次。
 
 **工程化**
-- 无 E2E/契约字段级测试；无性能/负载数据；无 Helm/K8s（overview §6 的 C/D 档只是纸面）；无 CHANGELOG/release/tag（除 shared 1 个）；Caddyfile 无 TLS、不路由 web
+- 无 E2E/契约字段级测试；无性能/负载数据；无 Helm/K8s（[总规划](../getting-started/introduction.md) §6 的 C/D 档只是纸面）；无 CHANGELOG/release/tag（除 shared 1 个）；Caddyfile 无 TLS、不路由 web
 - CI 无 gofmt 门（仓库存在既有未格式化文件：admin.go/migrate.go/s3storage.go/render.go/memstore.go）
 - 无 ToS/Privacy/DMCA/内容合规
 
@@ -106,7 +108,7 @@ title: 当前进度
 - 唯一值得重新考虑的情形：若坚持"mod 站必须是单二进制（无 Mirror）"，则退路是把 Mirror 账号核心抽成独立 library 模块（不进 shared）——当前不接受该约束，故不抽
 - ADR-0011（身份架构）已补：`src/content/docs/architecture/adr-0011-identity-architecture.md`（2026-10-26）
 
-### Phase 1 — Mirror 可交付（预计 4–6 周）
+### Phase 1 — Mirror 可交付（预计 4~6 周）
 
 目标：一个陌生人按文档部署后，能完成 注册→验证→登录→传皮肤→皮肤库浏览互动 全流程。**范围=产品功能补齐**；生产化正确性（多实例/存储加固）归 Phase 2。
 
@@ -133,7 +135,7 @@ title: 当前进度
 - 打 `v0.1.0`（mirror/web/shared/api 同步 tag），compose 提供 pin GHCR 镜像版本
 - 验收：陌生人按文档部署并走完全流程；CI 全绿含 E2E
 
-### Phase 2 — 生产化与运维基线（预计 3–4 周）
+### Phase 2 — 生产化与运维基线（预计 3~4 周）
 
 目标：敢开一个 A/B 档公共小站并持续运营。**范围=正确性与可运维性**（Phase 3 依赖其中的 IdP 加固）。
 
@@ -150,14 +152,14 @@ title: 当前进度
 - ~~Prometheus/Grafana~~✅：`docs/deploy/observability/`（告警规则 promtool 校验过、dashboard JSON、抓取配置；hoard 补齐 /metrics）；~~k6 压测基线~~✅：`docs/deploy/k6/`（读 20→50VU p95=4.5ms 0 错误；写 5VU 登录+上传+发布 checks 100% p95=63ms；阈值即 SLO 草案，生产验收在目标硬件重跑记录）
 - 验收：按文档从零运维小站两周无手工干预（待真实部署窗口）；~~双副本部署登录态/限流/OIDC 正确~~✅（限流/OIDC/正版绑定/迁移均已双副本真机验证）；~~发布 `v0.2.0`~~✅（mirror/hoard/web/api 同步 tag；web 会话为破坏性变更：AuthState 不再含 accessToken）
 
-### Phase 3 — Hoard 用户体系与开放上传（预计 6–8 周）
+### Phase 3 — Hoard 用户体系与开放上传（预计 6~8 周）
 
 目标：普通用户不需要管理员 token 就能发布 mod；在此之前 Hoard 不宣传为 Modrinth 替代。按上方身份架构决策执行：
 
-**状态（2026-10-23）：W1–W8 全部完成 ✅，`v0.3.0` 已发布**（hoard/web/api；mirror 无变更不重打）；剩余 Prism 人工安装验收待部署窗口。
+**状态（2026-10-23）：W1~W8 全部完成 ✅，`v0.3.0` 已发布**（hoard/web/api；mirror 无变更不重打）；剩余 Prism 人工安装验收待部署窗口。
 
 后端：
-- ~~Hoard OIDC RP~~✅（W1，2026-10-23）：`internal/oidcrp`（go-oidc v3：discovery/JWKS 轮换/签名/iss/aud/exp/nonce 全校验，机密客户端）；migration 00002（`users` 投影 + `sessions`）；`/auth/oidc/login|callback`、`/auth/logout`、`/auth/me`；state/nonce 短期 httpOnly cookie；会话 cookie `hoard_session`（httpOnly+Lax，7d，服务端可撤销）；投影 upsert **重登不覆盖已提升的 role**；`HOARD_ADMIN_SUBJECTS` 白名单幂等映射 admin；CORS 白名单允许凭证；spec 漂移门绿；mem+PG 测试；**真机 SSO 全流程打通**（mirror IdP：login→consent→code→callback→me(role=admin)→logout→401，投影/会话落 PG 验证）
+- ~~Hoard OIDC RP~~✅（W1，2026-10-23）：`internal/oidcrp`（go-oidc v3：discovery/JWKS 轮换/签名/iss/aud/exp/nonce 全校验，机密客户端）；migration 00002（`users` 投影 + `sessions`）；`/auth/oidc/login|callback`、`/auth/logout`、`/auth/me`；state/nonce 短期 httpOnly cookie；会话 cookie `hoard_session`（httpOnly+Lax，7d，服务端可撤销）；投影 upsert **重登不覆盖已提升的 role**；`HOARD_ADMIN_SUBJECTS` 白名单幂等映射 admin；CORS 白名单允许凭证；spec 漂移门绿；mem+PG 测试；**真机 SSO 全流程验证通过**（mirror IdP：login→consent→code→callback→me(role=admin)→logout→401，投影/会话落 PG 验证）
 - ~~迁移：`users` 投影表、`teams`/`team_members`、`personal_access_tokens`~~✅（W2，migration 00002/00003）：投影表 + 服务端会话（W1）；teams 两级角色（owner 管成员/删项目，member 传版本）；PAT `mhp_` 前缀明文仅创建时返回一次、sha256 哈希存储、scopes、过期、last_used、可撤销；`projects.team_id` 可空兼容存量；mem+PG 集成 + HTTP 全链路测试（401/403/撤销即失效/明文不泄漏）
 - ~~用户级上传~~✅（W3）：`POST /v2/project`（Modrinth 形 multipart data+file，自动建团队归属）、`POST /v2/version`（团队成员校验）、`DELETE /v2/project/{id}`（owner/admin）；PAT scopes 强制（声明 scopes 须含 UPLOAD）；`HOARD_REQUIRE_REVIEW` 审核开关接线；管理员 `/api/mods` 队列保留；spec 漂移门绿
 - ~~mod 元数据解析~~✅（W4）：`internal/modmeta` 解析 jar 内 `fabric.mod.json`/`quilt.mod.json`/`META-INF/(neo)forge.mods.toml`（BurntSushi/toml）→ 自动填充 title/description/loaders/game_versions（minecraft 依赖下界）/license/version/icon；表单优先、冲突写 `metadata_flags`（title/description/loader/game_versions_mismatch）；icon 提取入对象存储 + `GET /api/mods/{id}/icon` 直出；migration 00004（license/icon_key/meta_flags 列）；非 jar/损坏元数据静默兼容；7 项解析单测 + 上传集成测试
@@ -173,14 +175,14 @@ title: 当前进度
 ### Phase 4 — 生态扩展（持续，按需启动）
 
 - i18n 扩语言（目标 15+，接 Crowdin/Weblate）
-- ~~Compass 原生启动（piston-meta + assets + authlib-injector 注入）或先做 Prism 账号深度集成；补 CI/自动更新；`launch` 白名单化~~ → 已展开为独立计划：**[`plans/compass-launcher.md`](/plans/compass-launcher/)**（P0 骨架与仓库卫生 → P1 原生启动最小闭环 → P2 实例与内容管理 → P3 mod loader 与整合包 → P4 账号与令牌安全 → P5 诊断/Java 自动下载/自动更新 → P6 三平台打包签名发布；每阶段含周任务、验收与版本号，Forge processor pipeline 为最大单点风险并已写下降级验收标准）。决策：**直接全量对标 HMCL/PCL，三平台**，不再走"先做 Prism 账号深度集成"的过渡路线。
+- ~~Compass 原生启动（piston-meta + assets + authlib-injector 注入）或先做 Prism 账号深度集成；补 CI/自动更新；`launch` 白名单化~~ → 已展开为独立计划：**[Compass 启动器开发计划](./compass-launcher.md)**（P0 骨架与仓库卫生 → P1 原生启动最小可用链路 → P2 实例与内容管理 → P3 mod loader 与整合包 → P4 账号与令牌安全 → P5 诊断/Java 自动下载/自动更新 → P6 三平台打包签名发布；每阶段含周任务、验收与版本号，Forge processor pipeline 为最大单点风险并已写下降级验收标准）。决策：**直接全量对标 HMCL/PCL，三平台**，不再走"先做 Prism 账号深度集成"的过渡路线。
 - 上游镜像代理（Modrinth/CurseForge 冷启动）；插件/Webhook；Isles/Atlas 建仓评估
 
 ---
 
 ### 补记（2026-10-26）：工作区换树事故 + canonical 树上的修复轮
 
-**事故**：会话中途工作区被换成另一棵树（Q: 是文件支持的 VHDX；系统时钟同时被回拨约 8 小时，`Get-Date`=05:08 而当日写入文件 mtime=12:31–12:51）。旧树的部分目录（根 `hoard`/`mods`/`isles`/`atlas`、`docs/adr|plans|specs`、`web/src/app/[locale]/teams`、`mirror/internal/api`、`hoard/internal/httpapi`）在当前树不存在；回收站无近期删除、`Q:\Backups` 无本项目备份、`opencode.db` 无本项目会话记录 ⇒ **会话内不可还原**，唯一完整来源在宿主侧快照。经用户决定：不还原，在当前（canonical，7 个独立 git 仓库）树上重做缺失项。详见工作区根 `FRONTEND-REMEDIATION.md` §J/§K。
+**事故**：会话中途工作区被换成另一棵树（Q: 是文件支持的 VHDX；系统时钟同时被回拨约 8 小时，`Get-Date`=05:08 而当日写入文件 mtime=12:31~12:51）。旧树的部分目录（根 `hoard`/`mods`/`isles`/`atlas`、`docs/adr|plans|specs`、`web/src/app/[locale]/teams`、`mirror/internal/api`、`hoard/internal/httpapi`）在当前树不存在；回收站无近期删除、`Q:\Backups` 无本项目备份、`opencode.db` 无本项目会话记录 ⇒ **会话内不可还原**，唯一完整来源在宿主侧快照。经用户决定：不还原，在当前（canonical，7 个独立 git 仓库）树上重做缺失项。详见工作区根 `FRONTEND-REMEDIATION.md` §J/§K。
 
 **复核结论**：多数被判"丢失"的能力其实只是换了位置/命名（注册要求端点=`/api/register-requirements`、公告=`/api/announcement`+admin、Microsoft 绑定=`/mojang/oauth/*`、按名头像=`/avatars/by-name/{name}`、举报+皮肤审核队列在 **mirror** 而非 hoard、法务文在 `web/messages` 的 `legal.*`、admin i18n 54 键齐全）。真缺口只剩：团队邀请接受/拒绝、玩家改名/删除与"当前玩家"、Microsoft 解绑、ADR-0011。
 

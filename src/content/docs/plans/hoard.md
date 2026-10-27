@@ -50,16 +50,7 @@ title: Mythic Hoard 计划
 
 ## 部署分级（Hoard 视角）
 
-全局分级见[部署](/deploy/)。
-
-| 层级 | 规模 | 资源 | 组件（必选到可选） |
-|---|---|---|---|
-| A | 10～100 | 1× 2C2G | Go 单二进制 + Postgres + 本地盘存储（`pg_trgm` 搜索、内联队列、内建账号） |
-| B | 100～1k | 2× 2C4G | Go 多副本 + Postgres + Redis + MinIO/R2 加 Meilisearch（Zitadel 可选、asynq 可选、CDN 可选） |
-| C | 1k～5k | App 3+ 副本 | Go 无状态多副本 + PG 主读副本 + Redis + Meili + S3+CDN + asynq（Zitadel 建议） |
-| D | 5k～10k+ | K8s+HPA | K8s + PG 高可用 + Redis Cluster + Meili 集群 + 多区域 S3+CDN + Zitadel HA |
-
-与 Mirror 的分级差异：搜索（Meili）是 Hoard 独有，B 起必选；其余组件与 Mirror 共享同一套接口与部署语义。
+与 Mirror 的差异在搜索：Meilisearch 是 Hoard 独有组件，B 档起必选；A 档用 `pg_trgm`。其余组件与全局分级表一致，见[总规划](../getting-started/introduction.md) §6 与[部署](../deploy/index.md)。
 
 ## 风险与待决
 

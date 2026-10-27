@@ -20,3 +20,7 @@ title: ADR-0010 OIDC Provider 与登录方式注册表
 
 - 正：一套 Fosite 覆盖 SSO，无需 Zitadel；客户端管理经 `/api/admin/oauth-clients`；能力分层（token 存储、密钥）保留替换点。
 - 负：单实例内存 token 存储重启即失效；多实例需补 SQL/Redis 存储（已预留 `fosite.Storage` 接口）。
+
+## 修订（2026-10-23）
+
+OIDC token 存储已落 Postgres（`pgstore.OIDCStore`，`oidc_sessions` 表，migration 00009）。未设 `DATABASE_URL` 时仍回退内存存储。后果一节中"多实例需补 SQL/Redis 存储"随之解决。

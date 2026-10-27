@@ -12,12 +12,12 @@ title: Mythic Hoard（Mod 托管）
 
 | 层 | 选型 |
 |---|---|
-| 后端 | Go（chi + pgx + sqlc + oapi-codegen） |
-| 契约 | OpenAPI 3.1（`openapi-typescript` 生成前端 client） |
+| 后端 | Go（chi + pgx + sqlc） |
+| 契约 | OpenAPI 3.1（`openapi-typescript` 生成 TS client；Go 侧手写，漂移测试保证 spec 与路由一致） |
 | 数据库 | PostgreSQL + goose 迁移 |
 | 搜索 | Meilisearch（`Search` 接口，A 档 `pg_trgm`） |
 | 存储 | `Storage` 接口：local / MinIO / S3 + CDN |
-| 认证 | 内建 JWT/session（必选）+ Zitadel OIDC（可选） |
+| 认证 | OIDC RP（Mirror 为 IdP）+ 会话 cookie `hoard_session` + `mhp_` PAT |
 | 任务队列 | asynq（`Queue` 接口，A 档内联） |
 | 前端 | Next.js 或 Vite + React |
 | 限流 | Redis（`RateLimiter` 接口） |
@@ -41,7 +41,7 @@ title: Mythic Hoard（Mod 托管）
 
 - `project`：项目/版本/文件、loader/分类/标签、依赖。
 - `search`：`Search` 接口（Postgres `pg_trgm` / Meilisearch）与 facets。
-- `ingest`：上游镜像代理（Modrinth/CF）。
+- `ingest`：上游镜像代理（Modrinth/CF，规划中，未开放）。
 - `pack`：`.mrpack` 生成与解析。
 - `org`：组织、团队、成员、权限。
 - `review`：审核队列、举报、合规。
@@ -50,14 +50,16 @@ title: Mythic Hoard（Mod 托管）
 
 ## Modrinth 兼容 API 清单（子集，逐步对齐）
 
+已开放：
+
 - `GET /v2/search`：全文加 facets（categories、versions、license、project_type、loaders）
-- `GET /v2/project/{id|slug}`、`GET /v2/projects?ids=[]`
-- `GET /v2/project/{id}/version`、`GET /v2/version/{id}`、`GET /v2/versions?ids=[]`
-- `GET /v2/version_files`、`GET /v2/version_file/{hash}`
-- `GET /v2/tag/*`、`GET /v2/category`、`GET /v2/loader`、`GET /v2/project/{id}/dependencies`
-- `GET /v2/user`、`GET /v2/users?ids=[]`、`GET /v2/team/*`、`POST /v2/organization`
-- 下载：`/cdn/data/{project}/{version}/{file}`（S3 直出）
-- `.mrpack` 导出：`GET /v2/project/{id}/version/{vid}/mrpack`（含 `modrinth.index.json`）
+- `GET /v2/project/{id}`、`GET /v2/project/{id}/version`、`GET /v2/project/{id}/dependencies`、`GET /v2/version/{id}`
+- `GET /v2/project/{id}/version/{vid}/mrpack`：`.mrpack` 导出（含 `modrinth.index.json`）
+- `GET /v2/tag/{loader,game_version,category}`：元数据列表
+- 下载走本站路由：`/api/mods/{id}/download`、`/api/mods/{id}/version/{vid}/file/{fid}`（S3 直出）
+- 身份与团队走本站路由：`GET /auth/me`、`POST /api/team`、`GET /api/user/teams` 等，完整清单见仓库 README
+
+规划中（未开放，按需对齐）：批量查询 `/v2/projects?ids=[]`、`/v2/versions?ids=[]`、`/v2/version_files`、`/v2/version_file/{hash}`、`/v2/user`、`/v2/team/*`、`POST /v2/organization`，以及 `/cdn/data` 下载路径。
 
 关键实现点：
 

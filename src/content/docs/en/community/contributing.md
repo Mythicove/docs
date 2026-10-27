@@ -35,7 +35,7 @@ This page is the canonical contributing guide for all Mythicove repositories. Th
 ## Documentation and language conventions
 
 - Root-level repo documents (README, CHANGELOG, LICENSE.history and friends) are English by default, with Chinese variants suffixed .zh-CN.md. The two files link to each other at the top, and no file mixes two languages.
-- Site content defaults to zh-CN (the src/content/docs/ root), with English under src/content/docs/en/. Ship new pages in both languages where possible; untranslated pages fall back to Chinese.
+- Site content defaults to zh-CN (the src/content/docs/ root), with English under src/content/docs/en/. Ship new pages with an en stub: a page without an English version returns 404.
 - The canonical security policy, code of conduct and contributing guide are the pages in this Community section. Individual repositories only keep English pointer files.
 
 ## Architecture decisions

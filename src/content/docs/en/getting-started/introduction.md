@@ -17,9 +17,9 @@ The licensing philosophy, ELv2 boundaries and an intended-use FAQ: see the [lice
 
 ## Tech stack
 
-- **Backend**: Go (chi + pgx + sqlc), single binary, self-host friendly.
-- **Frontend**: Next.js + React + Tailwind, contract-first via OpenAPI.
-- **Storage / search / queue**: capability interfaces with swappable implementations (local → S3, pg_trgm → Meilisearch, inline → asynq).
+- Backend: Go (chi + pgx + sqlc), single binary, self-host friendly.
+- Frontend: Next.js + React + Tailwind, contract-first via OpenAPI.
+- Storage, search and queue: capability interfaces with swappable implementations (local → S3, pg_trgm → Meilisearch, inline → asynq).
 
 ## Scale tiers
 

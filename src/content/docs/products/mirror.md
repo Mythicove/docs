@@ -6,22 +6,22 @@ title: Mythic Mirror（皮肤站）
 
 ## 定位与目标
 
-为离线模式服务器提供"外置登录 + 自定义皮肤/披风"一站式服务。玩家注册账号、上传皮肤，服务端通过 authlib-injector 对接后，客户端即可加载皮肤。目标是做 Blessing Skin 的现代化替代：UI 现代、协议齐全、无 PHP EOL 风险，且从 10 人私服到 10k 公共站都能按需部署。
+为离线模式服务器提供外置登录与自定义皮肤/披风服务。玩家注册账号、上传皮肤，服务端通过 authlib-injector 对接后，客户端即可加载皮肤。目标是做 Blessing Skin 的现代化替代：UI 现代、协议齐全、无 PHP EOL 风险，且从 10 人私服到 10k 公共站都能按需部署。
 
 ## 技术栈
 
 | 层 | 选型 |
 |---|---|
-| 后端 | Go（chi + pgx + sqlc + oapi-codegen） |
-| 契约 | OpenAPI 3.1（`openapi-typescript` 生成前端 client） |
+| 后端 | Go（chi + pgx + sqlc） |
+| 契约 | OpenAPI 3.1（`openapi-typescript` 生成 TS client；Go 侧手写，漂移测试保证 spec 与路由一致） |
 | 数据库 | PostgreSQL + goose 迁移 |
 | 缓存/限流 | Redis（`Cache`/`RateLimiter` 接口，A 档可进程内） |
 | 存储 | `Storage` 接口：local / MinIO / S3 |
-| 认证 | 内建 JWT/session（必选）+ Zitadel OIDC（可选） |
-| 图片 | Go `image/draw` + `x/image`（校验/重编码/2D 头像） |
+| 认证 | 内建 session（必选）+ 自建 Fosite OIDC IdP（生态 SSO）；第三方 OAuth 为 GitHub/Microsoft |
+| 图片 | Go 标准库 `image`（校验/重编码/2D 头像） |
 | 前端 | Next.js 或 Vite + React |
 | 3D 预览 | bs-community/skinview3d |
-| 验证码 | Cloudflare Turnstile |
+| 验证码 | 多驱动（Turnstile、reCAPTCHA、hCaptcha、Cap 自托管），保护范围后台可配 |
 | 部署 | Docker + Caddy（分级见[计划](/plans/mirror/)） |
 
 ## 架构设计
@@ -39,7 +39,7 @@ title: Mythic Mirror（皮肤站）
 
 模块划分（每模块对应接口，便于替换实现）：
 
-- `auth`：账号、session、验证码；`Auth` 接口（内建 / OIDC-Zitadel）。
+- `auth`：账号、session、验证码；会话与 OIDC IdP 直接在本仓实现（ADR-0007、ADR-0010、ADR-0011）。
 - `yggdrasil`：认证端点、`join`/`hasJoined`、name↔UUID 解析。
 - `texture`：皮肤/披风上传、校验、模型识别、base64 属性构造与 RSA 签名。
 - `render`：2D 头像/预览 API（crafatar 兼容，`image/draw` 合成）。
@@ -57,7 +57,7 @@ title: Mythic Mirror（皮肤站）
 - `GET /sessionserver/session/minecraft/hasJoined?username=&serverId=&ip=`：服务端换取玩家资料
 - `GET /sessionserver/session/minecraft/profile/{uuid}?unsigned=false`：返回带签名的 profile（含 base64 textures）
 - `POST /api/profiles/minecraft`：批量 name→UUID 查询
-- 自定义：`GET /skin/{name|uuid}`、`GET /cape/{name|uuid}`、`GET /avatar|/head|/body/{uuid}`（crafatar 兼容）
+- 自定义：`GET /skin/{name}`、`GET /cape/{name}`、`GET /avatars/{uuid}`、`GET /avatars/by-name/{name}`、`GET /renders/head/{uuid}`、`GET /renders/body/{uuid}`、`GET /usm/{uuid}`、`GET /textures/{key}`，以及旧版 `MinecraftSkins`、`MinecraftCloaks` 直链
 
 关键实现点：
 

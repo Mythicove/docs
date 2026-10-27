@@ -25,7 +25,7 @@ title: Mythic Mirror 计划
 ### P2：社区化
 
 - 皮肤画廊、分享、点赞、标签、评论。
-- 作为 OIDC Provider（Zitadel 托管）供 Mythicove 生态其他产品统一登录。
+- 作为 OIDC Provider 供 Mythicove 生态其他产品统一登录（Mirror 自建 Fosite，ADR-0010/0011）。
 - USM、CSL（CustomSkinLoader）兼容 API。
 
 ## 数据模型（草案）
@@ -49,14 +49,7 @@ title: Mythic Mirror 计划
 
 ## 部署分级（Mirror 视角）
 
-Mirror 不需要搜索组件，分级更简单。全局分级见[部署](/deploy/)。
-
-| 层级 | 规模 | 资源 | 组件（必选到可选） |
-|---|---|---|---|
-| A | 10～100 | 1× 2C2G | Go 单二进制 + Postgres + 本地盘存储（内建账号、进程内限流） |
-| B | 100～1k | 2× 2C4G | Go 多副本 + Postgres + Redis + MinIO/R2（Zitadel 可选、CDN 可选） |
-| C | 1k～5k | App 3+ 副本 | Go 无状态多副本 + PG 主读副本 + Redis + S3+CDN（Zitadel 建议） |
-| D | 5k～10k+ | K8s+HPA | K8s + PG 高可用 + Redis Cluster + 多区域 S3+CDN + Zitadel HA |
+Mirror 不需要搜索组件。A 档为 Go 单二进制 + Postgres + 本地盘存储（内建账号、进程内限流）；B 档起按全局分级表补 Redis 与 MinIO/R2；C/D 档再加 PG 读副本与多区域 S3+CDN。全局分级表见[总规划](../getting-started/introduction.md) §6 与[部署](../deploy/index.md)。
 
 ## 风险与待决
 
