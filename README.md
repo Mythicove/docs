@@ -55,7 +55,7 @@ astro.config.mjs sets site to https://docs.gov.skin and deploys at the root path
 ## Internationalization
 
 - The default locale is zh-CN; English content lives in src/content/docs/en/.
-- Untranslated pages fall back to Chinese, so there are no dead links.
+- Pages without an English version return 404, so new pages ship with an en stub.
 - Sidebar group labels get their English translations from the sidebar translations entry in astro.config.mjs.
 
 ## License

@@ -55,7 +55,7 @@ astro.config.mjs 的 site 设为 https://docs.gov.skin，根路径部署，不�
 ## 多语言
 
 - 默认语言为 zh-CN，英文内容在 src/content/docs/en/。
-- 未翻译的页面回退到中文，避免死链。
+- 没有英文版的页面会 404，因此新页面同时提供 en stub。
 - 侧边栏分类标签的双语在 astro.config.mjs 的 sidebar translations 中配置。
 
 ## 许可证
