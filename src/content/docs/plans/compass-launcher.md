@@ -300,7 +300,32 @@ quilt ok: 307 loader versions, profile quilt-loader-0.31.0-beta.1-1.21.4 (libs 1
 
 **另外两条实测事实**：官方 installer **不下载原版的库**（装完后父版本的 113 条库里有 102 条不在磁盘上），它假定启动器已经装过父版本——我们的 `install_profile` 走清单解析父版本并下载全部库，所以比它完整，也正因如此 NeoForge 安装必须先能解析 `inheritsFrom`（P3 W8 已具备）。以及官方 installer 自己也会因一次 TLS 抖动失败（`jline-reader` 下载 `Remote host terminated the handshake`），而且**重试成功之后仍把它算进失败清单**并整体报错——我们自己的下载器不该有这种行为（P1 起就是"重试后按最终结果判定"）。
 
-**W9 下一步**：① ~~用一次真启动定论"原版 client jar 是否留在 classpath"~~ **已完成**（结论：一个游戏 jar 都不放，判据是 `--launchTarget`，见上）；② 实现 `install_profile.json` 解析 + data 变量解析（三种形态）+ 按 sides 过滤并按序执行 processor（主类从 jar 的 MANIFEST 读，用探测到的对应 Java 起子进程）；③ 装完把子版本 JSON 落盘即可，**不需要**再往库里追加 `{PATCHED}`/`{MC_EXTRA}` 合成条目（fml_loader 自己找）；④ Forge 1.13+ 复用同一套（installer 结构一致，注意 `maven.minecraftforge.net` 与 `patches/client.lzma`）；⑤ Forge 1.12.2 是另一套（无 processor），按计划里预写的降级验收处理。
+**W9 进度**：① 定论 classpath（一个游戏 jar 都不放，判据 `--launchTarget`）**已完成**；② `install_profile.json` 解析 + data 三种形态 + 按 sides 过滤按序跑 processor **已完成，NeoForge 真装通过**（见下面的实施记录）；③ 装完落盘子版本 JSON 即可，**不需要**往库里追加 `{PATCHED}`/`{MC_EXTRA}` 合成条目（fml_loader 自己找）**已确认**；④ Forge 1.13+ 复用同一套（`maven.minecraftforge.net`、`patches/client.lzma`）**未做**；⑤ Forge 1.12.2 是另一套（无 processor）**未做**；⑥ 我们自己装出来的那份 NeoForge **还没真启动过一次**（classpath 组合是用官方 installer 的产物验的）**未做**。
+
+### W9 实施记录（2026-10-28，NeoForge 已交付并真装验证）
+
+NeoForge 装得起来了，而且是**用我们自己的代码真装一遍**验的，不是照官方 installer 的产物反推：列版本 → 下 installer（带 `.sha1` 校验）→ 读 `install_profile.json` → 装父版本 → 下 70 条 installer 库 → 按 `sides` 过滤跑 6 个 client processor → 装子版本。
+
+```
+neoforge versions: 158 (chosen 21.4.161)
+installed: id=neoforge-21.4.161 jar=1.21.4 main=cpw.mods.bootstraplauncher.BootstrapLauncher java=21
+minecraft client artifacts: [client-…-extra.jar, client-…-mappings.txt, client-…-slim.jar, client-…-srg.jar]
+extracted installer entries: [client.lzma]
+classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组合一致）
+```
+
+**真跑出来的第一个失败比成功更有用**：processor 3（MCP_DATA）报 `Input does not exist: [net.neoforged:neoform:1.21.4-20241203.161809@zip]`——参数里除了 `{VAR}` 还有**内联的 Maven 坐标**（`[…]`）也要解析成库路径，而我只处理了前者。随后把真 profile 里所有 token 形态清点了一遍（13 个 `{VAR}` + 1 个 `[…]`，没有 `'literal'`），`substitute` 现在两种都认，且未知变量与不配对的括号一律报错而不是留字面量（留字面量的话，报错会出现在 Java 那边且看不出根因）。
+
+**顺带修掉一个会让整条 pipeline 崩的旧 bug**：`version::maven_path` 不认 `@ext` 后缀，`neoform:…@zip` 与 `…:mappings@txt` 都被拼成 `.jar`。这个 bug 在 Fabric/Quilt 上不可能暴露（它们的坐标没有 `@ext`），只有 Forge/NeoForge 用得到——**接入一个新数据源，往往就是在给旧代码做体检**。
+
+设计上的几个决定：
+
+- `install_profile.json` 的 fixture 是官方 installer 里那份 **130KB 原文，未裁剪**。裁剪版又会变成"我以为的格式"，而这份 profile 的所有关键事实（sides 分布是 3/4/5/6/8/9 跑 client、data 三种形态、70 条库都带 `downloads.artifact` 与真 sha1、**没有一个 processor 有 `outputs`**）都由 10 条测试直接对它断言。
+- `resolve_vars` 是**纯函数**，installer 内条目的解压单独一步（`extract_data_entries`）。第一版把 IO 混在变量表里，结果那条测试只能 panic——变量表算错了必须能离线测出来。
+- processor 的 `Main-Class` 从它自己 jar 的 MANIFEST 读，不写死（installertools / jarsplitter / AutoRenamingTool / binarypatcher 各有各的主类，且随版本变）。MANIFEST 解析收敛成 `archive::manifest_attr[_from_text]` 一份实现并处理 72 字节折行的续行；`content.rs` 的 `Implementation-Version` 兜底改为复用它。
+- `Installer` 借出 `downloader()` 与 `paths()`：processor 的 `{ROOT}`/`{LIBRARY_DIR}` 必须与安装产物落点是同一套布局，各造一份就会分岔。
+- 版本列表按"游戏版本去掉 `1.` 前缀"过滤（1.21.4 → `21.4.x`，NeoForge 自己的编号约定）；**过滤结果为空时退回完整列表**，好过给一个空列表加一句猜不出原因的提示。Maven 元数据没有 stable 的概念，所以 `stable` 全是 `None`（不显示成"开发版"）。
+- CI 的 smoke 作业加了 `setup-java` 21 与 `neoforge_live` 步骤，三平台都跑：processor pipeline 对路径分隔符与 java 可执行文件名敏感，**只在 Windows 上验过不算验过**。
 
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
