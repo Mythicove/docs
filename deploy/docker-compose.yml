@@ -28,6 +28,30 @@ services:
       MIRROR_WEB_URL: "${WEB_URL:-http://localhost:3101}"
       # CORS 白名单可独立于 WEB_URL 覆盖（逗号分隔多 origin：dev server + compose web 并存时）
       MIRROR_CORS_ORIGINS: "${MIRROR_CORS_ORIGINS:-${WEB_URL:-http://localhost:3101}}"
+      # ---- 邮件（driver=log|smtp|resend；log=只写日志，默认）----
+      MIRROR_MAIL_DRIVER: "${MIRROR_MAIL_DRIVER:-log}"
+      MIRROR_SMTP_ADDR: "${MIRROR_SMTP_ADDR:-}"
+      MIRROR_SMTP_FROM: "${MIRROR_SMTP_FROM:-}"
+      MIRROR_SMTP_USER: "${MIRROR_SMTP_USER:-}"
+      MIRROR_SMTP_PASS: "${MIRROR_SMTP_PASS:-}"
+      MIRROR_RESEND_API_KEY: "${MIRROR_RESEND_API_KEY:-}"
+      MIRROR_RESEND_FROM: "${MIRROR_RESEND_FROM:-}"
+      # ---- 验证码（driver 留空=不启用；cap 实例地址同时被 web 构建复用，见下方 web.build.args）----
+      MIRROR_CAPTCHA_DRIVER: "${MIRROR_CAPTCHA_DRIVER:-}"
+      MIRROR_CAPTCHA_SITE_KEY: "${MIRROR_CAPTCHA_SITE_KEY:-}"
+      MIRROR_CAPTCHA_SECRET: "${MIRROR_CAPTCHA_SECRET:-}"
+      MIRROR_CAPTCHA_CAP_URL: "${MIRROR_CAPTCHA_CAP_URL:-}"
+      # ---- 纹理存储（local|s3；s3 需补 ENDPOINT/BUCKET/密钥）----
+      # 有代码默认值的变量必须在此显式兜底：compose 传空串会覆盖掉默认值
+      MIRROR_STORAGE_DRIVER: "${MIRROR_STORAGE_DRIVER:-local}"
+      MIRROR_S3_ENDPOINT: "${MIRROR_S3_ENDPOINT:-}"
+      MIRROR_S3_REGION: "${MIRROR_S3_REGION:-auto}"
+      MIRROR_S3_BUCKET: "${MIRROR_S3_BUCKET:-}"
+      MIRROR_S3_ACCESS_KEY: "${MIRROR_S3_ACCESS_KEY:-}"
+      MIRROR_S3_SECRET_KEY: "${MIRROR_S3_SECRET_KEY:-}"
+      # ---- 多实例：Redis（共享缓存/限流）；CDN/云 LB 边缘网段（逗号分隔，见 docs/deploy）----
+      MIRROR_REDIS_ADDR: "${MIRROR_REDIS_ADDR:-}"
+      MIRROR_TRUSTED_PROXIES: "${MIRROR_TRUSTED_PROXIES:-}"
     volumes:
       - mirrordata:/data
     healthcheck:
@@ -64,6 +88,21 @@ services:
       # rewrite transport 会保留 issuer 的 Host 头，故 iss 校验不受影响。
       HOARD_OIDC_INTERNAL_BASE_URL: "${HOARD_OIDC_INTERNAL_BASE_URL:-http://mirror:8080}"
       HOARD_ADMIN_SUBJECTS: "${HOARD_ADMIN_SUBJECTS:-}"
+      # ---- mod 文件存储（local|s3）----
+      HOARD_STORAGE_DRIVER: "${HOARD_STORAGE_DRIVER:-local}"
+      HOARD_S3_ENDPOINT: "${HOARD_S3_ENDPOINT:-}"
+      HOARD_S3_REGION: "${HOARD_S3_REGION:-auto}"
+      HOARD_S3_BUCKET: "${HOARD_S3_BUCKET:-}"
+      HOARD_S3_ACCESS_KEY: "${HOARD_S3_ACCESS_KEY:-}"
+      HOARD_S3_SECRET_KEY: "${HOARD_S3_SECRET_KEY:-}"
+      # ---- 搜索（pgtrgm|meili）与队列（inline|asynq；asynq 需 REDIS_ADDR）----
+      HOARD_SEARCH_DRIVER: "${HOARD_SEARCH_DRIVER:-pgtrgm}"
+      HOARD_MEILI_URL: "${HOARD_MEILI_URL:-}"
+      HOARD_MEILI_API_KEY: "${HOARD_MEILI_API_KEY:-}"
+      HOARD_QUEUE_DRIVER: "${HOARD_QUEUE_DRIVER:-inline}"
+      HOARD_REDIS_ADDR: "${HOARD_REDIS_ADDR:-}"
+      # ---- CDN/云 LB 边缘网段（逗号分隔，见 docs/deploy）----
+      HOARD_TRUSTED_PROXIES: "${HOARD_TRUSTED_PROXIES:-}"
     volumes:
       - hoarddata:/data
     healthcheck:
@@ -105,6 +144,9 @@ services:
       context: ./web
       args:
         NEXT_PUBLIC_API_URL: "${API_URL:-http://localhost:8080}"
+        # web 的公开 origin（metadataBase/sitemap/robots）。不能传空串：
+        # 空串会绕过代码里的 ?? 回退并让 new URL("") 抛错，故与本文件其余 WEB_URL 用同一默认。
+        NEXT_PUBLIC_WEB_URL: "${WEB_URL:-http://localhost:3101}"
         NEXT_PUBLIC_LOCALE_PREFIX: "${LOCALE_PREFIX:-never}"
         NEXT_PUBLIC_INDEXABLE: "${INDEXABLE:-false}"
         # CSP 在构建期烘焙：driver=cap 时必须让 web 知道验证码实例地址，否则

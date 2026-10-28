@@ -5,7 +5,8 @@ groups:
   - name: mythicove-availability
     rules:
       - alert: ServiceDown
-        expr: up{job=~"mirror|hoard|web"} == 0
+        # 抓取目标只有 mirror/hoard：web（Next）不暴露 /metrics，故不进 up 的 job 白名单
+        expr: up{job=~"mirror|hoard"} == 0
         for: 2m
         labels:
           severity: critical

@@ -5,14 +5,15 @@
 #   `docker compose up -d db mirror hoard caddy` 跳过 web 服务，
 #   本文件末尾的 web 兜底路由会因上游缺失返回 502（API 路径不受影响），见 docs/deploy。
 :8080 {
-	# ---- Hoard：Modrinth 兼容 API / SSO 会话 / 团队 / PAT ----
+	# ---- Hoard：Modrinth 兼容 API / SSO 会话 / 团队 / PAT / 文件直出 ----
 	reverse_proxy /v2/* hoard:8081
 	reverse_proxy /api/mods* hoard:8081
 	reverse_proxy /auth/* hoard:8081
 	reverse_proxy /api/team* hoard:8081
 	reverse_proxy /api/user* hoard:8081
+	reverse_proxy /cdn/* hoard:8081
 
-	# ---- Web：BFF 会话路由与 GET 落地页（必须先于 mirror 的 /api/*、/account/* 兜底）----
+	# ---- Web：BFF 会话路由与 GET 落地页（必须先于 mirror 的 /api/*、/account/*、/oauth/* 兜底）----
 	# /api/auth/*：Next 路由处理器，token 只在服务端经手（httpOnly cookie 会话）
 	reverse_proxy /api/auth/* web:3000
 	# 邮件落地页 GET 是 web 页面；同名 POST（/account/verify 等）是 mirror API，由下方规则承接
@@ -21,11 +22,23 @@
 		method GET
 	}
 	reverse_proxy @web_landing web:3000
+	# OIDC 登录页/授权同意页：mirror 的 IdP（/oauth2/auth）302 到 web 渲染，
+	# 而 mirror 自身只服务 /oauth/{provider}/auth|callback（第三方登录）→ 这两条必须先于 @mirror。
+	reverse_proxy /oauth/login* web:3000
+	reverse_proxy /oauth/consent* web:3000
 
 	# ---- Mirror：Yggdrasil / 账号 / 皮肤库 / 纹理 / 渲染 / 管理 / OIDC Provider ----
 	# /metrics 有意不经网关暴露（Prometheus 在 compose 网络内直抓 mirror:8080/hoard:8081）
-	@mirror path /authserver/* /sessionserver/* /api/* /account/* /oauth/* /oauth2/* /mojang/* /skinlib* /skin/* /cape/* /textures/* /avatars/* /renders/* /usm/* /MinecraftSkins/* /MinecraftCloaks/* /admin/batch-import /site/* /.well-known/openid-configuration /.well-known/jwks.json /healthz
+	# /reports：举报提交（mirror API）；根路径 / 的 JSON 元信息由下方 @yggmeta 承接
+	@mirror path /authserver/* /sessionserver/* /api/* /account/* /oauth/* /oauth2/* /mojang/* /skinlib* /skin/* /cape/* /textures/* /avatars/* /renders/* /usm/* /MinecraftSkins/* /MinecraftCloaks/* /admin/batch-import /site/* /reports /.well-known/openid-configuration /.well-known/jwks.json /healthz
 	reverse_proxy @mirror mirror:8080
+
+	# ---- Yggdrasil 根元信息：启动器 GET / 带 JSON Accept（浏览器落地页仍走 web）----
+	@yggmeta {
+		path /
+		header Accept *json*
+	}
+	reverse_proxy @yggmeta mirror:8080
 
 	# ---- 其余（页面 / _next 静态资源 / favicon 等）→ Web 前端 ----
 	reverse_proxy web:3000

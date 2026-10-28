@@ -37,10 +37,10 @@ title: Compass 启动器开发计划
 2. **重逻辑放 Rust，前端只做视图。** 版本/资源/库的解析、下载调度、Java 探测、参数拼装、进程管理全部在 Rust；React 通过 `invoke` 取状态、通过 Tauri event 收进度。不在前端拼启动参数（前端拼一次就得在三平台各错一次）。
 3. **全局缓存 + 实例隔离。** `assets/objects`、`libraries`、`versions/<id>`（version json + client jar）、`java/`（自动下载的 JRE）、`authlib-injector.jar` 全局共享（按 sha1/Maven 坐标天然去重，多实例不重复下载）；实例只存自己的 `instance.json` + `.minecraft/`（游戏目录：mods/config/saves/resourcepacks/options.txt/logs）。目录布局：
    ```
-   <AppData>/MythicCompass/          # Windows %APPDATA%、macOS ~/Library/Application Support、Linux $XDG_DATA_HOME
-     compass.json                    # 全局设置：语言、主题、下载并发与镜像、Java 列表、默认内存
-     accounts.dat                    # 账号（令牌入系统钥匙串，见 P4）
-     cache/{assets,libraries,versions,java}/
+   <app_data_dir>/com.mythicove.compass/   # Tauri app_data_dir（identifier com.mythicove.compass）：Windows %APPDATA%、macOS ~/Library/Application Support、Linux $XDG_DATA_HOME
+     compass.json                          # 全局设置：语言、主题、下载并发与镜像、默认内存（无 Java 列表字段，Java 靠实测探测）
+     accounts.json                         # 账号（令牌入系统钥匙串，见 P4）
+     cache/{assets,libraries,versions,java,tools}/
      instances/<slug>/{instance.json,.minecraft/}
    ```
 4. **下载策略统一一处实现**：并发（默认 32，可配）、失败重试（指数退避）、sha1 与 size 校验、`Range` 断点续传、镜像源可切换（默认官方 `piston-meta.mojang.com` / `resources.download.minecraft.net` / `libraries.minecraft.net`，可选 BMCLAPI 等国内镜像）。**校验失败的文件一律丢弃重下**，不留半截文件（半截 jar 会让游戏以极难诊断的方式崩溃）。

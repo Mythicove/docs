@@ -29,7 +29,7 @@ docker compose up -d db
 # 2. 恢复 Postgres
 docker compose exec -T db pg_restore -U mirror -d mirror --clean --if-exists < /var/backups/mythicove/<stamp>/postgres.dump
 
-# 3. 恢复文件卷
+# 3. 恢复文件卷（卷名带 compose 项目前缀，默认=目录名；用 docker volume ls 确认）
 docker run --rm -v mythicove_mirrordata:/data -v /var/backups/mythicove/<stamp>:/backup alpine \
   sh -c 'cd /data && tar xzf /backup/mirror-textures.tar.gz'
 docker run --rm -v mythicove_hoarddata:/data -v /var/backups/mythicove/<stamp>:/backup alpine \
@@ -37,7 +37,9 @@ docker run --rm -v mythicove_hoarddata:/data -v /var/backups/mythicove/<stamp>:/
 
 # 4. 起全栈并验证
 docker compose up -d
-curl -sf http://localhost:8080/healthz && curl -sf http://localhost:8081/healthz
+curl -sf http://localhost:8080/healthz    # 统一入口网关（mirror 的 /healthz，经 Caddyfile 分流）
+# hoard 不发布宿主端口，只能在容器内探：
+docker compose exec hoard wget -qO- http://127.0.0.1:8081/healthz
 ```
 
 ## 恢复演练

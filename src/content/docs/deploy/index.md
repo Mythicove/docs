@@ -54,7 +54,7 @@ docker compose up -d db mirror hoard caddy   # 跳过 web 服务
 
 ## 镜像发布（GHCR）
 
-各仓库在打 `v*` tag 时，GitHub Actions 会自动构建并推送到 `ghcr.io/Mythicove/<repo>`：
+各仓库在打 `v*` tag 时，GitHub Actions 会自动构建并推送到 `ghcr.io/mythicove/<repo>`（镜像名全小写，发布工作流会把 `github.repository` 转小写）：
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0

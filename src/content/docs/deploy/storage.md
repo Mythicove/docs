@@ -27,8 +27,14 @@ S3 驱动覆盖所有 S3 兼容服务商（MinIO / R2 / AWS / OSS / COS 等）�
 
 ## 直出 URL
 
-- 本地：`{baseURL}/textures/{key}`（Mirror）/ `{baseURL}/cdn/{key}`（Hoard）。
-- S3：配置 `baseURL`（CDN 域名）时直接拼接，否则生成 15 分钟预签名 URL。
+`local` 与 `s3` 两种 driver 给浏览器的都是**经网关的应用路由**（服务端从存储读出再转发），URL 形态不随 driver 变化：
+
+- Mirror：`{baseURL}/textures/{key}`（网关 `/textures/*` → mirror）。
+- Hoard：`{baseURL}/cdn/{key}`（网关 `/cdn/*` → hoard）。
+
+`baseURL` 即对外站点地址（`MIRROR_TEXTURES_BASE_URL` / `HOARD_BASE_URL`），也可换成 CDN 域名。
+
+`PresignGet` 只是 `Storage` 接口的一项能力：s3 实现在 `baseURL` 留空时才退回 15 分钟预签名 URL（私有桶直连场景）。正常部署都配了 `baseURL`，浏览器拿到的是上面两种路由地址，不是预签名 URL。
 
 ## CDN 刷新
 
