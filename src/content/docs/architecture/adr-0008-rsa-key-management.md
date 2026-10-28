@@ -12,9 +12,15 @@ Minecraft 1.19+ 要求 Yggdrasil 服务端用 RSA 私钥对 profile 的 `texture
 ## 决策
 
 - 密钥对在**初始化时生成**（RSA-2048，可上 3072/4096）；私钥存文件/环境变量/KMS，**绝不进仓库**。
-- 根 `GET /` meta 返回 `signaturePublickey`（base64 PEM）；签名值写入 profile 属性 `signature`（base64）。
+- 根 `GET /` meta 返回 `signaturePublickey`（**PEM 文本**，不再 base64 包装）；签名值写入 profile 属性 `signature`（base64）。
 - **轮换**：v1 单密钥对，通过更换配置 + 重启生效；预留 key id 字段，后续做优雅轮换。
 - 公钥编码与签名格式在 M1 实现时以 authlib-injector 文档 + yggdrasil-mock 逐位对齐。
+
+> 2026-10-28 修正：`signaturePublickey` 一度实现成 **base64(PEM)**，且旧单测把这个形状固化了下来
+> （测试先解 base64 再 `pem.Decode`，只能证明"我们自己解得开"）。真用 authlib-injector 1.2.8
+> 启动一次 Minecraft 才暴露：注入端报 `Unable to parse metadata: Bad signature public key`
+> 并放弃注入，客户端因此认不到本站皮肤。规范里这个字段就是 PEM 文本。
+> 教训与"上一条要求逐位对齐"是同一件事：**与外部客户端的格式契约，只能由那个客户端来验**。
 
 ## 后果
 

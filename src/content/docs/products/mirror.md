@@ -49,7 +49,7 @@ title: Mythic Mirror（皮肤站）
 
 ## Yggdrasil API 清单（对齐 authlib-injector 规范）
 
-- `GET /`：meta，返回 `{"meta":{...},"skinDomains":["..."],"signaturePublickey":"<PEM base64>"}`
+- `GET /`：meta，返回 `{"meta":{...},"skinDomains":["..."],"signaturePublickey":"-----BEGIN PUBLIC KEY-----\n…"}`（PEM 文本，**不是** base64 包装：authlib-injector 直接按 PEM 解析）
 - `POST /authserver/authenticate`：玩家名加该玩家的独立密码换 token 和用户资料（ADR-0012：网站主密码不进协议端点，站点因此可以只留第三方登录）
 - `POST /authserver/refresh`：刷新 token
 - `POST /authserver/validate`、`POST /authserver/invalidate`、`POST /authserver/signout`
