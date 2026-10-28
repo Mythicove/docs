@@ -26,7 +26,14 @@ title: Compass 启动器开发计划
    - **打包/签名/公证/自动更新**：`tauri-action` + `tauri-plugin-updater` 现成，三平台 CI 已跑通并出过 draft release；GPUI 这条链要自己搭，P5/P6 明显变重。
    - **GPUI 的额外代价**：0.2.x 意味着 API 会随 Zed 变动；文档以 Zed 内部用法为主；无 i18n、无障碍成熟度未知。**而用户看不到收益**——启动器不是代码编辑器，不需要自定义 GPU 渲染管线。它真正合适的场景是"游戏内覆盖层"这类极度自定义的绘制面，将来那一块可以单独用 wgpu，不必换外壳。
    - **Go/Wails 的诱惑与真相**：好处是与后端同语言、能复用 `shared/mc`、交叉编译更省事（不需 MSVC 工具链）。但启动器与后端的**共享面很窄**：只有离线 UUID 派生（`UUID.nameUUIDFromBytes("OfflinePlayer:"+name)`，Rust 侧 20 行等价实现，并用契约测试与 mirror 的输出逐字节对齐——比"共用一个库"更可靠）与几个数据结构。而 Wails 仍然是 webview，三平台不一致的代价一分不少，却少了 Tauri 的 capabilities/更新/打包体系。
-   - **Tauri 的真实缺点与缓解**：三平台 webview 不一致，Linux 的 WebKitGTK 最弱（渲染怪癖、WebGL 可能不可用、老发行版版本旧）；多一个 webview 进程约 100~200MB 内存；跨 IPC 调试比同进程麻烦。缓解：UI 不碰前沿 web API；**WebGL 不可用时 3D 预览降级为 2D 平面贴图**（P1 实现）；安装文档写明 WebKitGTK 版本要求；CI 已有 ubuntu-latest 这条腿。
+   - **Tauri 的真实缺点与缓解**：三平台 webview 不一致，Linux 的 WebKitGTK 最弱（渲染怪癖、WebGL 可能不可用、老发行版版本旧）；多一个 webview 进程约 100~200MB 内存；跨 IPC 调试比同进程麻烦。缓解：UI 不碰前沿 web API；3D 预览走下面的梯队兜底（2026-10-28 修订，取代原"WebGL 不可用降级 2D"单点方案）；安装文档写明 WebKitGTK 版本要求；CI 已有 ubuntu-latest 这条腿。
+
+   **2026-10-28 补充：Linux 体验一致化路径（目标是三平台一致，不是降级）**。Linux 不一致的根源是系统 WebKitGTK 版本随发行版漂移（Debian 12 还在 2.3x，WebGL 靠驱动运气；2.40+ 走 ANGLE 后端基本正常）。四层补全：
+   - **Flatpak 钉版本（主渠道）**：GNOME runtime 自带新版 WebKitGTK，宿主发行版是什么版本不再重要；配合 Windows 的 WebView2 evergreen、macOS 的 WKWebView 随系统更新，三平台 webview 版本全部钉死。deb/rpm 作次级渠道，依赖声明写清 WebKitGTK 最低版本；不做 AppImage（捆绑 webkit2gtk 容易在沙箱与 GPU 进程上翻车）。
+   - **软件渲染 WebGL（视觉一致的兜底）**：skinview3d 场景极轻（64×64 贴图、单模型、小画布），GPU context 拿不到时强制 llvmpipe 软件渲染重试（`LIBGL_ALWAYS_SOFTWARE=1` / `GALLIUM_DRIVER=llvmpipe`，Mesa 各发行版自带），60fps 无压力，画面与 GPU 路径逐像素相同，只是烧 CPU。启动器是原生进程，能在 webview 初始化前设好环境变量，用户无感——这是 Tauri 壳相对纯 web 的优势。
+   - **已知 webview 怪癖自愈**：Tauri 的 Linux 老 issue（#6559 WebGL context lost、#7761 窗口冻结）多指向特定驱动组合且社区已有解法。Rust 侧按检测到的环境自动逐个重试并在日志页记录最终生效的组合：`WEBKIT_DISABLE_DMABUF_RENDERER=1`（NVIDIA + Wayland 白屏/花屏的标准修复）、软件渲染变量等。
+   - **3D 预览兜底梯队**（原"降级 2D"方案降为末位）：① GPU WebGL2/1（skinview3d）→ ② 软件 WebGL（同一套代码，逐像素一致）→ ③ CSS 3D（`preserve-3d` 贴图盒子，仍可旋转立体，无 WebGL 依赖）→ ④ mirror 的 `/renders/head`、`/renders/body` 服务端渲染静态图。Flatpak + 梯队②落地后，实际落到③④的用户接近于零。
+   - **工程保障**：基线锁最老受支持 WebKitGTK（Ubuntu 24.04 / Debian 12 容器）跑 Playwright-WebKit 冒烟测试进 CI；特性一律 feature-detect，不做 UA 嗅探。
 2. **重逻辑放 Rust，前端只做视图。** 版本/资源/库的解析、下载调度、Java 探测、参数拼装、进程管理全部在 Rust；React 通过 `invoke` 取状态、通过 Tauri event 收进度。不在前端拼启动参数（前端拼一次就得在三平台各错一次）。
 3. **全局缓存 + 实例隔离。** `assets/objects`、`libraries`、`versions/<id>`（version json + client jar）、`java/`（自动下载的 JRE）、`authlib-injector.jar` 全局共享（按 sha1/Maven 坐标天然去重，多实例不重复下载）；实例只存自己的 `instance.json` + `.minecraft/`（游戏目录：mods/config/saves/resourcepacks/options.txt/logs）。目录布局：
    ```
