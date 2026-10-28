@@ -94,7 +94,7 @@ title: Compass 启动器开发计划
 
 ### P1 实施记录（2026-10-28，核心已交付）
 
-已落地十个 Rust 模块 + 命令层 + UI 接线（实例建/装/启/停、下载进度、实时日志页），`cargo test` 92 passed、`clippy -D warnings` 干净、真下载冒烟本地通过（release 91.6s 装完 1.21.4：client jar + 84 库 + 4039 资源对象，幂等重装全 skipped）。**尚未做**：真机"启动到主菜单"（需显示环境；冒烟的 `COMPASS_SMOKE_LAUNCH=1` 分支已写好）、loader 与整合包（P3）。
+已落地十个 Rust 模块 + 命令层 + UI 接线（实例建/装/启/停、下载进度、实时日志页），`cargo test` 92 passed、`clippy -D warnings` 干净、真下载冒烟本地通过（release 91.6s 装完 1.21.4：client jar + 84 库 + 4039 资源对象，幂等重装全 skipped）。**并且真机把游戏拉起来过**（Windows + Java 21 + javaw，用真账号走 ADR-0012 的启动器登录链路，注入 authlib-injector 指向本站，游戏到 `Setting user:` 与 `Backend library: LWJGL 3.3.3+5` 后主动停止）。**尚未做**：loader 与整合包（P3）、mod/内容管理（P2）。
 
 与计划文本的差异，以及只有真数据/真网络才暴露的问题：
 
@@ -104,6 +104,8 @@ title: Compass 启动器开发计划
 - **失败清单要报实际请求的 URL**：原来只报原始 URL，用户配了镜像却看到官方域名，无法判断是源站坏还是镜像坏；且几千个文件全拼进一个错误串（74 条 = 几十 KB 的 HTML 403）。现改为报生效 URL 并截断成"前 5 条 + 另 N 个"。
 - **一次误诊，记下判据**：本地资源全 404 时我判定为"本机网络拦截 Mojang CDN"，还据此加了镜像回退。真相是 URL 拼错——用同样错误的 URL 去 curl 当然也 404。**当三个独立干净环境给出同一个失败时，问题几乎一定在代码里。**
 - 其余从真实样本挖出并钉进测试的细节：现代 natives 是 4 段坐标走 classpath、老式才有 `natives`+`extract`；1.21.4 的 arm64 natives 只有 `os.name` 规则没有 arch 规则（同平台多条命中就全放行）；Fabric 的库没有 `downloads` 块且部分条目无校验和（空 sha1 = 无从校验，不等于校验通过）；`-Dlog4j.configurationFile` 不在 `arguments.jvm` 里；Log4Shell 边界是 1.18.1；库条数按平台钉死（1.21.4：Win 84 / macOS 77 / Linux 70）。
+- **真机启动抓到 mirror 的一个真 bug**：`GET /` meta 的 `signaturePublickey` 实现成了 **base64(PEM)**，authlib-injector 1.2.8 报 `Unable to parse metadata: Bad signature public key` 并放弃注入——游戏照样能启动，但皮肤与进服身份全废，属于"看起来能用其实坏了"的最难查那一类。mirror 侧已修为 PEM 文本（ADR-0008 补了修正说明）。**mirror 的旧单测把这个错误形状固化了**（先解 base64 再 `pem.Decode`，只能证明"我们自己解得开"）。可复用的结论：**与外部客户端的格式契约，只能由那个客户端来验**。
+- 启动编排（读版本 → 选 Java → 备 injector → 拼命令行 → 解压 natives）收敛为 `runner::prepare_launch` 一份实现，命令层与冒烟测试共用；测试里重写一遍顺序的话，它只能证明自己是对的。
 
 ## Phase 2: 实例与内容管理（预计 3 周）
 
@@ -162,6 +164,7 @@ title: Compass 启动器开发计划
 
 - **W13 日志与崩溃诊断**
   - 游戏日志查看器：实时流、ANSI 颜色、级别过滤、搜索、复制/导出、日志轮转；`logs/latest.log` 与 `crash-reports/` 归档列表。
+  - **实测约束（2026-10-28 真机启动时发现的）**：传了 Mojang 的 `logging.client` 配置后，stdout 是 **XML 形式**（`<log4j:Message><![CDATA[Setting user: …]]></log4j:Message>`），不是纯文本。所以查看器要么解析这个 XML appender，要么改传自己的 plain-pattern 配置——**不能只做纯文本渲染**，否则用户看到的是一堆 CDATA。选前者还是后者要连带考虑：崩溃分析规则库是照着纯文本日志写的，而 `crash-reports/` 里的文件始终是纯文本。
   - 崩溃分析规则库（正则/关键字 → 人话 + 建议动作）：缺 mod、mod 版本不匹配、Java 版本不对、内存不足（OOM）、显卡驱动/LWJGL 初始化失败、Forge/NeoForge processor 失败、混装 loader（Fabric mod 进 Forge 实例）、磁盘空间不足、杀毒软件锁文件；命中后给出"一键动作"（如"切到 Java 17""补装缺失依赖""打开日志"）。
   - 安装/启动全过程的操作日志（可导出，供提 issue 用）。
 - **W14 Java 自动下载**
