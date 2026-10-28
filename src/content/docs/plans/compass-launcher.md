@@ -283,12 +283,24 @@ quilt ok: 307 loader versions, profile quilt-loader-0.31.0-beta.1-1.21.4 (libs 1
 
 **两个必须先解决的关键点**：
 
-1. **打过补丁的 client jar 不在任何 JSON 里。** `version.json` 的 47 条库中既没有 `net.neoforged:neoforge:21.4.161:client`，也没有 `net.minecraft:client:…:extra`（grep 结果 0 命中），官方 installer 也只是把 `/version.json` 原样写出。所以启动 classpath 要由**启动器自己补**：`{PATCHED}` 与 `{MC_EXTRA}` 都得加上（`-DignoreList=client-extra,…` 正好反证 client-extra 在 classpath 上）。**尚未定论的是原版 `1.21.4.jar` 要不要同时留在 classpath 上**——`slim + extra` 是原版 jar 切出来的两半，`{PATCHED}` 是 slim 改名打补丁后的结果，所以 patched + extra 理论上已经覆盖原版内容，再放一份原版 jar 就是重复类。下一步要用一次真启动来定（见下面的未完成项）。
+1. **打过补丁的 client jar 不在任何 JSON 里。** `version.json` 的 47 条库中既没有 `net.neoforged:neoforge:21.4.161:client`，也没有 `net.minecraft:client:…:extra`（grep 结果 0 命中），官方 installer 也只是把 `/version.json` 原样写出。**已定论（真启动验过，提交 `a011e99`）：classpath 只放合并去重后的库，一个游戏 jar 都不放**——原版 jar、补丁 jar、extra jar 放进去都会因**自动模块重名**失败：
+
+   | classpath 里放了什么 | 结果 |
+   |---|---|
+   | 原版 `1.21.4.jar` | `ResolutionException: Modules _1._21._4 and minecraft export package net.minecraft.util.profiling.jfr.event`（`_1._21._4` 就是 `1.21.4.jar` 的自动模块名） |
+   | 补丁 `neoforge-21.4.161-client.jar` | `ResolutionException: Module mixin_synthetic reads more than one module named neoforge` |
+   | **只放库** | `Launching target 'neoforgeclient'` → Datafixer → MixinExtras → `Setting user: Tester` → `Backend library: LWJGL version 3.3.3+5`，2187 行日志、stderr 空 |
+
+   模块名是用 `jar --describe-module` 查实的：`neoforge-…-client.jar` 与 `neoforge-…-universal.jar` 的自动模块名**都是 `neoforge`**，`client-…-srg.jar` 与 `client-…-extra.jar` **都是 `client`**。原因也清楚了：`fml_loader` 自己按坐标去 libraries 目录找游戏 jar（日志里 `Found mod file … [locator: production client provider +net.neoforged:neoforge:21.4.161:client]`），启动器再塞一个进去就撞名。
+   
+   判据取自**数据**而非版本表：游戏参数里有没有 `--launchTarget`（ModLauncher 的入口参数）。NeoForge 与 Forge 1.17+ 有；Fabric/Quilt 走 KnotClient、Forge 1.12 走 `--tweakClass`，都没有（它们**必须**有原版 jar 在 classpath 上）。四种情况一个判据全对。`LaunchOptions.client_jar` 因此改成 `Option`，`runner` 只在需要时才检查它存在；反向也钉住了——原版与 Fabric 缺 client jar 时仍然报 `client jar missing`。
+
+   另记一个只有真跑才知道的坑：`--launchTarget` 缺失时 `fml_loader` 拿到 `null`，在 `ImmediateWindowHandler.load` 里 NPE（`List.of("neoforgeclient","neoforgeclientdev").contains(null)`），**栈里完全看不出版本 JSON 少了一段参数**。所以有一条测试专门断言 `--launchTarget` 与四个 `--fml.*` 参数在合并后仍在、且排在父版本参数之前。
 2. **库必须按 Maven 身份去重**（已修，提交 `6f349a0`）：原版 1.21.4 带 `org.ow2.asm:asm:9.6`，NeoForge 带 9.8 且把它放进模块路径，两份同时在 classpath 上时 BootstrapLauncher 直接抛 `Module named org.objectweb.asm was already on the JVMs module path … but class-path contains it at …asm-9.6.jar`。这条报错是**真跑出来的**，不是推测。Fabric 同样重复带 asm（9.10.1 对 9.6），只是没有模块路径检查所以一直没炸。去重键 = `group:artifact[:classifier[@ext]]`，不含版本号（子赢），classifier 必须进键（`lwjgl` 与其 `natives-*` 分片是两个文件）。
 
 **另外两条实测事实**：官方 installer **不下载原版的库**（装完后父版本的 113 条库里有 102 条不在磁盘上），它假定启动器已经装过父版本——我们的 `install_profile` 走清单解析父版本并下载全部库，所以比它完整，也正因如此 NeoForge 安装必须先能解析 `inheritsFrom`（P3 W8 已具备）。以及官方 installer 自己也会因一次 TLS 抖动失败（`jline-reader` 下载 `Remote host terminated the handshake`），而且**重试成功之后仍把它算进失败清单**并整体报错——我们自己的下载器不该有这种行为（P1 起就是"重试后按最终结果判定"）。
 
-**W9 下一步（未做）**：① 用一次真启动定论"原版 client jar 是否留在 classpath"；② 实现 `install_profile.json` 解析 + data 变量解析（三种形态）+ 按 sides 过滤并按序执行 processor（主类从 jar 的 MANIFEST 读，用探测到的对应 Java 起子进程）；③ 把 `{PATCHED}`/`{MC_EXTRA}` 作为合成库条目追加进子版本 JSON（这样合并后的 JSON 仍然自描述，启动路径不需要为 NeoForge 开特例）；④ Forge 1.13+ 复用同一套（installer 结构一致，注意 `maven.minecraftforge.net` 与 `patches/client.lzma`）；⑤ Forge 1.12.2 是另一套（无 processor），按计划里预写的降级验收处理。
+**W9 下一步**：① ~~用一次真启动定论"原版 client jar 是否留在 classpath"~~ **已完成**（结论：一个游戏 jar 都不放，判据是 `--launchTarget`，见上）；② 实现 `install_profile.json` 解析 + data 变量解析（三种形态）+ 按 sides 过滤并按序执行 processor（主类从 jar 的 MANIFEST 读，用探测到的对应 Java 起子进程）；③ 装完把子版本 JSON 落盘即可，**不需要**再往库里追加 `{PATCHED}`/`{MC_EXTRA}` 合成条目（fml_loader 自己找）；④ Forge 1.13+ 复用同一套（installer 结构一致，注意 `maven.minecraftforge.net` 与 `patches/client.lzma`）；⑤ Forge 1.12.2 是另一套（无 processor），按计划里预写的降级验收处理。
 
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
