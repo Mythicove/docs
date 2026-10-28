@@ -15,7 +15,7 @@ Modrinth 在 2024 年把代码从 AGPL-3.0 改成 source-available（非 OSI 开
 
 | 资产 | 许可证 | 理由 |
 |---|---|---|
-| 产品（`mythic-mirror`/`mythic-hoard`/`web`/`compass`） | **Elastic License 2.0（ELv2）** | 源码可用：允许使用/修改/分发/自用商用；**禁止把产品作为托管/管理服务提供给第三方**（即反商用的精确命中点）；禁止绕过 license key、禁止去除版权 notice |
+| 产品（`mythic-mirror`/`mythic-hoard`/`web`/`mythic-compass`） | **Elastic License 2.0（ELv2）** | 源码可用：允许使用/修改/分发/自用商用；**禁止把产品作为托管/管理服务提供给第三方**（即反商用的精确命中点）；禁止绕过 license key、禁止去除版权 notice |
 | 共享 Go 模块（`shared`） | **Elastic License 2.0（ELv2）** | 属产品核心代码，非公共 SDK，与产品一致 |
 | 契约与生成物（`api`） | **MIT** | SDK/契约类走宽松许可，便于第三方启动器/工具接入 |
 | 文档内容（`docs` 的文字/图片） | **CC BY-SA 4.0** | 文档标准许可证 |

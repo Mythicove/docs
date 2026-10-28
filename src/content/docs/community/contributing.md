@@ -9,7 +9,7 @@ title: 贡献指南
 | 仓库 | 内容 | 许可证 |
 |---|---|---|
 | mythic-mirror、mythic-hoard | Go 后端产品 | Elastic License 2.0 |
-| web、compass | 前端产品（Next.js、Vite） | Elastic License 2.0 |
+| web、mythic-compass | 前端产品（Next.js、Vite） | Elastic License 2.0 |
 | shared | 共享 Go 模块（能力接口与领域类型） | Elastic License 2.0 |
 | api | OpenAPI 契约与生成物 | MIT |
 | docs | 文档站（Astro + Starlight）、ADR、部署产物 | 内容 CC BY-SA 4.0，站点代码 MIT |

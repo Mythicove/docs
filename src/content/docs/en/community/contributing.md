@@ -10,7 +10,7 @@ This page is the canonical contributing guide for all Mythicove repositories. Th
 | Repository | Contents | License |
 |---|---|---|
 | mythic-mirror, mythic-hoard | Go backend products | Elastic License 2.0 |
-| web, compass | Frontend products (Next.js, Vite) | Elastic License 2.0 |
+| web, mythic-compass | Frontend products (Next.js, Vite) | Elastic License 2.0 |
 | shared | Shared Go module (capability interfaces and domain types) | Elastic License 2.0 |
 | api | OpenAPI contracts and generated artifacts | MIT |
 | docs | Documentation site (Astro + Starlight), ADRs, deploy artifacts | Content CC BY-SA 4.0, site code MIT |

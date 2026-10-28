@@ -29,7 +29,7 @@ title: Mythicove 生态总规划
 | Mod 托管 | **Mythic Hoard** | 秘藏 | `mythic-hoard` | 已建仓，用户体系已发货（v0.3.0） |
 | 服务器/开服 | **Mythic Isles** | 群岛 | `mythic-isles` | 未建仓 |
 | 整合包 | **Mythic Atlas** | 舆图 | `mythic-atlas` | 未建仓 |
-| 启动器 | **Mythic Compass** | 罗盘 | `compass` | 已建仓，原生启动改造中 |
+| 启动器 | **Mythic Compass** | 罗盘 | `mythic-compass` | 已建仓，原生启动改造中 |
 | 统一前端 | **Mythicove Web** | 无 | `web` | 已建仓，皮肤站 + mod 站（v0.3.0） |
 | 共享模块 | **Mythicove Shared** | 无 | `shared` | 已建仓，能力接口与领域类型 |
 | API 契约 | **Mythicove API** | 无 | `api` | 已建仓，OpenAPI 3.1 |
@@ -73,7 +73,7 @@ Mythicove/                          # 本地 workspace 根
 ├── mythic-mirror/                  # 皮肤站后端
 ├── mythic-hoard/                   # Mod 托管后端
 ├── web/                            # 统一前端（Next.js）
-├── compass/                        # 启动器（Tauri）
+├── mythic-compass/                        # 启动器（Tauri）
 ├── docker-compose.yml              # 本地与生产 compose
 └── Caddyfile                       # 统一入口网关
 ```

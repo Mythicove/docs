@@ -20,7 +20,7 @@ title: 进度台账（截至 2026-10-27）
 | `mythic-mirror` | Go 后端。Yggdrasil 全套端点 + RSA 签名、皮肤/披风上传校验与分发、crafatar 风格头像/渲染、账号体系（注册/邮箱验证/找回密码/GitHub OAuth/Microsoft 正版绑定/邀请码/验证码）、皮肤库（发布/点赞/评论读写 + 管理删除）、管理后台、OIDC Provider（Fosite，会话落 Postgres `oidc_sessions`，无 DB 时内存）。存储本地/S3、缓存内存/Redis、邮件 SMTP/Resend/日志可切。集成测试对真 Postgres 全绿。 |
 | `mythic-hoard` | Go 后端。Project→Version→File 三级模型（Postgres/sqlc 或内存）、本地/S3 存储、pg_trgm/Meili 搜索、inline/asynq 队列、下载统计、审核状态、Modrinth 兼容读子集、`.mrpack` 生成（含 dependencies + mods/ 路径）。用户体系已接通（OIDC SSO、团队、PAT、用户级上传）；管理 token 降级为 bootstrap/救援。 |
 | `web` | Next.js 16 App Router。**皮肤库列表/详情已改 RSC 服务端渲染**（搜索/排序/分页/评论区/应用到我的皮肤），其余页面仍为客户端渲染。landing/注册/登录(OAuth+忘记密码)/邮箱验证与重置落地页/上传皮肤披风(profile)/3D 预览/管理后台/mod 列表+上传。类型由 OpenAPI 契约生成。**无前端单测**；会话已加固为 httpOnly cookie；管理后台会话登录 + 救援 token；Playwright E2E 进 CI。 |
-| `compass` | Tauri 2。原生启动模块（版本解析、资源下载、Java 探测、参数构造、进程管理、实例）已在 Rust 实现并有测试，Tauri 命令与 UI 尚未接线；Prism 委托与 `.mrpack` 下载已删除。无 CI、无自动更新。 |
+| `mythic-compass` | Tauri 2。原生启动模块（版本解析、资源下载、Java 探测、参数构造、进程管理、实例）已在 Rust 实现并有测试，Tauri 命令与 UI 尚未接线；Prism 委托与 `.mrpack` 下载已删除。无 CI、无自动更新。 |
 | `shared` | Go 能力接口 + 零依赖进程内实现：storage/search/cache/**ratelimit（Memory 固定窗口）**/**clientip（可信代理感知的客户端 IP 解析）**/queue/mailer/i18n/captcha/cdn/oauth/mc。**已删除无人引用的 `auth` 接口**（认证在各服务内直接实现，见 [能力分层](../getting-started/introduction.md) §5）。 |
 | `api` | OpenAPI 契约（mirror + hoard + common），已对齐实现（见下）。 |
 | `docs` | 计划与架构决策（ADR-0001..0012）。 |
