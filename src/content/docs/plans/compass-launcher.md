@@ -242,6 +242,54 @@ quilt ok: 307 loader versions, profile quilt-loader-0.31.0-beta.1-1.21.4 (libs 1
 
 **P3 尚未做**：W9 NeoForge/Forge（processor pipeline，全计划技术风险最高的一块，降级验收已预先写死）、W10 整合包（`.mrpack` / CurseForge）、W11 依赖解析与冲突阻止（现在依赖只展示不判定）。
 
+### W9 前置调研（2026-10-28）：NeoForge installer 的真实结构
+
+还没写 W9 的代码，但已经拿真的 installer 跑过一遍并拆开看了。记在这里是因为这些结论每条都要花时间才能拿到，重新推一遍是浪费。样本：NeoForge `21.4.161`（Minecraft 1.21.4）。
+
+**取版本与 installer**：版本列表在 `https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml`（1852 个版本，`21.4.*` 对应 MC 1.21.4）；installer 是 `…/neoforge/<ver>/neoforge-<ver>-installer.jar`（7.2MB，411 个条目，自带 gson/jopt-simple 等 shaded 依赖）。命令行 `--installClient <dir>`，且**目标目录里必须先有 `launcher_profiles.json`**，否则报 `There is no minecraft launcher profile`（写个 `{}` 就够）。
+
+**`install_profile.json`（130KB）顶层**：`spec=1, profile, version, icon, minecraft, json="/version.json", logo, welcome, mirrorList, hideExtract=true, data(10 项), processors(10 个), libraries(70 条), serverJarPath`。
+
+**processors 的 `sides` 决定跑不跑**（这是最容易做错的一步）：
+
+| # | sides | jar | 干什么 |
+|---|-------|-----|--------|
+| 0 | server | installertools | EXTRACT_FILES（run.sh/run.bat/args.txt） |
+| 1 | server | installertools | BUNDLER_EXTRACT --libraries |
+| 2 | server | installertools | BUNDLER_EXTRACT --jar-only |
+| 3 | 两侧 | installertools | MCP_DATA（从 neoform zip 取 mappings） |
+| 4 | 两侧 | installertools | DOWNLOAD_MOJMAPS（`--side {SIDE}`） |
+| 5 | 两侧 | installertools | MERGE_MAPPING |
+| 6 | **client** | jarsplitter | 把原版 client jar 切成 slim + extra |
+| 7 | server | jarsplitter | 同上（服务端） |
+| 8 | 两侧 | AutoRenamingTool:all | slim → srg（改名为 SRG） |
+| 9 | 两侧 | binarypatcher:fatjar | `--clean {MC_SRG} --output {PATCHED} --apply {BINPATCH}` |
+
+所以客户端安装跑 **3,4,5,6,8,9**，跳过 0,1,2,7。**这 10 个 processor 一个都没有 `outputs` 字段**——计划里写的"校验 outputs 的 sha1"在 NeoForge 21.4 上无处可用（部分 Forge 版本有，实现时要按"有就校验、没有就跳过"处理，不能假定一定有）。
+
+**`data` 变量有三种形态，必须分别处理**：
+- `[group:artifact:version[:classifier][@ext]]` = Maven 坐标 → 解析成 `libraries/` 下的路径（例：`[net.neoforged:neoform:1.21.4-20241203.161809:mappings@txt]`，注意 `@txt` 是扩展名覆盖、`:mappings` 是 classifier）；
+- `/data/client.lzma` = **installer jar 内部**的路径 → 要先解出来（`BINPATCH` 就是它）；
+- `'1.21.4-20241203.161809'` = 单引号包着的字面量 → 去掉引号（`MCP_VERSION`）。
+- 客户端/服务端各一个值（`client`/`server` 两个键），按 `{SIDE}` 选。
+
+**processor 参数里出现的内建变量**：`{INSTALLER}`（installer jar 路径）、`{ROOT}`（**含 `libraries/` 的那个目录**——官方 installer 把产物写到 `<root>/libraries/net/minecraft/client/…`）、`{MINECRAFT_JAR}`（原版 client jar）、`{SIDE}`、`{LIBRARY_DIR}`、`{MINECRAFT_VERSION}`（后两个出现在 `serverJarPath` 里），其余全来自 `data`。processor 的主类要从它那个 jar 的 `MANIFEST.MF` 里读 `Main-Class`。
+
+**`libraries`（70 条）的形状与 Mojang 的一致**：每条都有 `downloads.artifact{sha1,size,url,path}`，所以现有 Downloader 不用改。里面**包含全部 processor 工具**（installertools、jarsplitter、`AutoRenamingTool:2.0.3:all`、`binarypatcher:2.1.2:fatjar`、`neoform:…@zip`）与 `net.neoforged:neoforge:21.4.161:universal`，但**不包含 `:client`**——那是 binarypatcher 的产物。
+
+**`version.json`（installer 内的 `/version.json`，也是官方 installer 原样写出的那份）**：`id=neoforge-21.4.161`、`inheritsFrom=1.21.4`、`mainClass=cpw.mods.bootstraplauncher.BootstrapLauncher`、47 条库，`arguments.jvm` 里带着模块路径那一套（`-p <8 个 jar>`、`--add-modules ALL-MODULE-PATH`、若干 `--add-opens`/`--add-exports`）与 `-DignoreList=client-extra,${version_name}.jar`。
+
+**官方 installer 跑完后磁盘上的产物**（客户端）：`versions/1.21.4/1.21.4.{jar,json}`、`versions/neoforge-21.4.161/neoforge-21.4.161.json`，以及 `libraries/` 下的 `client-1.21.4-20241203.161809-{slim,extra,srg}.jar`、`client-…-mappings.txt`、`neoforge-21.4.161-client.jar`（= `{PATCHED}`）、`neoforge-21.4.161-universal.jar`。
+
+**两个必须先解决的关键点**：
+
+1. **打过补丁的 client jar 不在任何 JSON 里。** `version.json` 的 47 条库中既没有 `net.neoforged:neoforge:21.4.161:client`，也没有 `net.minecraft:client:…:extra`（grep 结果 0 命中），官方 installer 也只是把 `/version.json` 原样写出。所以启动 classpath 要由**启动器自己补**：`{PATCHED}` 与 `{MC_EXTRA}` 都得加上（`-DignoreList=client-extra,…` 正好反证 client-extra 在 classpath 上）。**尚未定论的是原版 `1.21.4.jar` 要不要同时留在 classpath 上**——`slim + extra` 是原版 jar 切出来的两半，`{PATCHED}` 是 slim 改名打补丁后的结果，所以 patched + extra 理论上已经覆盖原版内容，再放一份原版 jar 就是重复类。下一步要用一次真启动来定（见下面的未完成项）。
+2. **库必须按 Maven 身份去重**（已修，提交 `6f349a0`）：原版 1.21.4 带 `org.ow2.asm:asm:9.6`，NeoForge 带 9.8 且把它放进模块路径，两份同时在 classpath 上时 BootstrapLauncher 直接抛 `Module named org.objectweb.asm was already on the JVMs module path … but class-path contains it at …asm-9.6.jar`。这条报错是**真跑出来的**，不是推测。Fabric 同样重复带 asm（9.10.1 对 9.6），只是没有模块路径检查所以一直没炸。去重键 = `group:artifact[:classifier[@ext]]`，不含版本号（子赢），classifier 必须进键（`lwjgl` 与其 `natives-*` 分片是两个文件）。
+
+**另外两条实测事实**：官方 installer **不下载原版的库**（装完后父版本的 113 条库里有 102 条不在磁盘上），它假定启动器已经装过父版本——我们的 `install_profile` 走清单解析父版本并下载全部库，所以比它完整，也正因如此 NeoForge 安装必须先能解析 `inheritsFrom`（P3 W8 已具备）。以及官方 installer 自己也会因一次 TLS 抖动失败（`jline-reader` 下载 `Remote host terminated the handshake`），而且**重试成功之后仍把它算进失败清单**并整体报错——我们自己的下载器不该有这种行为（P1 起就是"重试后按最终结果判定"）。
+
+**W9 下一步（未做）**：① 用一次真启动定论"原版 client jar 是否留在 classpath"；② 实现 `install_profile.json` 解析 + data 变量解析（三种形态）+ 按 sides 过滤并按序执行 processor（主类从 jar 的 MANIFEST 读，用探测到的对应 Java 起子进程）；③ 把 `{PATCHED}`/`{MC_EXTRA}` 作为合成库条目追加进子版本 JSON（这样合并后的 JSON 仍然自描述，启动路径不需要为 NeoForge 开特例）；④ Forge 1.13+ 复用同一套（installer 结构一致，注意 `maven.minecraftforge.net` 与 `patches/client.lzma`）；⑤ Forge 1.12.2 是另一套（无 processor），按计划里预写的降级验收处理。
+
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
 目标：多账号、令牌安全、以及把 ADR-0012 的独立密码体验补齐（现在用户必须回网站建独立密码，启动器里应当能直接看到状态并跳转）。
