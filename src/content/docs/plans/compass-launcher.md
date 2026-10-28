@@ -300,7 +300,7 @@ quilt ok: 307 loader versions, profile quilt-loader-0.31.0-beta.1-1.21.4 (libs 1
 
 **另外两条实测事实**：官方 installer **不下载原版的库**（装完后父版本的 113 条库里有 102 条不在磁盘上），它假定启动器已经装过父版本——我们的 `install_profile` 走清单解析父版本并下载全部库，所以比它完整，也正因如此 NeoForge 安装必须先能解析 `inheritsFrom`（P3 W8 已具备）。以及官方 installer 自己也会因一次 TLS 抖动失败（`jline-reader` 下载 `Remote host terminated the handshake`），而且**重试成功之后仍把它算进失败清单**并整体报错——我们自己的下载器不该有这种行为（P1 起就是"重试后按最终结果判定"）。
 
-**W9 进度**：① 定论 classpath（一个游戏 jar 都不放，判据 `--launchTarget`）**已完成**；② `install_profile.json` 解析 + data 三种形态 + 按 sides 过滤按序跑 processor **已完成，NeoForge 真装通过**（见下面的实施记录）；③ 装完落盘子版本 JSON 即可，**不需要**往库里追加 `{PATCHED}`/`{MC_EXTRA}` 合成条目（fml_loader 自己找）**已确认**；④ Forge 1.13+ 复用同一套（`maven.minecraftforge.net`、`patches/client.lzma`）**未做**；⑤ Forge 1.12.2 是另一套（无 processor）**未做**；⑥ 我们自己装出来的那份 NeoForge **还没真启动过一次**（classpath 组合是用官方 installer 的产物验的）**未做**。
+**W9 进度**：① 定论 classpath（一个游戏 jar 都不放，判据 `--launchTarget`）**已完成**；② `install_profile.json` 解析 + data 三种形态 + 按 sides 过滤按序跑 processor **已完成，NeoForge 真装通过、三平台 CI 绿**（见下面的实施记录）；③ 装完落盘子版本 JSON 即可，**不需要**往库里追加 `{PATCHED}`/`{MC_EXTRA}` 合成条目（fml_loader 自己找）**已确认**。剩下的见本节末尾"W9 仍未做"。
 
 ### W9 实施记录（2026-10-28，NeoForge 已交付并真装验证）
 
@@ -325,7 +325,11 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 - processor 的 `Main-Class` 从它自己 jar 的 MANIFEST 读，不写死（installertools / jarsplitter / AutoRenamingTool / binarypatcher 各有各的主类，且随版本变）。MANIFEST 解析收敛成 `archive::manifest_attr[_from_text]` 一份实现并处理 72 字节折行的续行；`content.rs` 的 `Implementation-Version` 兜底改为复用它。
 - `Installer` 借出 `downloader()` 与 `paths()`：processor 的 `{ROOT}`/`{LIBRARY_DIR}` 必须与安装产物落点是同一套布局，各造一份就会分岔。
 - 版本列表按"游戏版本去掉 `1.` 前缀"过滤（1.21.4 → `21.4.x`，NeoForge 自己的编号约定）；**过滤结果为空时退回完整列表**，好过给一个空列表加一句猜不出原因的提示。Maven 元数据没有 stable 的概念，所以 `stable` 全是 `None`（不显示成"开发版"）。
-- CI 的 smoke 作业加了 `setup-java` 21 与 `neoforge_live` 步骤，三平台都跑：processor pipeline 对路径分隔符与 java 可执行文件名敏感，**只在 Windows 上验过不算验过**。
+- CI 的 smoke 作业加了 `setup-java` 21 与 `neoforge_live` 步骤，三平台都跑：processor pipeline 对路径分隔符与 java 可执行文件名敏感，**只在 Windows 上验过不算验过**。（结果：`install a real NeoForge version (processor pipeline)` 在 ubuntu / windows / macos 三个作业里全部 success。）
+- CI 的两个 smoke 步骤**不加 `--release`**：`[profile.release] panic = "abort"` 与测试需要的 unwind 会在同一个 target 目录里打架（本地实测 `the crate compass_lib requires panic strategy abort which is incompatible with this crate's strategy of unwind`，伴随一串 `output filename collision`）。这两个测试是 I/O 密集，release 买不到可测速度：NeoForge debug 45.0s / release 52.0s。
+- 测试一律用 `compass_lib::api::http_client()` 建 client，不要 `reqwest::Client::new()`：依赖图里有**两份 reqwest**（tauri 2.12.5 用 0.13、我们用 0.12），测试目标里那个名字有歧义，ubuntu 上直接编不过。改用 lib 的构造器顺带让**连接超时、请求超时与 User-Agent 第一次被测试覆盖**——原来测试裸建 client，那三条生产配置从没被任何测试碰到过。
+
+**W9 仍未做**：Forge 1.13+（同一套 installer 结构，`maven.minecraftforge.net`、`patches/client.lzma`）、Forge 1.12.2（另一套，无 processor）、**我们自己装出来的那份 NeoForge 还没真启动过一次**（classpath 组合是用官方 installer 的产物验的，装出来的产物只验到"启动计划自洽"）、W10 整合包、W11 依赖解析与冲突阻止。
 
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
