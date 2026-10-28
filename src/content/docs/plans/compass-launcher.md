@@ -211,6 +211,37 @@ title: Compass 启动器开发计划
   - 与 Hoard 的 `version_dependencies`（Phase 3 后端已实现）对齐语义，不自己发明第二套依赖模型。
 - **验收**：能从零装出并成功启动这四个实例——Fabric 1.21.x、Quilt 1.20.x、NeoForge 1.21.x、Forge 1.12.2；能安装一个含 overrides 与 loader 依赖的 `.mrpack` 并进游戏；缺依赖的 mod 会被明确拒绝并给出可执行的补救动作。
 
+### P3 实施记录（2026-10-28，W8 Fabric/Quilt 已交付）
+
+W8 拿下：列 loader 版本、装 loader（取 profile → 与父版本合并 → 下载库）、换版本、卸回原版，UI 在实例卡片上开了一个 loader 面板。两家 meta 服务同构（Quilt 的 meta 是 Fabric 的分叉），所以一套实现两个 base 就够；合并与下载复用 P1 那条链路（新增 `Installer::install_profile` 入口，与 `install` 共用 `install_merged`，免得两条安装路径在"装完到底写了什么"上分岔）。
+
+**端点与字段是对着线上服务核的**，不是照文档想象：Fabric 的 loader 对象有 `stable`，Quilt 的**没有**（它多的是 `hashed` 与 `hashes`），所以 `LoaderVersion.stable` 是 `Option<bool>`——把"来源没说"显示成"开发版"，是替它编了一句它没说过的话。同理，列表顺序自己排（实测 Quilt 返回的是 `beta.9, beta.7, beta.8, …`，直接给用户看就像列表在乱跳），排序规则只有一处，测试调的也是那一处。
+
+真装 Fabric 时抓出继承链上的**两个方向相反的 bug**：
+
+1. **死循环**：`resolve_from` 合并后读的是合并结果里的 `inheritsFrom`，而 `version::merge` 是"子覆盖父"，那个值永远是子版本原来的 ⇒ 同一个父版本被反复解析，撞满深度上限，报 `version inheritance deeper than 8`。P1 只单测过 `version::merge` 这个纯函数，这条**循环**从没真跑过（原版没有 `inheritsFrom`，所以一直没暴露）。
+2. 第一版的修法（合并后清掉 `inheritsFrom`）**又是错的**：`jar_version()` 靠它定位 client jar——继承型版本自己不带 jar，jar 在父版本的目录下。清掉之后，装好的 Fabric 会去找 `versions/fabric-loader-…/fabric-loader-….jar`，症状是启动时 `client jar missing`。
+
+正确做法是把两件事分开：**合并结果保留指向"提供 jar 的那个版本"，而链的推进走父版本自己的指针**。这一步抽成纯函数 `meta::merge_step(parent, child) -> (merged, next)`——要联网的部分只有取 JSON，而两个 bug 都在推进规则里，所以它可以离线测（三个测试：真实 Fabric profile、三层链 A←B←C、以及"一步收敛"的正面回归）。
+
+一个自己抓到并删掉的坏设计：为了在 UI 上显示"这个实例是 Fabric 1.21.4"，我先写了一版从版本 id 反推 loader 的解析器，还写了个测试把它对 `quilt-loader-0.20.0-beta.9-1.21.4` 的错误答案（`None`）固化成"预期行为"，理由写的是"id 格式本身有歧义"。歧义是真的（loader 版本自己带 `-`，预发布游戏版本也带 `-`，按分隔符切必然有切错的时候），但结论错了：**装的那一刻我们本来就知道这三件事，记下来就行**，不需要事后猜。于是删掉解析器，改成 `Instance.loader: Option<InstanceLoader{kind, version, gameVersion}>`，由装载流程写入；设置面板改 `version_id` 时清空它（两者必须一致，而设置面板不知道新值对应哪个 loader——显示成 Fabric 而实际是原版，用户接下来会去 mods 目录里找不生效的原因）。这是本项目第四次踩到同一个模式：**测试照着实现写，就把实现的意见固化成了契约**。
+
+其它同批落地的：`validate_version_id`（版本 id 会被当成 `versions/<id>/` 的目录名，而它来自官方清单**和** loader 的 meta 服务——一个返回 `"id": "../../evil"` 的 meta 就是一次任意路径写入）；URL 拼接复用 `api::join_path`（段级百分号编码，不写第二份）。
+
+**真安装冒烟测试新增第 7/8 步**（三平台 CI 每次都跑，不需要显示环境）：
+
+```
+fabric loader versions: 255 (chosen 0.20.1 stable=Some(true))
+fabric installed: id=fabric-loader-0.20.1-1.21.4 jar=1.21.4 main=…knot.KnotClient libs downloaded=9
+quilt ok: 307 loader versions, profile quilt-loader-0.31.0-beta.1-1.21.4 (libs 11)
+```
+
+并断言启动计划里**同时**有子版本的 `-DFabricMcEmu` 与父版本的 `-Djava.library.path`（P1 那条"父+子拼接"教训的正面回归）、classpath 含 `fabric-loader` 与 `intermediary`、每一项都真在磁盘上、无残留 `${}`；Quilt 只验端点与 profile 形状（下载与合并的代码路径与 Fabric 完全相同，不必重复一遍），并断言它的 `stable` 全是 `None`。
+
+一次偶发红：冒烟测试在"幂等重装"那步失败过一次，重跑即过——网络抖动（Downloader 本身已重试）。这条测试要下 ~550MB，判读偶发红时先按这个先验来。
+
+**P3 尚未做**：W9 NeoForge/Forge（processor pipeline，全计划技术风险最高的一块，降级验收已预先写死）、W10 整合包（`.mrpack` / CurseForge）、W11 依赖解析与冲突阻止（现在依赖只展示不判定）。
+
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
 目标：多账号、令牌安全、以及把 ADR-0012 的独立密码体验补齐（现在用户必须回网站建独立密码，启动器里应当能直接看到状态并跳转）。
