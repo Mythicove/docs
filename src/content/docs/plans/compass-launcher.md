@@ -377,7 +377,28 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 
 **CI**：三平台跑 `.mrpack` 真装，与 NeoForge / Forge 步骤**共用数据目录**——1.21.4 只下一次，这一步只多 ~42MB，所以跑得起。
 
-**W10 仍未做**：MultiMC / `instance.cfg` 格式、"服务器整合包 .zip"、CurseForge zip（计划里标注为可选，需要第三方 API key）、整合包**导出**（现在只有导入）、以及 optional 文件的逐个勾选 UI（当前是一律装上并在结果里报数）。W11 依赖解析与冲突阻止未动。
+**W10 仍未做**：MultiMC / `instance.cfg` 格式、"服务器整合包 .zip"、CurseForge zip（计划里标注为可选，需要第三方 API key）、整合包**导出**（现在只有导入）、以及 optional 文件的逐个勾选 UI（当前是一律装上并在结果里报数）。
+
+### W11 实施记录（2026-10-29，依赖与冲突检查已交付）
+
+**依赖模型只有一套**：`ModMeta.deps` 从"必需依赖的展示字符串"改成 `ModDep { id, kind, constraint }`，`kind` 的四个取值与 Hoard 的 `version_dependencies.dependency_type`、与 Modrinth 完全一致（`required` / `optional` / `incompatible` / `embedded`）。原来那句注释说"把 optional / incompatible 也列进来，用户会以为缺了这个就起不来"——顾虑是对的，但解法是**分类**而不是**只留一类**：W11 要靠 `incompatible` 拦冲突、靠 `embedded` 认出内嵌提供，少任何一类检查就会给出错误结论。
+
+**样本是 Fabulously Optimized 1.21.4 的 46 个真 jar**（`modpack_live` 装出来的那份）。四件事只有真数据能告诉你：
+
+1. **嵌套 jar 是正确性要求，不是锦上添花。** 这个包里 **15 个依赖 id 只由嵌套 jar 提供**（fabric-api 的各子模块、sodium 内嵌的 `fabric-renderer-api-v1`、controlify 内嵌的 `yet_another_config_lib_v3`…）。只扫顶层 jar 就会在一个完全正常的整合包上报 15 个假"缺依赖"——**用户会因此学会忽略所有警告**，那比不做检查更糟。现在读两层（109 个嵌套 jar，其中 2 个自己还带 `jars`），带单文件大小上限与总额预算。
+2. **`provides` 别名。** 4/46 个 jar 声明了：`fabric-api provides ["fabric"]`、`sodium provides ["indium"]`、`cloth-config provides ["cloth-config2"]`。不认它，就有 7 个 mod 被报"缺 fabric"，而 fabric-api 明明就在目录里。
+3. **3/46 个 jar 的 JSON 是技术上的非法**：Debugify 的 `description` 里有**裸换行**，mixintrace 与 NoChatReports 的字符串里有**裸 TAB**。Fabric Loader 用 Gson 宽松模式照样加载；我们严格解析就把这 3 个判成"读不出元数据"——它们在 UI 上没名字还算小事，**在依赖检查里完全不存在**才是要紧的（一个装着的 mod 对检查看不见 = 它声明的冲突与它提供的依赖都不算数，6.5% 的 mod 成盲区）。现在加了宽容重试：把字符串字面量内部的裸控制字符转义掉，**只在严格解析失败后才跑**，合法 JSON 一个字节不动。这个包的元数据覆盖率从 45/46 变成 **46/46**，必需依赖从 150 涨到 154。
+4. **`breaks` 实测都带版本区间**（`{"sodium":"<0.6.6"}`），而 `conflicts` 是无条件的（`{"optifabric":"*"}`）。所以**只拦无条件的那一类**；带区间的报成"未判定，请自己确认"。四家的区间语法各不相同（`>=1.2 <2` / `[1.21.4,1.21.5)` / 裸版本号），自己写求值器判错的后果比明说"不判定"更糟。
+
+**冲突必须双向查。** 冲突通常由**已装的那一方**声明（sodium 声明 `breaks: optifabric`，而 optifabric 自己什么都不声明）。只查待装 mod 的声明，就会在安装 optifabric 时放行、然后游戏启动时炸——那正是这个功能要防的事。
+
+**一个 mod 自己提供的 id 不能当冲突对象**（它本身、它 `provides` 的别名、它内嵌的库）。这条是测试逼出来的：不排除的话，一个声明了 `breaks` 自己 id 的 jar **永远装不进去**。
+
+**接线方式**：`hoard_install` 与 `content_import` 命中无条件冲突时**把文件删掉再报错**（留在目录里等于"我们拦下了它，但它还在"，下次启动照样炸）；新增 `content_check` 做整实例体检——整合包一次装几十个，逐个走闸门既慢（每个文件都要重扫目录）也不该拦（两个 mod 互相冲突不该让整包失败）；`modpack_install` 的返回值里直接带体检报告，不用等用户想起来去点"检查"。**禁用的 mod 在检查函数内部排除**，不交给调用方过滤：漏过滤的症状是"我明明禁用了那个 mod 它还说冲突"，从调用方很难看出来。
+
+**验证**：`cargo test` 200 + 8 + 7、clippy `-D warnings`、fmt、tsc、vite build 全干净；真包上 46/46 有元数据、154 required / 23 optional / 76 incompatible / 120 embedded、**零假缺失、零假冲突**、38 条带版本约束的正确降级为"未判定"。
+
+**W11 仍未做**：缺依赖时的"从 Hoard 一键补装"动作（现在只报 mod id，UI 可以拿它去搜）、Forge/NeoForge 的 JarJar 内嵌库识别（只做了 fabric/quilt 的 `jars`）、以及版本区间求值（**故意不做**，理由见上）。
 
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
