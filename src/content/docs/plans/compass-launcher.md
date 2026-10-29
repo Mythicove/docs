@@ -329,7 +329,10 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 - CI 的两个 smoke 步骤**不加 `--release`**：`[profile.release] panic = "abort"` 与测试需要的 unwind 会在同一个 target 目录里打架（本地实测 `the crate compass_lib requires panic strategy abort which is incompatible with this crate's strategy of unwind`，伴随一串 `output filename collision`）。这两个测试是 I/O 密集，release 买不到可测速度：NeoForge debug 45.0s / release 52.0s。
 - 测试一律用 `compass_lib::api::http_client()` 建 client，不要 `reqwest::Client::new()`：依赖图里有**两份 reqwest**（tauri 2.12.5 用 0.13、我们用 0.12），测试目标里那个名字有歧义，ubuntu 上直接编不过。改用 lib 的构造器顺带让**连接超时、请求超时与 User-Agent 第一次被测试覆盖**——原来测试裸建 client，那三条生产配置从没被任何测试碰到过。
 
-**W9 仍未做**：Forge 1.13+（同一套 installer 结构，`maven.minecraftforge.net`、`patches/client.lzma`）、Forge 1.12.2（另一套，无 processor）、**我们自己装出来的那份 NeoForge 还没真启动过一次**（classpath 组合是用官方 installer 的产物验的，装出来的产物只验到"启动计划自洽"）、W10 整合包、W11 依赖解析与冲突阻止。
+- **W9 补完（`5138c3e`）：真启动我们自己装出来的那份 NeoForge。** `installs_neoforge_for_real` 钉的是启动计划（classpath 组成、asm 只一份、`--launchTarget neoforgeclient`、每项都在磁盘上），计划自洽不等于 JVM 起得来。新增 `launches_neoforge_for_real`：装完 → `runner::build` → 解 natives → `launch::spawn`，然后**边收输出边轮询标记，命中即 kill**。不能等退出：有显示服务的机器上游戏会真开窗一直跑。标记只挑结构稳定的三行（ModLauncher 的 `Launching target 'neoforgeclient'`、原版 `Setting user:`、`Backend library: LWJGL`），同时认致命标记（`export package net.minecraft`、`reads more than one module named`、`ClassNotFoundException`）以便早失败。结果：暖启 32s 走到 LWJGL 绑定，一次通过——**装的东西本来就是对的**；第一次跑红的是我的标记表（照旧日志写死了 `ModdedDatafixers`，这个版本记的是 `mojang/DataFixerBuilder`）。
+- 该测试**不进 CI**：GLFW 建窗在那行日志之前，headless runner 永远走不到标记，还要再下一份 ~700MB。CI 按名字只跑 `installs_neoforge_for_real`，真启动是本地验收步骤。把"CI 覆盖到哪为止"写在 workflow 注释里，好过让它绿着但覆盖面含糊。
+
+**W9 仍未做**：Forge 1.13+（同一套 installer 结构，`maven.minecraftforge.net`、`patches/client.lzma`）、Forge 1.12.2（另一套，无 processor）、W10 整合包、W11 依赖解析与冲突阻止。
 
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
