@@ -199,7 +199,7 @@ title: Compass 启动器开发计划
 - **W9 NeoForge / Forge（高风险）**
   - NeoForge（1.20.2+）：`maven.neoforged.net` 取 installer jar → 解析 `install_profile.json`（`data`/`processors`/`libraries`/`versionInfo`）→ 下载所需 Maven 工件 → **按序执行 processors**（用我们探测到的对应 Java 起子进程，传入 `jar`/`classpath`/`args`，替换 `${...}` 数据变量，校验 `outputs` 的 sha1）→ 生成继承版本 JSON。
   - Forge 1.13+：同上（installer 结构一致，注意 `maven.minecraftforge.net` 与 patches/`client.lzma` 等额外工件）。**已交付（`4a8dbf4`），且计划里"结构一致"这句只对了一半**：1.13–1.16 的 profile 是 spec 0、processor 没有 `sides`、工具链是 SpecialSource 而不是 AutoRenamingTool；1.17+ 才与 NeoForge 同构。差异清单见下面的实施记录。
-  - Forge ≤1.12.2：**计划里这条的假设是错的，实测已纠正。** 原写"Universal/patches jar 合并、`minecraft.jar` 处理路径差异"——实测 1.12.2 的 `install_profile.json`（spec 0）里 `processors` 是**空数组**、`data` 也是空的，没有任何合并步骤：universal jar 就是一条普通库，而且它**打包在 installer 的 `maven/` 树里**（version.json 给的是 `"url": ""` + 真 sha1），官方 installer 只是把它拷出来。真正的差异在启动侧：旧式 `minecraftArguments` + `--tweakClass FMLTweaker` + `launchwrapper.Launch`，而且**原版 jar 必须在 classpath 上**（与 1.13+ 相反）。1.8.9 / 1.7.10 未验证（installer 已下载，格式待查）。
+  - Forge ≤1.12.2：**计划里这条的假设是错的，实测已纠正。** 原写"Universal/patches jar 合并、`minecraft.jar` 处理路径差异"——实测 1.12.2 的 `install_profile.json`（spec 0）里 `processors` 是**空数组**、`data` 也是空的，没有任何合并步骤：universal jar 就是一条普通库，而且它**打包在 installer 的 `maven/` 树里**（version.json 给的是 `"url": ""` + 真 sha1），官方 installer 只是把它拷出来。真正的差异在启动侧：旧式 `minecraftArguments` + `--tweakClass FMLTweaker` + `launchwrapper.Launch`，而且**原版 jar 必须在 classpath 上**（与 1.13+ 相反）。**1.8.9 / 1.7.10 是第四套格式（v0），已交付（`b6b2538`）**：与 1.12.2 也不同——版本 JSON 内联在 `versionInfo` 里（installer 中没有 `/version.json` 条目）、universal jar 在 installer 根部且那个 Maven 坐标是 404、库用 `url` + `clientreq`/`serverreq` 而不是 `rules`/`downloads`。详见下面的实施记录。
   - 失败可诊断：processor 的 stdout/stderr 全量落到安装日志并在 UI 展示，不要只显示"安装失败"。
 - **W10 整合包安装**
   - `.mrpack`（Modrinth 格式，也是 Hoard 导出的格式）：解析 `modrinth.index.json`（`files[]` 的 `path`/`hashes.sha1`/`downloads[]`/`env.client|server`）、`overrides/`、`client-overrides/`、`server-overrides/`；按 `dependencies`（minecraft/fabric-loader/forge/neoforge/quilt-loader）先装版本与 loader；`env.client=unsupported` 的文件跳过。
@@ -354,7 +354,20 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 - 测试：6 份真 fixture（未裁剪，11–35KB）+ 6 条离线测试；`tests/forge_live.rs` 真装 1.21.4 与 1.12.2（本地都通过，classpath 分别 120 / 51 条，legacy 那条验到"原版 jar 必须在、`--tweakClass` 从旧式参数展开、Java 8"）。live 测试的公用工具收到 `tests/live/`，两个 live 文件不会再各写一份然后分岔。CI 三平台跑现代 Forge，并与 NeoForge 步骤**共用数据目录**（同为 1.21.4，原版库与资源只下一次）——正是这个共用把上面那个 bug 逼了出来。
 - **CI 不跑 legacy Forge**：1.12.2 要再下 ~1GB 旧资源，而它独有的那条路径（从 installer 的 `maven/` 取产物）已有离线单测 `installer_maven_tree_is_extracted_into_libraries` 钉住，含 zip-slip 拒绝与幂等。1.16.5（中间那套：无 sides + 内联坐标 + SpecialSource）同样只有离线 fixture 覆盖，**没有真装过**——它的 pipeline 与 1.21.4 同构，但这句话是推断，不是实测。
 
-**W9 仍未做**：Forge 1.16.5 这类中间格式的真装验证（离线已覆盖，未真跑）、Forge 1.8.9 / 1.7.10（installer 已下载，格式未查）。
+- **W9 补完（`b6b2538`）：Forge 是四套格式，不是三套。** 打开 1.8.9 / 1.7.10 的 installer 才发现 v0 与前三套**没有任何重叠**：`install_profile.json` 只有 `install` 与 `versionInfo` 两个键，installer 里**根本没有 `/version.json` 条目**（版本 JSON 内联在 `versionInfo`），顶层也没有 `minecraft`（在 `install.minecraft`），universal jar 在 installer **根部**而不是 `maven/` 下，而且它那条库指向的坐标在 Maven 上是 **404**（实测只发布了 `-universal.jar` 与 `-installer.jar`）——官方 installer 就是把根部那个文件拷到 `install.path` 对应的 Maven 落点，我们做同一件事，否则装完启动就是 CNFE。库还是"前 rules 时代"的形状：`url` 而不是 `downloads`，用 `clientreq`/`serverreq` 布尔表态（1.8.9 的 jline 是 `serverreq=true, clientreq=false`，而 launchwrapper 只写 `serverreq=true`，**clientreq 缺省表示客户端也要**，所以只有显式 false 才排除）。
+- **同时把"1.16.5 只是推断"这笔债还了**，而它证明我猜错了一处：1.16.5 的 `{PATCHED}`（`forge-<ver>:client`）由 binarypatcher 产出，但**没有被列进 version.json**，所以不在 classpath 上——与 NeoForge 同，与 1.21.4 相反。四套格式并排看，classpath 规则从头到尾没变过：
+
+  | version.json 列了什么 | 补丁 jar 在 classpath 上 |
+  |---|---|
+  | NeoForge 21.4：一个 `neoforge:*` 都不列 | 否（fml 按坐标找） |
+  | Forge 1.21.4：`:universal` + `:client` | 是 |
+  | Forge 1.16.5：只有无 classifier 的 `forge:<ver>` | 否 |
+  | Forge 1.12.2 / 1.8.9：只有无 classifier 的 `forge:<ver>` | 不适用（无 processor） |
+
+- **我自己的两条断言又错了，而且是同一个错**：把别的版本的数字/规则搬过来。`entries.len() > 60`（1.16.5 只有 49）换成与生产同一个解析器（`install::split_libraries`）算出的**精确集合**比对：120 == 120（1.21.4）、49 == 49（1.16.5）、51 == 50 + 原版 jar（1.12.2）、48 == 47 + 原版 jar（1.8.9）。阈值只能证明"差不多"，相等才证明规则对。另一条"补丁 jar 必须在 classpath 上"对 1.21.4 成立、对 1.16.5 不成立。
+- 现在**四套格式全部本地真装通过**（1.21.4 / 1.16.5 / 1.12.2 / 1.8.9），加上 NeoForge 真装 + 真启动、`.mrpack` 真装与失败回滚，一共 8 个 live 测试。测试数据目录里放了 JDK 8（1.16.5 / 1.12.2 / 1.8.9 都要），这也让 Java 8 探测路径第一次被真跑到。五份真 profile（含 1.7.10）未裁剪入库，离线钉住四套格式。CI 仍只跑现代版：另外三套各要再下一整套旧资源（~1GB / ~700MB / ~1GB）。
+
+**W9 仍未做**：1.7.10 的真装（profile 已入库并离线钉住，未真跑；它与 1.8.9 同属 v0，差别在 tweakClass 包名 `cpw.mods.fml` 对 `net.minecraftforge.fml`，已断言）、Forge/NeoForge 的 JarJar 内嵌库识别、以及四套格式里"装完真启动"只做了 NeoForge 那一套。
 
 ### W10 实施记录（2026-10-29，`.mrpack` 已交付并真装验证）
 
