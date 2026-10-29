@@ -354,7 +354,30 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 - 测试：6 份真 fixture（未裁剪，11–35KB）+ 6 条离线测试；`tests/forge_live.rs` 真装 1.21.4 与 1.12.2（本地都通过，classpath 分别 120 / 51 条，legacy 那条验到"原版 jar 必须在、`--tweakClass` 从旧式参数展开、Java 8"）。live 测试的公用工具收到 `tests/live/`，两个 live 文件不会再各写一份然后分岔。CI 三平台跑现代 Forge，并与 NeoForge 步骤**共用数据目录**（同为 1.21.4，原版库与资源只下一次）——正是这个共用把上面那个 bug 逼了出来。
 - **CI 不跑 legacy Forge**：1.12.2 要再下 ~1GB 旧资源，而它独有的那条路径（从 installer 的 `maven/` 取产物）已有离线单测 `installer_maven_tree_is_extracted_into_libraries` 钉住，含 zip-slip 拒绝与幂等。1.16.5（中间那套：无 sides + 内联坐标 + SpecialSource）同样只有离线 fixture 覆盖，**没有真装过**——它的 pipeline 与 1.21.4 同构，但这句话是推断，不是实测。
 
-**W9 仍未做**：Forge 1.16.5 这类中间格式的真装验证（离线已覆盖，未真跑）、W10 整合包、W11 依赖解析与冲突阻止。
+**W9 仍未做**：Forge 1.16.5 这类中间格式的真装验证（离线已覆盖，未真跑）、Forge 1.8.9 / 1.7.10（installer 已下载，格式未查）。
+
+### W10 实施记录（2026-10-29，`.mrpack` 已交付并真装验证）
+
+**格式取自六个真包，不是照规范文档写的**（Fabulously Optimized / Adrenaline / Sodium Plus / FastCraft / Optimized fps / Create+）。三处与"读规范会得到印象"不同：
+- 顶层字段**顺序不固定**，部分包多一个 `summary`；Hoard 自己的导出还多一个**包级 `env`**（规范里没有，真包里一个都没有）。所以解析必须忽略未知字段——这一条同时让"我们自己的导出"与"Modrinth 的包"走同一套代码。
+- `files[].env` 有**规范外的值**：Create+ 里有一个文件是 `unknown/unknown`。
+- 六个包里 `hashes` 都同时给 sha1+sha512、`downloads` 都只有一个 CDN 地址，但都不是保证，所以缺 sha1 退化成"无从校验"而不是失败。
+
+**两个产品决策**（都体现在安装结果里，不藏）：
+- `optional` **装上**，并单独计数。理由：整合包是作者作为一个整体发布的，Create+ 客户端侧 155 个文件里 36 个是 optional，跳过近四分之一看起来像装坏了；装上去要去掉也容易。
+- 规范外的 `env` 值**按 required 装 + 记一条警告**。静默吞掉一个看不懂的值，等它出问题就查不出来源。
+
+**安全边界**（整合包决定我们下载什么、往哪写）：索引里的 `path` 与 zip 条目名都过 `archive::safe_rel_path`；下载只收 http/https；**slug 由调用方给，绝不取自包内**；`modpack_inspect` 是必需的第一步，UI 在落盘前把"会下载什么、会覆盖什么、装哪个 loader"摊开给用户看；`server-overrides/` 不应用到客户端实例；装失败把实例目录整个删掉（半成品实例比明确的失败更难处理）。
+
+**真装验证**（仓库里那份真包，183KB）：48 个文件 / 42MB、62 个 overrides、Fabric 0.19.3 + 1.21.4，实例指向 `fabric-loader-0.19.3-1.21.4`，索引声明的每个文件都在它声明的位置、第一个文件的 sha1 与索引复核一致、92 条 classpath 全在磁盘上、KnotClient 主类且原版 jar 在。另有两条：loader 版本不存在的包装失败且**不留实例**；同一 slug 装第二次被明确拒绝。
+
+**门禁自己抓到我两处问题**：
+- `shape_contract` 红了，原因是我先前一次编辑吃掉了 `export interface LaunchInfo {` 后面的换行，`instance` 与 `{` 挤在同一行，而 TS 解析器是按行的——门报的正是"两侧字段不一致"，这就是它存在的意义。
+- clippy 的 `too_many_arguments`（8/7）是对的，而修法是**减法**不是 allow：`Installer` 本来就持有 Downloader，再传一个就等于允许两套并发/镜像配置分岔。`populate` 的七元组返回也换成了具名结构体（元组的位置含义只有写的人记得，调用方数错一位编译器不拦）。
+
+**CI**：三平台跑 `.mrpack` 真装，与 NeoForge / Forge 步骤**共用数据目录**——1.21.4 只下一次，这一步只多 ~42MB，所以跑得起。
+
+**W10 仍未做**：MultiMC / `instance.cfg` 格式、"服务器整合包 .zip"、CurseForge zip（计划里标注为可选，需要第三方 API key）、整合包**导出**（现在只有导入）、以及 optional 文件的逐个勾选 UI（当前是一律装上并在结果里报数）。W11 依赖解析与冲突阻止未动。
 
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
