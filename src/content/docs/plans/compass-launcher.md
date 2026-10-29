@@ -198,8 +198,8 @@ title: Compass 启动器开发计划
   - UI：实例创建向导里选 loader 与版本；已装实例可"重装/换 loader 版本"。
 - **W9 NeoForge / Forge（高风险）**
   - NeoForge（1.20.2+）：`maven.neoforged.net` 取 installer jar → 解析 `install_profile.json`（`data`/`processors`/`libraries`/`versionInfo`）→ 下载所需 Maven 工件 → **按序执行 processors**（用我们探测到的对应 Java 起子进程，传入 `jar`/`classpath`/`args`，替换 `${...}` 数据变量，校验 `outputs` 的 sha1）→ 生成继承版本 JSON。
-  - Forge 1.13+：同上（installer 结构一致，注意 `maven.minecraftforge.net` 与 patches/`client.lzma` 等额外工件）。
-  - Forge ≤1.12.2：老 `install_profile.json`（v0）+ Universal/patches jar 合并、`minecraft.jar` 处理路径差异；这一段单独排一层测试（用 1.12.2、1.8.9、1.7.10 三个代表版本）。
+  - Forge 1.13+：同上（installer 结构一致，注意 `maven.minecraftforge.net` 与 patches/`client.lzma` 等额外工件）。**已交付（`4a8dbf4`），且计划里"结构一致"这句只对了一半**：1.13–1.16 的 profile 是 spec 0、processor 没有 `sides`、工具链是 SpecialSource 而不是 AutoRenamingTool；1.17+ 才与 NeoForge 同构。差异清单见下面的实施记录。
+  - Forge ≤1.12.2：**计划里这条的假设是错的，实测已纠正。** 原写"Universal/patches jar 合并、`minecraft.jar` 处理路径差异"——实测 1.12.2 的 `install_profile.json`（spec 0）里 `processors` 是**空数组**、`data` 也是空的，没有任何合并步骤：universal jar 就是一条普通库，而且它**打包在 installer 的 `maven/` 树里**（version.json 给的是 `"url": ""` + 真 sha1），官方 installer 只是把它拷出来。真正的差异在启动侧：旧式 `minecraftArguments` + `--tweakClass FMLTweaker` + `launchwrapper.Launch`，而且**原版 jar 必须在 classpath 上**（与 1.13+ 相反）。1.8.9 / 1.7.10 未验证（installer 已下载，格式待查）。
   - 失败可诊断：processor 的 stdout/stderr 全量落到安装日志并在 UI 展示，不要只显示"安装失败"。
 - **W10 整合包安装**
   - `.mrpack`（Modrinth 格式，也是 Hoard 导出的格式）：解析 `modrinth.index.json`（`files[]` 的 `path`/`hashes.sha1`/`downloads[]`/`env.client|server`）、`overrides/`、`client-overrides/`、`server-overrides/`；按 `dependencies`（minecraft/fabric-loader/forge/neoforge/quilt-loader）先装版本与 loader；`env.client=unsupported` 的文件跳过。
@@ -332,7 +332,28 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 - **W9 补完（`5138c3e`）：真启动我们自己装出来的那份 NeoForge。** `installs_neoforge_for_real` 钉的是启动计划（classpath 组成、asm 只一份、`--launchTarget neoforgeclient`、每项都在磁盘上），计划自洽不等于 JVM 起得来。新增 `launches_neoforge_for_real`：装完 → `runner::build` → 解 natives → `launch::spawn`，然后**边收输出边轮询标记，命中即 kill**。不能等退出：有显示服务的机器上游戏会真开窗一直跑。标记只挑结构稳定的三行（ModLauncher 的 `Launching target 'neoforgeclient'`、原版 `Setting user:`、`Backend library: LWJGL`），同时认致命标记（`export package net.minecraft`、`reads more than one module named`、`ClassNotFoundException`）以便早失败。结果：暖启 32s 走到 LWJGL 绑定，一次通过——**装的东西本来就是对的**；第一次跑红的是我的标记表（照旧日志写死了 `ModdedDatafixers`，这个版本记的是 `mojang/DataFixerBuilder`）。
 - 该测试**不进 CI**：GLFW 建窗在那行日志之前，headless runner 永远走不到标记，还要再下一份 ~700MB。CI 按名字只跑 `installs_neoforge_for_real`，真启动是本地验收步骤。把"CI 覆盖到哪为止"写在 workflow 注释里，好过让它绿着但覆盖面含糊。
 
-**W9 仍未做**：Forge 1.13+（同一套 installer 结构，`maven.minecraftforge.net`、`patches/client.lzma`）、Forge 1.12.2（另一套，无 processor）、W10 整合包、W11 依赖解析与冲突阻止。
+- **W9 补完（`4a8dbf4`）：Forge 装通了，而且它不是"换个 URL 的 NeoForge"。** 动手前先开了 6 个真 installer（1.7.10 / 1.12.2 / 1.13.2 / 1.16.5 / 1.20.1 / 1.21.4），实测跨**三套格式**：
+
+  | | 1.21.4-54.1.22 | 1.16.5-36.2.39 | 1.12.2-14.23.5.2864 |
+  |---|---|---|---|
+  | spec | 1 | 0 | 0 |
+  | processors | 7（client 侧 3） | 4（**都没有 sides** = client 全跑） | **空数组** |
+  | 带 `outputs` | 5 | 2 | 0 |
+  | 主类 | `net.minecraftforge.bootstrap.ForgeBootstrap` | `cpw.mods.modlauncher.Launcher` | `net.minecraft.launchwrapper.Launch` |
+  | 游戏参数 | `--launchTarget forge_client`（下划线） | `--launchTarget fmlclient` | 旧式 `minecraftArguments` + `--tweakClass` |
+  | 映射 | `@tsrg`（NeoForge 用 `@txt`） | `mcp_config@zip` + SpecialSource | 无 |
+  | 原版 jar 上 classpath | 否 | 否 | **是** |
+
+  NeoForge 只覆盖第一套的一半（它一个 `outputs` 都没有）。
+- **两个 bug 只有真装才炸得出来**，NeoForge 那条路上都走不到：
+  1. **`outputs` 的值也是变量引用。** Forge 写的是 `{MOJMAPS}={MOJMAPS_SHA}`，而 `plan_processor` 只替换了键，于是拿字面量去比对 sha1，报 `want {MOJMAPS_SHA} got c23f3418…`——**这句报错长得像"产物被篡改"**，会把人整个带到安全问题上。NeoForge 21.4 的 10 个 processor 一个 `outputs` 都没有，所以这条路径从没执行过。已抽成纯函数 `forge::resolve_outputs` 并离线钉住（5 个带 outputs 的 processor 全部解析成"绝对路径 + 40 位十六进制"）。
+  2. **每个 Forge 版本 JSON 都恰好有一条 `"url": ""` 的库。** 那不是坏数据，意思是"本地产出"：1.21.4 的是 binarypatcher 的输出（sha1 与 `{PATCHED_SHA}` 一致），1.12.2 / 1.16.5 的**打包在 installer 的 `maven/` 树里**。空 URL 过去会变成一次 HTTP 请求，失败信息是 `failed to download 1 file(s): : http: builder error`（注意那个空的来源名）。现在先把 installer 的 `maven/` 解到 `libraries/`（官方 installer 就是这么干的），仍然没就位的空 URL 会报出路径与期望 sha1。校验没有因此放松：下载器认"已就位"靠的就是版本 JSON 里的 sha1。
+- **顺带修掉一个排序 bug**：Maven 元数据的文档顺序不可信（1.16.5 那段末尾是 `36.0.0`，`36.2.39` 在中间），而 Forge 旧版的 loader 段有**四**位数字（`14.23.5.2864`）——三段键会让 `2860` 与 `2864` 并列，"哪个最新"就交回给了服务端排列。`version_key` 改成比较 `-` 两侧的**全部**数字段；预发布标签仍解析为空次键，所以 `0.20.0-beta.9` 不会排到 `0.20.0` 前面。
+- **纠正一条我先前写下的概括**：规则不是"classpath 上绝不放游戏 jar"。NeoForge 的 version.json **根本不列** `neoforged:neoforge:*`（fml_loader 自己按坐标找），而且它有 15 条 jvm 参数含 `-p` 模块路径，自动模块重名才致命；Forge 1.21.4 把 `:universal` 与 `:client` **都列了进去**，jvm 参数只有 1 条、没有模块路径，全在 classpath 上就不构成模块，也就没有撞名问题。**真正的规则一直只有一条：版本 JSON 写了什么就放什么，我们自己什么都不加。**
+- 测试：6 份真 fixture（未裁剪，11–35KB）+ 5 条离线测试；`tests/forge_live.rs` 真装 1.21.4 与 1.12.2（本地都通过，classpath 分别 120 / 51 条，legacy 那条验到"原版 jar 必须在、`--tweakClass` 从旧式参数展开、Java 8"）。live 测试的公用工具收到 `tests/live/`，两个 live 文件不会再各写一份然后分岔。CI 三平台跑现代 Forge，并与 NeoForge 步骤**共用数据目录**（同为 1.21.4，原版库与资源只下一次）。
+- **CI 不跑 legacy Forge**：1.12.2 要再下 ~1GB 旧资源，而它独有的那条路径（从 installer 的 `maven/` 取产物）已有离线单测 `installer_maven_tree_is_extracted_into_libraries` 钉住，含 zip-slip 拒绝与幂等。1.16.5（中间那套：无 sides + 内联坐标 + SpecialSource）同样只有离线 fixture 覆盖，**没有真装过**——它的 pipeline 与 1.21.4 同构，但这句话是推断，不是实测。
+
+**W9 仍未做**：Forge 1.16.5 这类中间格式的真装验证（离线已覆盖，未真跑）、W10 整合包、W11 依赖解析与冲突阻止。
 
 ## Phase 4: 账号与令牌安全（预计 2 周）
 
