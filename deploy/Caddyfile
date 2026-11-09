@@ -16,6 +16,7 @@
 	# ---- Web：BFF 会话路由与 GET 落地页（必须先于 mirror 的 /api/*、/account/*、/oauth/* 兜底）----
 	# /api/auth/*：Next 路由处理器，token 只在服务端经手（httpOnly cookie 会话）
 	reverse_proxy /api/auth/* web:3000
+	reverse_proxy /api/isles/* web:3000
 	# 邮件落地页 GET 是 web 页面；同名 POST（/account/verify 等）是 mirror API，由下方规则承接
 	@web_landing {
 		path /account/verify /account/reset-password

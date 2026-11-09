@@ -14,11 +14,11 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | 阶段 | 内容 | 验收 | 状态 |
 |---|---|---|---|
 | E0 | 两份调研、全部候选计划与依赖关系 | 文档构建通过，计划可追踪 | 已交付 |
-| E1 | Isles 基础：持久化服务器、公开/管理 API、秘密隔离、Java/Bedrock 状态 | HTTP 场景验证配置→公开读取→状态及未授权拒绝 | 开发中 |
-| E2 | Web 服务器目录、详情、集成后台及代理鉴权 | 真后端页面流程，普通用户不能管理；未配置可独立运行 | 待做 |
+| E1 | Isles 基础：持久化服务器、公开/管理 API、秘密隔离、Java/Bedrock 状态 | HTTP 场景验证配置→公开读取→状态及未授权拒绝 | 已交付 |
+| E2 | Web 服务器目录、详情、集成后台及代理鉴权 | 真后端页面流程，普通用户不能管理；未配置可独立运行 | 已交付 |
 | E3 | MCSManager、Pterodactyl 的实例发现/控制/日志，监控接口 | 测试上游协议边界，真实目标面板验证另记版本 | 待做 |
 | E4 | packwiz 与 `.mrpack`、Modrinth/Hangar 来源、资源包 | 发布不可变版本，客户端/服务端分离，真实包安装 | 待做 |
-| E5 | 游戏 Bridge：平台连接、游戏身份验证、基础状态 | 真服启动与 HTTP 交互，连接撤销和 UUID 授权 | 待做 |
+| E5 | 游戏 Bridge：平台连接、游戏身份验证、基础状态 | 真服启动与 HTTP 交互，连接撤销和 UUID 授权 | Paper 路径已交付；其他平台待做 |
 | E6 | LuckPerms、spark、PlaceholderAPI、Plan | 成员资格、性能摘要、本人资料与面板入口 | 待做 |
 | E7 | 游戏世界、治理、跨平台与社区扩展 | 每种实际支持平台有测试/真服证据 | 待做 |
 | E8 | Web 社区视觉、分组后台；Compass grasscn 与启动核心流程 | 中文/键盘/小窗口、实际启动与错误/下载进度 | 待做 |
@@ -40,10 +40,10 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | Hangar | 插件搜索/版本/下载来源，平台过滤 | E1/E2 | 待做 |
 | Polymer | 资源包版本/产物链接、AutoHost 接入；发布本站产物 | 资源包分发 | 待做 |
 | SkinsRestorer | 已验证身份应用本站皮肤，持久/临时和代理模式验证 | Bridge、Mirror | 待做 |
-| LuckPerms | 本站负责的成员组授予/撤销、上下文及状态读取 | Bridge、身份绑定 | 待做 |
-| PlaceholderAPI | 站长选定的玩家资料展示项；不可用结果明确 | Paper Bridge | 待做 |
+| LuckPerms | 本站负责的成员组授予/撤销、上下文及状态读取 | Bridge、身份绑定 | 全局组授予/撤销及读取已验证；上下文/到期待做 |
+| PlaceholderAPI | 站长选定的玩家资料展示项；不可用结果明确 | Paper Bridge | 已交付；真服 Server expansion 解析通过 |
 | Plan | 既有分析入口、访问隔离；本人活动与聚合资料 | E1/E2，深入需 Bridge | 待做 |
-| spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | 待做 |
+| spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 已验证；GC/报告入口待做 |
 | Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | 待做 |
 | ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | 待做 |
@@ -72,5 +72,11 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 ## 执行记录
 
 - E0：调研和本计划纳入 docs；docs 构建验证。
+- E1/E2：`mythic-isles` 已建仓并推送；持久化目录、加密连接令牌、Java/Bedrock 探测、MCSManager/Pterodactyl 常用操作、Prometheus 指标和 packwiz URL 源发布。HTTP/TCP/UDP 场景与 race 检测通过；面板真实部署、实时控制台和不支持的 packwiz 模式继续保留待办。
+- Web：`/servers`、服务器详情、`/admin/integrations`、服务端 BFF 与中英界面完成；Playwright 使用真实 Isles 进程跑通发布→前台浏览→链接，验证匿名管理 401、跨站写入 403、玩家不能给他人生成绑定码及 390px 无横向溢出。Web CI、既有 E2E 和新增 Isles E2E 均绿（`6c4647b`）。
+- E5/E6 首批：Java 21 Paper/Spigot Bridge 完成。Purpur 1.21.1 build 2329 真进程 + Mineflayer 1.21.1 玩家验证心跳、游戏内一次性 UUID 绑定、白名单任务；LuckPerms 5.5.71 验证成员组授予和撤销；PlaceholderAPI 2.12.3 + Server expansion 验证资料解析；内置 spark API 服务验证 TPS/MSPT/CPU。结果保存在本地场景目录，脚本 `bridge/paper/test/live.mjs` 可复跑。
+- 真服发现：内置 spark 不作为普通 Bukkit 插件列出，改为发现公开 Spark service/provider；没有数据不回填虚假 TPS。成员操作以持久化 desired-state 队列执行并回报 pending/applied/failed。
+
+部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 
 参考：[视觉与总体架构评估](../research/web-and-mc-ecosystem.md)、[可选整合调研](../research/optional-mc-integrations.md)。

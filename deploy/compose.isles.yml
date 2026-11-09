@@ -1,0 +1,23 @@
+# Use with the workspace compose file as the first -f argument.
+# docker compose -f docker-compose.yml -f docs/deploy/compose.isles.yml up -d --build isles web
+services:
+  isles:
+    build:
+      context: ./mythic-isles
+    restart: unless-stopped
+    environment:
+      ISLES_LISTEN: 0.0.0.0:8095
+      ISLES_DATA_DIR: /data
+      ISLES_ADMIN_TOKEN: ${ISLES_ADMIN_TOKEN:?Set a random 32+ character service token}
+      ISLES_SECRET_KEY: ${ISLES_SECRET_KEY:?Set a base64-encoded random 32-byte key}
+    volumes:
+      - isles-data:/data
+  web:
+    environment:
+      ISLES_URL: http://isles:8095
+      ISLES_ADMIN_TOKEN: ${ISLES_ADMIN_TOKEN}
+    build:
+      args:
+        ISLES_IMAGE_ORIGINS: ${ISLES_IMAGE_ORIGINS:-}
+volumes:
+  isles-data:
