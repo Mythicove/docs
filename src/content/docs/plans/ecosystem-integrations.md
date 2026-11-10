@@ -45,7 +45,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | Plan | 既有分析入口、访问隔离；本人活动与聚合资料 | E1/E2，深入需 Bridge | 5.9/3705 + SQLite 真服验证已存会话、离线本人资料、当前服聚合及重启持久性；面板沿用自身鉴权，MySQL/代理/SSO 待验收 |
 | spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 已验证；GC/报告入口待做 |
 | Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 待做 |
-| Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | 待做 |
+| Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | loopback 未签名 Bedrock 协议真客户端验证绑定、版本、实际 Bukkit UUID 白名单与 UDP 探测；Xbox 在线认证、真实 Java 关联、代理及双入口配置待验收/完善 |
 | ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion 5.12.2 协议范围与在线玩家版本已真服验证；Backwards/Rewind 与 Compass 检查待做 |
 | WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge | 本人领地/角色/世界/中心坐标已真服验证；地图覆盖层与授权修改待做 |
 | Towny | 城镇/国家/居民/招募与地图；授权管理 | Paper Bridge | 0.103.2.0 flatfile 真服验证城镇/国家概况、本人角色/职级、离线重启及移除；公开招募、地图与授权修改待做 |
@@ -87,6 +87,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - 真服暴露的状态边界：Chunky 1.4.40 可能先保存零计数终止点，再由异步回调报告 100%。Bridge 读取真实任务生命周期事件，区分运行期对象与存档；重启后无法从终止存档证明完成或取消时报告 `stopped`。生产浏览器场景使用真服记录的上游观察，走真实 Web/BFF/Isles 领取与回执链路，验证自动进度、刷新后暂停状态、取消确认、390px 布局与令牌撤销禁用。记录样本位于 `web/e2e/fixtures/chunky-observations.json`。尚未提供自动维护模式，生成本身不会限制玩家登录。
 - Plan 首批（2026-11-10）：通过官方 Query API 后台只读查询，按当前 Plan server UUID 限定存档会话，导出服务器聚合及已验证 UUID 的个人活动。Purpur 1.21.1/2329 + Plan 5.9/3705 + SQLite 真服记录已绑定玩家与未绑定访客，两人的会话均计入聚合，但仅前者个人明细被采集；验证退出、重启后本人仍可读取。HTTP 与生产浏览器场景覆盖所有权、Bridge 跨服令牌隔离、公开目录不含统计、管理员聚合和查询不可用不伪造零。原生记录用于 `web/e2e/fixtures/plan-observations.json`；未将已存会话当作实时在线计数，也未改动 Plan 面板认证。
 - Towny 首批：Towny 0.103.2.0 / flatfile / Purpur 1.21.1/2329 实际创建城镇和国家，识别镇长/国王；加入未绑定访客、转移镇长并授予 assistant，验证离线重启后本人关系保持、踢出后不残留。概况仅管理员可见，个人明细仅已验证 UUID，复用 Bridge 心跳与身份清单。`public` 明确解释为公开传送，不等于网站公开权限；不导出传送坐标与居民目录。列表上限 100 各自有完整计数/截断提示，本人关系独立返回。原生记录用于 `web/e2e/fixtures/towny-observations.json`；公开招募、地图覆盖层和授权写操作未销项。
+- Geyser/Floodgate 首批（2026-11-11）：Geyser 2.8.3 b941、Floodgate 2.2.5 b141、ViaVersion 5.12.2 与 Purpur 1.21.1/2329 实进程，Bedrock 1.21.100 通过真实 RakNet/加密握手、`start_game` 和游戏内命令完成一次性绑定，实际检查 Bukkit UUID 写入原生白名单；Java 玩家没有被误标基岩。另跑 Geyser 无 Floodgate 路径，验证实际 UDP 探测。本人页分开显示 Bedrock 原始版本和 ViaVersion 转换后 Java 协议；后台读取 Geyser 支持版本。HTTP/生产浏览器场景覆盖个人所有权、公开数据隔离、平台枚举、身份持久化和离线移除在线连接观察。夹具仅 loopback、允许未签名代理连接，XUID 为零；不将它冒充 Xbox Live 或真实 Java 账号关联验收，代理与双入口合并仍保留待办。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 

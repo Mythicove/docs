@@ -138,3 +138,18 @@ Chunky 1.4.40 的快速任务可能先写入终止存档、随后才回报异步
 “开放加入”来自 Towny 的 open 标记，“公开传送”来自 public 标记；这两个标记不会自动公开本站资料，也不是网页加入/传送按钮。townblock 使用 Towny 自身单位，不假设面积或输出保护边界。邀请、入镇、城镇权限修改仍在游戏内完成，地图覆盖层、公开招募和网页管理流程继续保留后续计划。
 
 已真服验证 **Towny 0.103.2.0 + flatfile + Purpur 1.21.1/2329**：创建城镇/国家、镇长与国王识别、转移镇长、assistant 职级、离线重启和移除居民。测试环境没有经济插件，Towny 有缺少 economy provider 及 `TownMobPVM:SulfurCube` 提示；验证的是上述只读路径，不代表 Towny 经济、战争与全部游戏版本兼容。MySQL/Folia 尚未验收。Towny 采集复用 2000 个已验证 UUID 和 256 KiB 心跳限制；单居民职级超过 32 条会明确使该次 Towny 观察不可用。
+
+## Geyser / Floodgate 基岩身份与连接观察
+
+按 [Geyser 官方部署指南](https://geysermc.org/wiki/geyser/setup/)安装并配置 Geyser；需要 Floodgate 时同时按其官方指南配置认证与密钥。Bridge 不负责修改这两个插件的认证或开放网络端口。Geyser 的 Java 转换目标若新于实际后端，需要按官方要求配置协议转换插件。
+
+1. 在后端服务器安装本阶段 Bridge，重启后在后台刷新，可查看本机 Geyser API 报告的支持基岩版本和 Java 转换目标。这不是公网 UDP 连通性证明。
+2. 基岩玩家在 `/game` 为**安装 Bridge 的后端服务器条目**生成一次性码，进服后执行 `/mythic link <code>`。不要把单独发布的基岩地址目录条目当作另一个 Bridge ID。
+3. Bridge 通过 Floodgate 在线玩家 API 或本机 Geyser 连接识别基岩来源，不按玩家名前缀或 UUID 外形猜测；绑定时保存平台。玩家本人页显示原始基岩版本、连接来源、上游 Java 账号关联状态；ViaVersion 的转换后 Java 协议另行标注。
+4. 白名单与成员资格始终针对实际 Bukkit UUID。Floodgate 已关联 Java 账号时，使用它实际采用的 Java UUID，不从 XUID 重造身份，也不会绕过本站已有的 UUID 所有权检查自动合并账号。
+
+上游 Java 账号关联与本站一次性游戏绑定是两件事；连接观察也不是独立的 Xbox 认证结论。离线后连接字段消失，绑定时的平台与身份保留。没有额外采集 Xbox ID、设备、IP 或会话 token。代理部署必须正确转发 Floodgate 数据；仅后端安装 Floodgate 时，不会虚构远端 Geyser 的支持版本。
+
+基岩地址仍可用现有 `edition: bedrock` 服务器条目发布，填写实际 UDP 端口，由 Isles 做 RakNet 探测；绑定选择上述后端条目。两种入口合并成单一服务器卡片的配置仍待后续完善。
+
+本阶段已用 **Geyser 2.8.3 b941 / Floodgate 2.2.5 b141 / ViaVersion 5.12.2 / Purpur 1.21.1/2329** 跑通真实 Bedrock 1.21.100 客户端的协议进入、游戏内绑定、私有版本观察、实际 Bukkit UUID 白名单及 UDP 探测；也验证了不安装 Floodgate 的 Geyser 路径。验收使用仅 loopback 可访问的未签名协议夹具，**不代表 Xbox Live 在线认证或真实已关联 Java 账号已验收**。公网认证、账号关联和代理转发保留运行验收待办，部署不要照搬夹具的认证例外设置。
