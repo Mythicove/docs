@@ -16,12 +16,12 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | E0 | 两份调研、全部候选计划与依赖关系 | 文档构建通过，计划可追踪 | 已交付 |
 | E1 | Isles 基础：持久化服务器、公开/管理 API、秘密隔离、Java/Bedrock 状态 | HTTP 场景验证配置→公开读取→状态及未授权拒绝 | 已交付 |
 | E2 | Web 服务器目录、详情、集成后台及代理鉴权 | 真后端页面流程，普通用户不能管理；未配置可独立运行 | 已交付 |
-| E3 | MCSManager、Pterodactyl 的实例发现/控制/日志，监控接口 | 测试上游协议边界，真实目标面板验证另记版本 | 待做 |
+| E3 | MCSManager、Pterodactyl 的实例发现/控制/日志，监控接口 | 测试上游协议边界，真实目标面板验证另记版本 | HTTP 常用操作已交付；真实面板、实时流及历史监控待做 |
 | E4 | packwiz 与 `.mrpack`、Modrinth/Hangar 来源、资源包 | 发布不可变版本，客户端/服务端分离，真实包安装 | packwiz 发布与 Modrinth/Hangar 搜索已交付；Compass 安装、资源包和不支持格式待做 |
 | E5 | 游戏 Bridge：平台连接、游戏身份验证、基础状态 | 真服启动与 HTTP 交互，连接撤销和 UUID 授权 | Paper 路径已交付；其他平台待做 |
 | E6 | LuckPerms、spark、PlaceholderAPI、Plan | 成员资格、性能摘要、本人资料与面板入口 | 待做 |
 | E7 | 游戏世界、治理、跨平台与社区扩展 | 每种实际支持平台有测试/真服证据 | 待做 |
-| E8 | Web 社区视觉、分组后台；Compass grasscn 与启动核心流程 | 中文/键盘/小窗口、实际启动与错误/下载进度 | 待做 |
+| E8 | Web 社区视觉、分组后台；Compass grasscn 与启动核心流程 | 中文/键盘/小窗口、实际启动与错误/下载进度 | Compass 首页 grasscn 首批已交付，其他页面和 Web 门户重设计待做 |
 
 ## 全部候选交付清单
 
@@ -29,11 +29,11 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 
 | 项目 | 最小有用交付及深入目标 | 依赖 | 状态 |
 |---|---|---|---|
-| MCSManager | 连接测试、选择实例、启停重启、命令、近期日志；实时日志和可选 OIDC | E1/E2 | 待做 |
-| Pterodactyl | Client API 选择服务器、资源、power、command、WebSocket | E1/E2 | 待做 |
-| BlueMap | 地图入口/嵌入、权限与网关说明；世界/地标/皮肤关联 | E1/E2，深度需 Bridge | 待做 |
-| squaremap | 已有地图入口、地图标记适配 | E1/E2，深度需 Bridge | 待做 |
-| Dynmap | 已有地图入口、官方标记 API | E1/E2，深度需 Bridge | 待做 |
+| MCSManager | 连接测试、选择实例、启停重启、命令、近期日志；实时日志和可选 OIDC | E1/E2 | HTTP 适配已交付；真面板、实时流、SSO 待做 |
+| Pterodactyl | Client API 选择服务器、资源、power、command、WebSocket | E1/E2 | Client HTTP 适配已交付；真面板和 WebSocket 待做 |
+| BlueMap | 地图入口/嵌入、权限与网关说明；世界/地标/皮肤关联 | E1/E2，深度需 Bridge | 地图配置、独立嵌入页与保存视角已交付；真地图、标记与皮肤待做 |
+| squaremap | 已有地图入口、地图标记适配 | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
+| Dynmap | 已有地图入口、官方标记 API | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
 | packwiz | 源检查、版本发布、`.mrpack` 导出/安装、可选项与服务端分离 | E1，Hoard/Compass | 待做 |
 | AutoModpack | 独立实例安装/共存、服务端配置指引；协议适配单独验证 | Compass | 待做 |
 | Modrinth | 搜索/版本/哈希识别，选定版本安装，保留来源 | Hoard/Compass | 搜索、兼容版本、上游下载及哈希展示已交付；按文件哈希识别和 Compass 安装待做 |
@@ -78,6 +78,9 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - 真服发现：内置 spark 不作为普通 Bukkit 插件列出，改为发现公开 Spark service/provider；没有数据不回填虚假 TPS。成员操作以持久化 desired-state 队列执行并回报 pending/applied/failed。
 - E4 内容来源：`/catalog` 完成中英文搜索、来源切换、平台/游戏版本筛选、版本列表、原站下载和上游哈希展示。Isles 使用部署级固定源、2MiB 响应上限、一分钟缓存、16 条缓存容量及每进程 60 次/分钟出站预算。生产 HTTP 场景覆盖筛选组合、缓存、无效输入、版本元数据、超大响应和预算；Playwright 两个场景通过（含移动端），真实 Modrinth Fabric API 与 Hangar ViaVersion 元数据读取通过。没有把“上游声明哈希”当作实际下载验证，也没有将目录阶段记成插件自动安装完成。
 - E7 首批：ViaVersion 5.12.2 与 WorldGuard 7.0.12 / WorldEdit 7.3.9 在 Purpur 1.21.1/2329 真服通过。观察服务端允许协议和实际客户端版本，创建真实矩形区域并加入已绑定玩家，验证私有资料返回成员角色及中心坐标、无物理范围的模板区域不会误显示。后端覆盖个人授权/公开数据隔离，Web 的独立生产构建场景通过“生成码→Bridge 绑定→上报→本人领地/客户端版本”。地图覆盖层、区域修改与其他平台没有提前销项。
+- E8 Compass 首批：grasscn Button/Input/Progress 与离线字体/材质接入首页，新增选择实例、账号门槛、启动失败重试、运行/停止和文件进度。CSS 先声明层次，旧全局控件样式处于 legacy 层，避免覆盖 MC 控件。保留既有品牌色与 skinview3d；中文正文不强制像素字。Chromium IPC 边界场景验证中文长名称、独立密码、重试/停止、125%/150% 与最小窗口无横向溢出；Windows Tauri/WebView2 实机验证中文输入、离线资源和无账号禁用启动。Mac/Linux、实际从新首页启动游戏，以及实例/设置/日志页的控件迁移仍保留待办。另从暂存区独立导出构建，验证发布内容不依赖其他未提交 Rust/账号改动。
+- E8 Web 首批：配置并发布服务器后，首页采用真实站点名称/介绍、服务器/世界截图、游戏连接状态、地图与整合包入口及个人资料导航；不再以 Yggdrasil 技术介绍作为服务器社区首屏。未启用服务器的部署保留现有皮肤/模组入口，不增加人工“首页模式”开关。服务器数据按请求读取，构建期未连接 Isles 不会把空目录固化。独立生产构建浏览器场景验证发布后首页自动变化、原技术徽标不再出现，以及 390px 无横向溢出。
+- 地图首层：服务器配置新增 BlueMap/squaremap/Dynmap 类型及浏览器地址，`/servers/{id}/map` 保留原工具与视角 fragment，加载独立 iframe，提供新标签页入口。不由 Go/Next 代理地图 tile。外部 iframe 来源由构建期 CSP 精确配置，未允许的来源给出提示，不全局放开。HTTP 场景验证地址/类型/草稿公开边界，生产 Web 场景验证配置→保存→嵌入外部工具→保留视角→移动端；没有将 fixture iframe 验证冒充真实地图渲染或标记 API 验证。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 

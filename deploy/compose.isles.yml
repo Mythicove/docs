@@ -19,5 +19,6 @@ services:
     build:
       args:
         ISLES_IMAGE_ORIGINS: ${ISLES_IMAGE_ORIGINS:-}
+        ISLES_MAP_ORIGINS: ${ISLES_MAP_ORIGINS:-}
 volumes:
   isles-data:

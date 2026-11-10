@@ -73,6 +73,12 @@ GET /api/isles/catalog/hangar/versions/ViaVersion/ViaVersion?platform=PAPER&limi
 
 BlueMap、squaremap、Dynmap 和 Plan 当前可以关联为具名链接，在各自工具中打开；这不是它们的游戏内 API 适配。成员地图的鉴权仍由对应工具或反向代理控制，隐藏本站链接不等于限制地图访问。
 
+地图还有专用配置：在服务器编辑页选择 BlueMap、squaremap 或 Dynmap，填写浏览器可访问地址（支持含保存视角的 `#fragment`），保存后服务器详情及社区首页出现“世界地图”，进入 `/servers/{id}/map`。地图仍由原工具渲染，站点仅提供页面容器及新标签页入口。
+
+同源地图可直接嵌入；外部地图需在构建 Web 时配置 `ISLES_MAP_ORIGINS=https://map.example.org`，并重新构建。Compose 附加文件已传递此参数。仅放行精确 origin，不全局开放 frame-src；地图服务自身的 CSP `frame-ancestors` 或 X-Frame-Options 也必须允许本站嵌入。不支持 iframe 或来源未放行时仍可打开原地图页面。Iframe 限制为地图所需的脚本、同源和指针交互，未开放顶层导航权限。
+
+仅成员地图应在其网页和数据入口统一鉴权；配置在本站的地址必须是允许玩家知道的浏览器入口，不填内网管理端点或私密 token。当前没有自动改写 BlueMap 标记/玩家皮肤，也没有把页面嵌入当成游戏内 API 接入完成。
+
 ## 游戏身份、白名单与玩家资料
 
 `mythic-isles/bridge/paper` 提供 Java 21 Paper/Spigot 插件，初始验证环境为 Purpur 1.21.1。可从 Isles CI 的 `isles-paper-bridge` artifact 获取 JAR，放入 `plugins/` 后重启。
