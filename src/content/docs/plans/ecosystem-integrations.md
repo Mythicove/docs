@@ -17,7 +17,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | E1 | Isles 基础：持久化服务器、公开/管理 API、秘密隔离、Java/Bedrock 状态 | HTTP 场景验证配置→公开读取→状态及未授权拒绝 | 已交付 |
 | E2 | Web 服务器目录、详情、集成后台及代理鉴权 | 真后端页面流程，普通用户不能管理；未配置可独立运行 | 已交付 |
 | E3 | MCSManager、Pterodactyl 的实例发现/控制/日志，监控接口 | 测试上游协议边界，真实目标面板验证另记版本 | 待做 |
-| E4 | packwiz 与 `.mrpack`、Modrinth/Hangar 来源、资源包 | 发布不可变版本，客户端/服务端分离，真实包安装 | 待做 |
+| E4 | packwiz 与 `.mrpack`、Modrinth/Hangar 来源、资源包 | 发布不可变版本，客户端/服务端分离，真实包安装 | packwiz 发布与 Modrinth/Hangar 搜索已交付；Compass 安装、资源包和不支持格式待做 |
 | E5 | 游戏 Bridge：平台连接、游戏身份验证、基础状态 | 真服启动与 HTTP 交互，连接撤销和 UUID 授权 | Paper 路径已交付；其他平台待做 |
 | E6 | LuckPerms、spark、PlaceholderAPI、Plan | 成员资格、性能摘要、本人资料与面板入口 | 待做 |
 | E7 | 游戏世界、治理、跨平台与社区扩展 | 每种实际支持平台有测试/真服证据 | 待做 |
@@ -36,8 +36,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | Dynmap | 已有地图入口、官方标记 API | E1/E2，深度需 Bridge | 待做 |
 | packwiz | 源检查、版本发布、`.mrpack` 导出/安装、可选项与服务端分离 | E1，Hoard/Compass | 待做 |
 | AutoModpack | 独立实例安装/共存、服务端配置指引；协议适配单独验证 | Compass | 待做 |
-| Modrinth | 搜索/版本/哈希识别，选定版本安装，保留来源 | Hoard/Compass | 待做 |
-| Hangar | 插件搜索/版本/下载来源，平台过滤 | E1/E2 | 待做 |
+| Modrinth | 搜索/版本/哈希识别，选定版本安装，保留来源 | Hoard/Compass | 搜索、兼容版本、上游下载及哈希展示已交付；按文件哈希识别和 Compass 安装待做 |
+| Hangar | 插件搜索/版本/下载来源，平台过滤 | E1/E2 | 搜索、按平台版本/下载/哈希已交付；服务端安装待做 |
 | Polymer | 资源包版本/产物链接、AutoHost 接入；发布本站产物 | 资源包分发 | 待做 |
 | SkinsRestorer | 已验证身份应用本站皮肤，持久/临时和代理模式验证 | Bridge、Mirror | 待做 |
 | LuckPerms | 本站负责的成员组授予/撤销、上下文及状态读取 | Bridge、身份绑定 | 全局组授予/撤销及读取已验证；上下文/到期待做 |
@@ -76,6 +76,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - Web：`/servers`、服务器详情、`/admin/integrations`、服务端 BFF 与中英界面完成；Playwright 使用真实 Isles 进程跑通发布→前台浏览→链接，验证匿名管理 401、跨站写入 403、玩家不能给他人生成绑定码及 390px 无横向溢出。Web CI、既有 E2E 和新增 Isles E2E 均绿（`6c4647b`）。
 - E5/E6 首批：Java 21 Paper/Spigot Bridge 完成。Purpur 1.21.1 build 2329 真进程 + Mineflayer 1.21.1 玩家验证心跳、游戏内一次性 UUID 绑定、白名单任务；LuckPerms 5.5.71 验证成员组授予和撤销；PlaceholderAPI 2.12.3 + Server expansion 验证资料解析；内置 spark API 服务验证 TPS/MSPT/CPU。结果保存在本地场景目录，脚本 `bridge/paper/test/live.mjs` 可复跑。
 - 真服发现：内置 spark 不作为普通 Bukkit 插件列出，改为发现公开 Spark service/provider；没有数据不回填虚假 TPS。成员操作以持久化 desired-state 队列执行并回报 pending/applied/failed。
+- E4 内容来源：`/catalog` 完成中英文搜索、来源切换、平台/游戏版本筛选、版本列表、原站下载和上游哈希展示。Isles 使用部署级固定源、2MiB 响应上限、一分钟缓存、16 条缓存容量及每进程 60 次/分钟出站预算。生产 HTTP 场景覆盖筛选组合、缓存、无效输入、版本元数据、超大响应和预算；Playwright 两个场景通过（含移动端），真实 Modrinth Fabric API 与 Hangar ViaVersion 元数据读取通过。没有把“上游声明哈希”当作实际下载验证，也没有将目录阶段记成插件自动安装完成。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 

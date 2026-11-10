@@ -54,6 +54,21 @@ HTTP 上游错误不会回显带 key 的 URL。管理审计记录操作、目标
 
 单次发布限制为 90 秒、总读取 256MiB、单个远程模组 128MiB、单个覆盖文件 32MiB、最多 2000 项。实际外部文件仍从其原下载源获取；Isles 不把所有远程模组重新打包分发。
 
+## 内容来源
+
+Isles 提供固定来源的 Modrinth 与 Hangar 搜索接口，供启动器或自部署站点查找项目。请求使用 `q`、`limit` 以及来源允许的筛选字段；结果保留来源和上游项目链接，不把外部项目文件偷偷镜像到本站。
+
+```text
+GET /api/isles/catalog/modrinth/search?q=Fabric&loader=fabric&game_version=1.21.1&limit=20
+GET /api/isles/catalog/hangar/search?q=Paper&platform=PAPER&limit=20
+GET /api/isles/catalog/modrinth/versions/P7dR8mSH?loader=fabric&game_version=1.21.1
+GET /api/isles/catalog/hangar/versions/ViaVersion/ViaVersion?platform=PAPER&limit=20
+```
+
+网页入口 `/catalog` 可完成同样的搜索与选版本流程。Modrinth 查询遵循其公共 API 的限流和 User-Agent 要求。Hangar 查询保留平台对应的下载和 SHA-256；版本页显示的是上游兼容性与哈希声明，文件内容校验仍在安装/发布阶段执行。Hangar 每页筛选不代表枚举了全部历史版本，页面已明确说明。
+
+每进程最多 60 次/分钟上游调用、16 条一分钟缓存；超出出站预算返回 429。部署兼容镜像时可在 Isles 服务端设置 `ISLES_MODRINTH_URL` 或 `ISLES_HANGAR_URL`，不能通过公开请求指定任意目标。普通皮肤站不用配置此可选服务。
+
 ## 地图、统计与后续插件
 
 BlueMap、squaremap、Dynmap 和 Plan 当前可以关联为具名链接，在各自工具中打开；这不是它们的游戏内 API 适配。成员地图的鉴权仍由对应工具或反向代理控制，隐藏本站链接不等于限制地图访问。
