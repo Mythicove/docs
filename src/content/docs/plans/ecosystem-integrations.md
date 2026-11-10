@@ -19,8 +19,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | E3 | MCSManager、Pterodactyl 的实例发现/控制/日志，监控接口 | 测试上游协议边界，真实目标面板验证另记版本 | HTTP 常用操作已交付；真实面板、实时流及历史监控待做 |
 | E4 | packwiz 与 `.mrpack`、Modrinth/Hangar 来源、资源包 | 发布不可变版本，客户端/服务端分离，真实包安装 | packwiz 发布与 Modrinth/Hangar 搜索已交付；Compass 安装、资源包和不支持格式待做 |
 | E5 | 游戏 Bridge：平台连接、游戏身份验证、基础状态 | 真服启动与 HTTP 交互，连接撤销和 UUID 授权 | Paper 路径已交付；其他平台待做 |
-| E6 | LuckPerms、spark、PlaceholderAPI、Plan | 成员资格、性能摘要、本人资料与面板入口 | 待做 |
-| E7 | 游戏世界、治理、跨平台与社区扩展 | 每种实际支持平台有测试/真服证据 | 待做 |
+| E6 | LuckPerms、spark、PlaceholderAPI、Plan | 成员资格、性能摘要、本人资料与面板入口 | 全局权限组、占位符与性能首批已交付；Plan、上下文与报告待做 |
+| E7 | 游戏世界、治理、跨平台与社区扩展 | 每种实际支持平台有测试/真服证据 | ViaVersion、WorldGuard、Vault 与 Chunky 首批已交付；其他项目和深层联动待做 |
 | E8 | Web 社区视觉、分组后台；Compass grasscn 与启动核心流程 | 中文/键盘/小窗口、实际启动与错误/下载进度 | Compass 首页 grasscn 首批已交付，其他页面和 Web 门户重设计待做 |
 
 ## 全部候选交付清单
@@ -58,7 +58,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | DiscordSRV | 复用已验证绑定和事件、身份/成员关联 | Paper Bridge | 待做 |
 | Simple Voice Chat | 包依赖、部署诊断与指引；游戏内状态 | Compass，深入需 Bridge | 客户端/UDP/代理部署指引已交付；状态适配与真验收待做 |
 | itzg/docker-minecraft-server | 固定版本 Compose 示例、packwiz/资源/网络配置 | E4 | 固定镜像 Paper 模板及 packwiz overlay 已解析验证；目标容器运行待验收 |
-| Chunky | 预生成任务发起、进度/暂停/取消与维护状态 | Bridge 或面板命令 | 待做 |
+| Chunky | 预生成任务发起、进度/暂停/取消与维护状态 | Bridge 或面板命令 | 1.4.40 真服验证正方形/圆形、进度/ETA、暂停重启续传、运行中/暂停后取消及完成；后台管理已交付，不自动设置停服维护 |
 
 ## 基础设计与验证
 
@@ -83,6 +83,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - 地图首层：服务器配置新增 BlueMap/squaremap/Dynmap 类型及浏览器地址，`/servers/{id}/map` 保留原工具与视角 fragment，加载独立 iframe，提供新标签页入口。不由 Go/Next 代理地图 tile。外部 iframe 来源由构建期 CSP 精确配置，未允许的来源给出提示，不全局放开。HTTP 场景验证地址/类型/草稿公开边界，生产 Web 场景验证配置→保存→嵌入外部工具→保留视角→移动端；没有将 fixture iframe 验证冒充真实地图渲染或标记 API 验证。
 - 自部署配方：新增[私服整合包、资源包与语音指南](../guides/private-modpack-workflows.md)及固定 itzg manifest 的 Paper Compose、packwiz/Fabric overlay。Compose 配置解析通过；实际 Docker 运行尚未验证，本机容器查询曾超时，不将模板阶段记为容器运行交付。workspace 根 `go.work` 已加入 Isles（根目录无 git，服务仓库自身可独立构建）。
 - Vault 首批：真实 Vault 1.7.3 / EssentialsX Economy 2.21.2 / Purpur 1.21.1 验证已绑定玩家余额、provider 名称、货币名和 provider 格式；本人网页资料展示通过。原始浮点值与显示格式保持上游结果，没有擅自把数值转为精确分币或改写格式；只读适配不暴露交易操作。历史 EssentialsX 对此服务端有版本警告，记录的是已跑通的特定 API 路径，不是认证全部上游功能兼容。
+- Chunky 首批（2026-11-10）：Purpur 1.21.1/2329 + Chunky 1.4.40 真进程生成正方形与圆形选区，读取实际区块进度/ETA；验证暂停→重启服务器→继续、运行中取消、暂停后取消、小范围 25 区块完成。任务操作复用既有队列，新增持久化领取后执行，丢失回执不会自动重放非幂等操作；HTTP 场景覆盖授权、参数、状态前置条件、重复领取、服务重启和回执失败。未装 Chunky 的真服回归绑定与白名单通过。
+- 真服暴露的状态边界：Chunky 1.4.40 可能先保存零计数终止点，再由异步回调报告 100%。Bridge 读取真实任务生命周期事件，区分运行期对象与存档；重启后无法从终止存档证明完成或取消时报告 `stopped`。生产浏览器场景使用真服记录的上游观察，走真实 Web/BFF/Isles 领取与回执链路，验证自动进度、刷新后暂停状态、取消确认、390px 布局与令牌撤销禁用。记录样本位于 `web/e2e/fixtures/chunky-observations.json`。尚未提供自动维护模式，生成本身不会限制玩家登录。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 
