@@ -89,3 +89,5 @@ BlueMap、squaremap、Dynmap 和 Plan 当前可以关联为具名链接，在各
 PlaceholderAPI 的展示项在服务器插件配置的 `placeholders` 中设置，相关 expansion 需实际安装。网页用户不能提交任意占位符。玩家资料只向拥有该站点玩家的网站会话返回，过期数据会标注不可用。spark 优先通过公开 API 服务读取，包括 Paper 内置服务。
 
 其他项目的状态以[生态实施计划](../plans/ecosystem-integrations.md)为准。仅添加链接不表示已完成深度整合。
+
+Paper Bridge 已支持可选的 WorldGuard 与 ViaVersion：安装对应插件后自动检测。玩家 `/game` 页可查看在线时观察到的本人领地成员关系、世界和区域中心坐标，以及实际客户端协议版本；后台可查看 ViaVersion 排除被禁协议后的允许范围。领地最多 32 条并明确截断，不公开其他玩家的领地资料，也不提供网页修改保护规则。协议列表不能代替对代理、认证或模组兼容性的验证。

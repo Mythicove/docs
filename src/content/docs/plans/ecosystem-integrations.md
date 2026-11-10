@@ -46,8 +46,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 已验证；GC/报告入口待做 |
 | Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | 待做 |
-| ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | 待做 |
-| WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge | 待做 |
+| ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion 5.12.2 协议范围与在线玩家版本已真服验证；Backwards/Rewind 与 Compass 检查待做 |
+| WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge | 本人领地/角色/世界/中心坐标已真服验证；地图覆盖层与授权修改待做 |
 | Towny | 城镇/国家/居民/招募与地图；授权管理 | Paper Bridge | 待做 |
 | FTB Teams / Chunks | 团队、领地及实际强制加载状态 | 对应模组平台 Bridge | 待做 |
 | FTB Quests | 任务定义、本人/团队进度只读，隐藏规则 | 对应模组平台 Bridge | 待做 |
@@ -77,6 +77,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - E5/E6 首批：Java 21 Paper/Spigot Bridge 完成。Purpur 1.21.1 build 2329 真进程 + Mineflayer 1.21.1 玩家验证心跳、游戏内一次性 UUID 绑定、白名单任务；LuckPerms 5.5.71 验证成员组授予和撤销；PlaceholderAPI 2.12.3 + Server expansion 验证资料解析；内置 spark API 服务验证 TPS/MSPT/CPU。结果保存在本地场景目录，脚本 `bridge/paper/test/live.mjs` 可复跑。
 - 真服发现：内置 spark 不作为普通 Bukkit 插件列出，改为发现公开 Spark service/provider；没有数据不回填虚假 TPS。成员操作以持久化 desired-state 队列执行并回报 pending/applied/failed。
 - E4 内容来源：`/catalog` 完成中英文搜索、来源切换、平台/游戏版本筛选、版本列表、原站下载和上游哈希展示。Isles 使用部署级固定源、2MiB 响应上限、一分钟缓存、16 条缓存容量及每进程 60 次/分钟出站预算。生产 HTTP 场景覆盖筛选组合、缓存、无效输入、版本元数据、超大响应和预算；Playwright 两个场景通过（含移动端），真实 Modrinth Fabric API 与 Hangar ViaVersion 元数据读取通过。没有把“上游声明哈希”当作实际下载验证，也没有将目录阶段记成插件自动安装完成。
+- E7 首批：ViaVersion 5.12.2 与 WorldGuard 7.0.12 / WorldEdit 7.3.9 在 Purpur 1.21.1/2329 真服通过。观察服务端允许协议和实际客户端版本，创建真实矩形区域并加入已绑定玩家，验证私有资料返回成员角色及中心坐标、无物理范围的模板区域不会误显示。后端覆盖个人授权/公开数据隔离，Web 的独立生产构建场景通过“生成码→Bridge 绑定→上报→本人领地/客户端版本”。地图覆盖层、区域修改与其他平台没有提前销项。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 
