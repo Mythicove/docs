@@ -56,7 +56,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | LibertyBans | 本人处罚、管理查询、申诉；授权处罚操作 | Bridge、身份绑定 | 待做 |
 | Vault | 本人余额/货币格式；交易需单独完整语义 | Paper Bridge、Economy provider | Vault 1.7.3 + EssentialsX Economy 2.21.2 只读余额/格式已真服验证；不提供交易 |
 | DiscordSRV | 复用已验证绑定和事件、身份/成员关联 | Paper Bridge | 待做 |
-| Simple Voice Chat | 包依赖、部署诊断与指引；游戏内状态 | Compass，深入需 Bridge | 客户端/UDP/代理部署指引已交付；状态适配与真验收待做 |
+| Simple Voice Chat | 包依赖、部署诊断与指引；游戏内状态 | Compass，深入需 Bridge | 2.6.25 / Paper 路径已验证兼容客户端握手、加密 UDP 连接、声音禁用/恢复、超时及离线清理；客户端/UDP/代理指引已交付，实际音频与公网/代理部署待验收 |
 | itzg/docker-minecraft-server | 固定版本 Compose 示例、packwiz/资源/网络配置 | E4 | 固定镜像 Paper 模板及 packwiz overlay 已解析验证；目标容器运行待验收 |
 | Chunky | 预生成任务发起、进度/暂停/取消与维护状态 | Bridge 或面板命令 | 1.4.40 真服验证正方形/圆形、进度/ETA、暂停重启续传、运行中/暂停后取消及完成；后台管理已交付，不自动设置停服维护 |
 
@@ -88,6 +88,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - Plan 首批（2026-11-10）：通过官方 Query API 后台只读查询，按当前 Plan server UUID 限定存档会话，导出服务器聚合及已验证 UUID 的个人活动。Purpur 1.21.1/2329 + Plan 5.9/3705 + SQLite 真服记录已绑定玩家与未绑定访客，两人的会话均计入聚合，但仅前者个人明细被采集；验证退出、重启后本人仍可读取。HTTP 与生产浏览器场景覆盖所有权、Bridge 跨服令牌隔离、公开目录不含统计、管理员聚合和查询不可用不伪造零。原生记录用于 `web/e2e/fixtures/plan-observations.json`；未将已存会话当作实时在线计数，也未改动 Plan 面板认证。
 - Towny 首批：Towny 0.103.2.0 / flatfile / Purpur 1.21.1/2329 实际创建城镇和国家，识别镇长/国王；加入未绑定访客、转移镇长并授予 assistant，验证离线重启后本人关系保持、踢出后不残留。概况仅管理员可见，个人明细仅已验证 UUID，复用 Bridge 心跳与身份清单。`public` 明确解释为公开传送，不等于网站公开权限；不导出传送坐标与居民目录。列表上限 100 各自有完整计数/截断提示，本人关系独立返回。原生记录用于 `web/e2e/fixtures/towny-observations.json`；公开招募、地图覆盖层和授权写操作未销项。
 - Geyser/Floodgate 首批（2026-11-11）：Geyser 2.8.3 b941、Floodgate 2.2.5 b141、ViaVersion 5.12.2 与 Purpur 1.21.1/2329 实进程，Bedrock 1.21.100 通过真实 RakNet/加密握手、`start_game` 和游戏内命令完成一次性绑定，实际检查 Bukkit UUID 写入原生白名单；Java 玩家没有被误标基岩。另跑 Geyser 无 Floodgate 路径，验证实际 UDP 探测。本人页分开显示 Bedrock 原始版本和 ViaVersion 转换后 Java 协议；后台读取 Geyser 支持版本。HTTP/生产浏览器场景覆盖个人所有权、公开数据隔离、平台枚举、身份持久化和离线移除在线连接观察。夹具仅 loopback、允许未签名代理连接，XUID 为零；不将它冒充 Xbox Live 或真实 Java 账号关联验收，代理与双入口合并仍保留待办。
+
+- Simple Voice Chat 首批（2026-11-11）：2.6.25 / Purpur 1.21.1/2329 / Java 21 实进程通过官方 Bukkit API 采集兼容客户端、连接与声音禁用状态。仅 loopback 的协议客户端完成 compatibility 20 握手、AES-128-GCM UDP 认证与连接校验，验证声音禁用/恢复、停止 keepalive 后超时、退出后移除观察及重新进服状态重置；未装插件的真服回归通过。复用玩家快照、20 秒心跳及本人授权，未知或缺失状态不回填断开，缺字段/null 的部分观察被拒绝。生产浏览器场景读取真服记录 `web/e2e/fixtures/voicechat-observations.json`，覆盖中英界面、状态变化、390px 布局、所有权/公开隔离及离线清理。2.6.25 API 没有麦克风静音读取；其他附加插件可覆盖连接状态，因此不将观察当作实际音频、公网 UDP 或麦克风可用证明。语音组、音频传输和公网/代理仍待验收。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 

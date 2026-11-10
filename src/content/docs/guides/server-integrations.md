@@ -139,6 +139,18 @@ Chunky 1.4.40 的快速任务可能先写入终止存档、随后才回报异步
 
 已真服验证 **Towny 0.103.2.0 + flatfile + Purpur 1.21.1/2329**：创建城镇/国家、镇长与国王识别、转移镇长、assistant 职级、离线重启和移除居民。测试环境没有经济插件，Towny 有缺少 economy provider 及 `TownMobPVM:SulfurCube` 提示；验证的是上述只读路径，不代表 Towny 经济、战争与全部游戏版本兼容。MySQL/Folia 尚未验收。Towny 采集复用 2000 个已验证 UUID 和 256 KiB 心跳限制；单居民职级超过 32 条会明确使该次 Towny 观察不可用。
 
+## Simple Voice Chat 本人连接状态
+
+在游戏服安装 [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) 与 Bridge，按[官方指南](https://modrepo.de/minecraft/voicechat/wiki/server_setup)配置独立 UDP 端口并重启。客户端需要对应版本的语音模组；仅安装服务端插件不会让原版客户端具备语音能力。整合包与代理部署参见[私服指南](./private-modpack-workflows.md)。
+
+1. 使用 `/game` 的一次性码在游戏内绑定实际 UUID。
+2. 留在游戏中，等待下一次 Bridge 心跳（默认约 20 秒），刷新 `/game`。
+3. 本人资料显示插件是否识别到兼容语音客户端、插件报告的语音连接状态；识别到兼容客户端时，另显示声音启用/禁用状态。麦克风静音与声音禁用是不同状态，本轮 API 不提供前者。
+
+数据复用现有心跳时间与新鲜度提示；退出游戏后在线语音观察消失，已验证的游戏绑定保留。插件未安装、服务尚未启动或 API 无法取得玩家状态时不生成断开记录。本人观察仅供该身份所有者和管理员读取，不进入公开服务器目录。不采集音频、语音组名、组密码、连接密钥或网络地址，也不提供网页端音频控制。
+
+已在 **Simple Voice Chat 2.6.25 / Purpur 1.21.1 build 2329 / Java 21** 验证无客户端、兼容性握手、AES-128-GCM UDP 认证/连接校验、声音禁用/恢复、连接超时、离线清理与重新登录；未装插件的回归也通过。验收使用 offline-mode、仅 loopback 的协议客户端，没有麦克风录制、Opus 编解码或声音播放。官方 API 允许其他附加插件覆盖连接状态，因此页面状态不能证明真实音频传输、麦克风或公网 UDP 可达性；公网、代理、Fabric/NeoForge/Folia 运行验收仍待完成。
+
 ## Geyser / Floodgate 基岩身份与连接观察
 
 按 [Geyser 官方部署指南](https://geysermc.org/wiki/geyser/setup/)安装并配置 Geyser；需要 Floodgate 时同时按其官方指南配置认证与密钥。Bridge 不负责修改这两个插件的认证或开放网络端口。Geyser 的 Java 转换目标若新于实际后端，需要按官方要求配置协议转换插件。
