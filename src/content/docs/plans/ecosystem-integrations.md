@@ -19,7 +19,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | E3 | MCSManager、Pterodactyl 的实例发现/控制/日志，监控接口 | 测试上游协议边界，真实目标面板验证另记版本 | HTTP 常用操作已交付；真实面板、实时流及历史监控待做 |
 | E4 | packwiz 与 `.mrpack`、Modrinth/Hangar 来源、资源包 | 发布不可变版本，客户端/服务端分离，真实包安装 | packwiz 发布与 Modrinth/Hangar 搜索已交付；Compass 安装、资源包和不支持格式待做 |
 | E5 | 游戏 Bridge：平台连接、游戏身份验证、基础状态 | 真服启动与 HTTP 交互，连接撤销和 UUID 授权 | Paper 路径已交付；其他平台待做 |
-| E6 | LuckPerms、spark、PlaceholderAPI、Plan | 成员资格、性能摘要、本人资料与面板入口 | 全局权限组、占位符与性能首批已交付；Plan、上下文与报告待做 |
+| E6 | LuckPerms、spark、PlaceholderAPI、Plan | 成员资格、性能摘要、本人资料与面板入口 | 全局权限组、占位符、性能及 Plan 本人/聚合首批已交付；上下文与报告等深入功能待做 |
 | E7 | 游戏世界、治理、跨平台与社区扩展 | 每种实际支持平台有测试/真服证据 | ViaVersion、WorldGuard、Vault 与 Chunky 首批已交付；其他项目和深层联动待做 |
 | E8 | Web 社区视觉、分组后台；Compass grasscn 与启动核心流程 | 中文/键盘/小窗口、实际启动与错误/下载进度 | Compass 首页 grasscn 首批已交付，其他页面和 Web 门户重设计待做 |
 
@@ -42,7 +42,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | SkinsRestorer | 已验证身份应用本站皮肤，持久/临时和代理模式验证 | Bridge、Mirror | 待做 |
 | LuckPerms | 本站负责的成员组授予/撤销、上下文及状态读取 | Bridge、身份绑定 | 全局组授予/撤销及读取已验证；上下文/到期待做 |
 | PlaceholderAPI | 站长选定的玩家资料展示项；不可用结果明确 | Paper Bridge | 已交付；真服 Server expansion 解析通过 |
-| Plan | 既有分析入口、访问隔离；本人活动与聚合资料 | E1/E2，深入需 Bridge | 待做 |
+| Plan | 既有分析入口、访问隔离；本人活动与聚合资料 | E1/E2，深入需 Bridge | 5.9/3705 + SQLite 真服验证已存会话、离线本人资料、当前服聚合及重启持久性；面板沿用自身鉴权，MySQL/代理/SSO 待验收 |
 | spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 已验证；GC/报告入口待做 |
 | Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | 待做 |
@@ -85,6 +85,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - Vault 首批：真实 Vault 1.7.3 / EssentialsX Economy 2.21.2 / Purpur 1.21.1 验证已绑定玩家余额、provider 名称、货币名和 provider 格式；本人网页资料展示通过。原始浮点值与显示格式保持上游结果，没有擅自把数值转为精确分币或改写格式；只读适配不暴露交易操作。历史 EssentialsX 对此服务端有版本警告，记录的是已跑通的特定 API 路径，不是认证全部上游功能兼容。
 - Chunky 首批（2026-11-10）：Purpur 1.21.1/2329 + Chunky 1.4.40 真进程生成正方形与圆形选区，读取实际区块进度/ETA；验证暂停→重启服务器→继续、运行中取消、暂停后取消、小范围 25 区块完成。任务操作复用既有队列，新增持久化领取后执行，丢失回执不会自动重放非幂等操作；HTTP 场景覆盖授权、参数、状态前置条件、重复领取、服务重启和回执失败。未装 Chunky 的真服回归绑定与白名单通过。
 - 真服暴露的状态边界：Chunky 1.4.40 可能先保存零计数终止点，再由异步回调报告 100%。Bridge 读取真实任务生命周期事件，区分运行期对象与存档；重启后无法从终止存档证明完成或取消时报告 `stopped`。生产浏览器场景使用真服记录的上游观察，走真实 Web/BFF/Isles 领取与回执链路，验证自动进度、刷新后暂停状态、取消确认、390px 布局与令牌撤销禁用。记录样本位于 `web/e2e/fixtures/chunky-observations.json`。尚未提供自动维护模式，生成本身不会限制玩家登录。
+- Plan 首批（2026-11-10）：通过官方 Query API 后台只读查询，按当前 Plan server UUID 限定存档会话，导出服务器聚合及已验证 UUID 的个人活动。Purpur 1.21.1/2329 + Plan 5.9/3705 + SQLite 真服记录已绑定玩家与未绑定访客，两人的会话均计入聚合，但仅前者个人明细被采集；验证退出、重启后本人仍可读取。HTTP 与生产浏览器场景覆盖所有权、Bridge 跨服令牌隔离、公开目录不含统计、管理员聚合和查询不可用不伪造零。原生记录用于 `web/e2e/fixtures/plan-observations.json`；未将已存会话当作实时在线计数，也未改动 Plan 面板认证。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 
