@@ -54,7 +54,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | CoreProtect | 举报坐标关联历史查询；回滚/恢复作为独立管理流程 | Paper Bridge | 待做 |
 | Ledger | Fabric 历史查询/举报关联，先确认支持接口 | Fabric Bridge | 待做 |
 | LibertyBans | 本人处罚、管理查询、申诉；授权处罚操作 | Bridge、身份绑定 | 待做 |
-| Vault | 本人余额/货币格式；交易需单独完整语义 | Paper Bridge、Economy provider | 待做 |
+| Vault | 本人余额/货币格式；交易需单独完整语义 | Paper Bridge、Economy provider | Vault 1.7.3 + EssentialsX Economy 2.21.2 只读余额/格式已真服验证；不提供交易 |
 | DiscordSRV | 复用已验证绑定和事件、身份/成员关联 | Paper Bridge | 待做 |
 | Simple Voice Chat | 包依赖、部署诊断与指引；游戏内状态 | Compass，深入需 Bridge | 客户端/UDP/代理部署指引已交付；状态适配与真验收待做 |
 | itzg/docker-minecraft-server | 固定版本 Compose 示例、packwiz/资源/网络配置 | E4 | 固定镜像 Paper 模板及 packwiz overlay 已解析验证；目标容器运行待验收 |
@@ -82,6 +82,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - E8 Web 首批：配置并发布服务器后，首页采用真实站点名称/介绍、服务器/世界截图、游戏连接状态、地图与整合包入口及个人资料导航；不再以 Yggdrasil 技术介绍作为服务器社区首屏。未启用服务器的部署保留现有皮肤/模组入口，不增加人工“首页模式”开关。服务器数据按请求读取，构建期未连接 Isles 不会把空目录固化。独立生产构建浏览器场景验证发布后首页自动变化、原技术徽标不再出现，以及 390px 无横向溢出。
 - 地图首层：服务器配置新增 BlueMap/squaremap/Dynmap 类型及浏览器地址，`/servers/{id}/map` 保留原工具与视角 fragment，加载独立 iframe，提供新标签页入口。不由 Go/Next 代理地图 tile。外部 iframe 来源由构建期 CSP 精确配置，未允许的来源给出提示，不全局放开。HTTP 场景验证地址/类型/草稿公开边界，生产 Web 场景验证配置→保存→嵌入外部工具→保留视角→移动端；没有将 fixture iframe 验证冒充真实地图渲染或标记 API 验证。
 - 自部署配方：新增[私服整合包、资源包与语音指南](../guides/private-modpack-workflows.md)及固定 itzg manifest 的 Paper Compose、packwiz/Fabric overlay。Compose 配置解析通过；实际 Docker 运行尚未验证，本机容器查询曾超时，不将模板阶段记为容器运行交付。workspace 根 `go.work` 已加入 Isles（根目录无 git，服务仓库自身可独立构建）。
+- Vault 首批：真实 Vault 1.7.3 / EssentialsX Economy 2.21.2 / Purpur 1.21.1 验证已绑定玩家余额、provider 名称、货币名和 provider 格式；本人网页资料展示通过。原始浮点值与显示格式保持上游结果，没有擅自把数值转为精确分币或改写格式；只读适配不暴露交易操作。历史 EssentialsX 对此服务端有版本警告，记录的是已跑通的特定 API 路径，不是认证全部上游功能兼容。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 
