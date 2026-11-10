@@ -35,10 +35,10 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | squaremap | 已有地图入口、地图标记适配 | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
 | Dynmap | 已有地图入口、官方标记 API | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
 | packwiz | 源检查、版本发布、`.mrpack` 导出/安装、可选项与服务端分离 | E1，Hoard/Compass | 待做 |
-| AutoModpack | 独立实例安装/共存、服务端配置指引；协议适配单独验证 | Compass | 待做 |
+| AutoModpack | 独立实例安装/共存、服务端配置指引；协议适配单独验证 | Compass | 共存/独立实例指引已交付；同步协议与实例真验收待做 |
 | Modrinth | 搜索/版本/哈希识别，选定版本安装，保留来源 | Hoard/Compass | 搜索、兼容版本、上游下载及哈希展示已交付；按文件哈希识别和 Compass 安装待做 |
 | Hangar | 插件搜索/版本/下载来源，平台过滤 | E1/E2 | 搜索、按平台版本/下载/哈希已交付；服务端安装待做 |
-| Polymer | 资源包版本/产物链接、AutoHost 接入；发布本站产物 | 资源包分发 | 待做 |
+| Polymer | 资源包版本/产物链接、AutoHost 接入；发布本站产物 | 资源包分发 | AutoHost 部署指引已交付；产物采集/发布待做 |
 | SkinsRestorer | 已验证身份应用本站皮肤，持久/临时和代理模式验证 | Bridge、Mirror | 待做 |
 | LuckPerms | 本站负责的成员组授予/撤销、上下文及状态读取 | Bridge、身份绑定 | 全局组授予/撤销及读取已验证；上下文/到期待做 |
 | PlaceholderAPI | 站长选定的玩家资料展示项；不可用结果明确 | Paper Bridge | 已交付；真服 Server expansion 解析通过 |
@@ -56,8 +56,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | LibertyBans | 本人处罚、管理查询、申诉；授权处罚操作 | Bridge、身份绑定 | 待做 |
 | Vault | 本人余额/货币格式；交易需单独完整语义 | Paper Bridge、Economy provider | 待做 |
 | DiscordSRV | 复用已验证绑定和事件、身份/成员关联 | Paper Bridge | 待做 |
-| Simple Voice Chat | 包依赖、部署诊断与指引；游戏内状态 | Compass，深入需 Bridge | 待做 |
-| itzg/docker-minecraft-server | 固定版本 Compose 示例、packwiz/资源/网络配置 | E4 | 待做 |
+| Simple Voice Chat | 包依赖、部署诊断与指引；游戏内状态 | Compass，深入需 Bridge | 客户端/UDP/代理部署指引已交付；状态适配与真验收待做 |
+| itzg/docker-minecraft-server | 固定版本 Compose 示例、packwiz/资源/网络配置 | E4 | 固定镜像 Paper 模板及 packwiz overlay 已解析验证；目标容器运行待验收 |
 | Chunky | 预生成任务发起、进度/暂停/取消与维护状态 | Bridge 或面板命令 | 待做 |
 
 ## 基础设计与验证
@@ -81,6 +81,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - E8 Compass 首批：grasscn Button/Input/Progress 与离线字体/材质接入首页，新增选择实例、账号门槛、启动失败重试、运行/停止和文件进度。CSS 先声明层次，旧全局控件样式处于 legacy 层，避免覆盖 MC 控件。保留既有品牌色与 skinview3d；中文正文不强制像素字。Chromium IPC 边界场景验证中文长名称、独立密码、重试/停止、125%/150% 与最小窗口无横向溢出；Windows Tauri/WebView2 实机验证中文输入、离线资源和无账号禁用启动。Mac/Linux、实际从新首页启动游戏，以及实例/设置/日志页的控件迁移仍保留待办。另从暂存区独立导出构建，验证发布内容不依赖其他未提交 Rust/账号改动。
 - E8 Web 首批：配置并发布服务器后，首页采用真实站点名称/介绍、服务器/世界截图、游戏连接状态、地图与整合包入口及个人资料导航；不再以 Yggdrasil 技术介绍作为服务器社区首屏。未启用服务器的部署保留现有皮肤/模组入口，不增加人工“首页模式”开关。服务器数据按请求读取，构建期未连接 Isles 不会把空目录固化。独立生产构建浏览器场景验证发布后首页自动变化、原技术徽标不再出现，以及 390px 无横向溢出。
 - 地图首层：服务器配置新增 BlueMap/squaremap/Dynmap 类型及浏览器地址，`/servers/{id}/map` 保留原工具与视角 fragment，加载独立 iframe，提供新标签页入口。不由 Go/Next 代理地图 tile。外部 iframe 来源由构建期 CSP 精确配置，未允许的来源给出提示，不全局放开。HTTP 场景验证地址/类型/草稿公开边界，生产 Web 场景验证配置→保存→嵌入外部工具→保留视角→移动端；没有将 fixture iframe 验证冒充真实地图渲染或标记 API 验证。
+- 自部署配方：新增[私服整合包、资源包与语音指南](../guides/private-modpack-workflows.md)及固定 itzg manifest 的 Paper Compose、packwiz/Fabric overlay。Compose 配置解析通过；实际 Docker 运行尚未验证，本机容器查询曾超时，不将模板阶段记为容器运行交付。workspace 根 `go.work` 已加入 Isles（根目录无 git，服务仓库自身可独立构建）。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 

@@ -1,0 +1,21 @@
+# Standalone game server example. Pinned image manifest, explicit Minecraft
+# version and persistent world; no panel or host Docker socket is required.
+services:
+  minecraft:
+    image: itzg/minecraft-server@sha256:88ea35f13e9d87085ddc9938d31a278652f5af5c61b00b03551a3d66369ef3d0
+    restart: unless-stopped
+    stop_grace_period: 90s
+    stdin_open: true
+    tty: true
+    ports:
+      - "${MC_PORT:-25565}:25565"
+    environment:
+      EULA: ${MC_EULA:?Set MC_EULA to your explicit Minecraft EULA choice}
+      TYPE: PAPER
+      VERSION: ${MC_VERSION:-1.21.1}
+      MEMORY: ${MC_MEMORY:-2G}
+      ENABLE_RCON: "false"
+    volumes:
+      - world:/data
+volumes:
+  world:

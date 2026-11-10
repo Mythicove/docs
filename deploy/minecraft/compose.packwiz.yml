@@ -1,0 +1,7 @@
+# Overlay for the base compose.yml. The source must define the same Minecraft
+# and loader versions used for your clients; only server-side pack items install.
+services:
+  minecraft:
+    environment:
+      TYPE: FABRIC
+      PACKWIZ_URL: ${PACKWIZ_URL:?Set an HTTP(S) pack.toml URL}

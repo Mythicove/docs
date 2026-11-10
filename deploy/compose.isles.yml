@@ -16,6 +16,7 @@ services:
     environment:
       ISLES_URL: http://isles:8095
       ISLES_ADMIN_TOKEN: ${ISLES_ADMIN_TOKEN}
+      ISLES_MAP_ORIGINS: ${ISLES_MAP_ORIGINS:-}
     build:
       args:
         ISLES_IMAGE_ORIGINS: ${ISLES_IMAGE_ORIGINS:-}
