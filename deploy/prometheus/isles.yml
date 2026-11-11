@@ -1,6 +1,6 @@
 # Merge this scrape job into an existing private Prometheus deployment.
-# Mount the existing Isles service token as /etc/prometheus/isles-token.
-# This token grants Isles administration: keep Prometheus and its config trusted.
+# Set ISLES_METRICS_TOKEN on Isles and mount that distinct read-only token
+# as /etc/prometheus/isles-token. Never mount the administrative token.
 rule_files:
   - isles-alerts.yml
 scrape_configs:

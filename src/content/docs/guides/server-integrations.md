@@ -46,9 +46,11 @@ HTTP 上游错误不会回显带 key 的 URL。管理审计记录操作、目标
 
 ### Prometheus 抓取 Isles
 
-Isles 私网监听地址提供 `GET /metrics`（Prometheus text 0.0.4），使用现有 `ISLES_ADMIN_TOKEN` Bearer 鉴权。Prometheus 直接访问 `http://isles:8095/metrics`，不通过浏览器 BFF；不要把服务令牌放进公开网页。该令牌同时拥有 Isles 管理权限，因此抓取端必须位于受信任部署中。首批沿用服务令牌，没有新增独立监控凭据。
+Isles 私网监听地址提供 `GET /metrics`（Prometheus text 0.0.4）。推荐设置独立的 `ISLES_METRICS_TOKEN`（至少 32 字符，必须与管理令牌不同）：配置后 `/metrics` 只接受该令牌的 Bearer 鉴权，该令牌不能访问管理 API。未配置时沿用 `ISLES_ADMIN_TOKEN`。更换令牌需要重启 Isles。Prometheus 直接访问 `http://isles:8095/metrics`，不通过浏览器 BFF。
 
-将 `docs/deploy/prometheus/isles.yml` 中的 job 合入已有 Prometheus 配置，把服务令牌只读挂载为 `/etc/prometheus/isles-token`。示例目标 `isles:8095` 对应 Compose 服务名，独立部署按实际私网地址调整。需要跨受信任私网之外抓取时，由部署层提供 TLS。该文件是抓取配置示例，不会自动启动 Prometheus 容器。
+将 `docs/deploy/prometheus/isles.yml` 中的 job 合入已有 Prometheus 配置，把独立监控令牌只读挂载为 `/etc/prometheus/isles-token`。Compose overlay 已传入可选的 `ISLES_METRICS_TOKEN`，Web 无需持有它。示例目标 `isles:8095` 对应 Compose 服务名，独立部署按实际私网地址调整。需要跨受信任私网之外抓取时，由部署层提供 TLS。该文件是抓取配置示例，不会自动启动 Prometheus 容器。
+
+独立令牌已通过真实 Purpur 1.21.1 / Prometheus 3.16.0 抓取验收：抓取目标 `up=1`，无凭据目标 `up=0`，监控令牌访问管理配置返回 401，管理令牌访问 `/metrics` 返回 401；真实 90 秒心跳过期后即时性能序列消失，历史序列保留。HTTP 场景还验证短令牌及与管理令牌相同的配置会阻止启动。
 
 | 指标 | 含义 |
 |---|---|

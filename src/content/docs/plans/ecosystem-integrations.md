@@ -44,7 +44,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | PlaceholderAPI | 站长选定的玩家资料展示项；不可用结果明确 | Paper Bridge | 已交付；真服 Server expansion 解析通过 |
 | Plan | 既有分析入口、访问隔离；本人活动与聚合资料 | E1/E2，深入需 Bridge | 5.9/3705 + SQLite 真服验证已存会话、离线本人资料、当前服聚合及重启持久性；面板沿用自身鉴权，MySQL/代理/SSO 待验收 |
 | spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 与管理员 GC 次数/累计耗时已真服验证；报告生成/分享入口待做 |
-| Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 私网 `/metrics`、`/healthz` 及 Bridge gauge 已真采集验证；抓取失败/Bridge 过期告警与规则引擎验收已交付；Alertmanager 通知、独立只读凭据、多副本与容器运行待做 |
+| Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 私网 `/metrics`、`/healthz` 及 Bridge gauge 已真采集验证；抓取失败/Bridge 过期告警与规则引擎验收已交付；独立只读凭据已真采集及权限隔离验证；Alertmanager 通知、多副本与容器运行待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | loopback 未签名 Bedrock 协议真客户端验证绑定、版本、实际 Bukkit UUID 白名单与 UDP 探测；Xbox 在线认证、真实 Java 关联、代理及双入口配置待验收/完善 |
 | ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion/Backwards 5.12.2 + Rewind 4.2.0 已真服验证 1.12.2/1.8.8 进服绑定、本人版本及协议 47 禁用；1.7、代理/在线认证与 Compass 启动前检查待做 |
 | WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge | 本人领地/角色/世界/中心坐标已真服验证；地图覆盖层与授权修改待做 |
