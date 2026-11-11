@@ -44,7 +44,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | PlaceholderAPI | 站长选定的玩家资料展示项；不可用结果明确 | Paper Bridge | 已交付；真服 Server expansion 解析通过 |
 | Plan | 既有分析入口、访问隔离；本人活动与聚合资料 | E1/E2，深入需 Bridge | 5.9/3705 + SQLite 真服验证已存会话、离线本人资料、当前服聚合及重启持久性；面板沿用自身鉴权，MySQL/代理/SSO 待验收 |
 | spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 与管理员 GC 次数/累计耗时已真服验证；报告生成/分享入口待做 |
-| Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 私网服务令牌 `/metrics`、`/healthz` 及 Bridge 性能 gauge 已交付，真实 Prometheus 3.16.0 验证鉴权、90 秒失效及 TSDB 历史；独立只读凭据、多副本与容器运行待做 |
+| Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 私网 `/metrics`、`/healthz` 及 Bridge gauge 已真采集验证；抓取失败/Bridge 过期告警与规则引擎验收已交付；Alertmanager 通知、独立只读凭据、多副本与容器运行待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | loopback 未签名 Bedrock 协议真客户端验证绑定、版本、实际 Bukkit UUID 白名单与 UDP 探测；Xbox 在线认证、真实 Java 关联、代理及双入口配置待验收/完善 |
 | ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion/Backwards 5.12.2 + Rewind 4.2.0 已真服验证 1.12.2/1.8.8 进服绑定、本人版本及协议 47 禁用；1.7、代理/在线认证与 Compass 启动前检查待做 |
 | WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge | 本人领地/角色/世界/中心坐标已真服验证；地图覆盖层与授权修改待做 |
@@ -102,5 +102,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - Prometheus 首批（2026-11-11）：Isles 新增直接私网服务令牌 `/metrics`，复用既有 Prometheus 编码库，按配置服务器 ID 输出 Bridge 时效、接收时间与有效 TPS/MSPT/系统 CPU/GC gauge，不采集玩家标签、不在抓取时探测上游。真实 Prometheus 3.16.0 + Purpur/Bridge 验证认证目标 `up=1`、无凭据 `up=0`、TPS/GC 采集；停止游戏并等待生产 90 秒边界后性能即时序列消失、`fresh=0`，TSDB 历史仍可查询，而 `/healthz` 仍为 200。`ISLES_TEST_PROMETHEUS_DIR` 可复跑，保留 `prometheus-result.json`。文档新增抓取 job；首批沿用管理服务令牌，未将其冒充独立只读权限，容器/多副本与任意 exporter 支持仍分别待验收。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的游戏 Bridge 平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia Bridge 已支持；Compass 的 Fabric 客户端验收与服务器 Bridge 支持是不同范围。
+
+- Prometheus 告警首批：增加抓取失败持续 2 分钟、Bridge 观察失效且同目标抓取正常持续 2 分钟两条规则。抓取异常抑制每服心跳重复告警；沿用既有 `up` 与 `bridge_fresh`，没有应用端新增配置或历史存储。官方 `promtool 3.16.0` 规则引擎验证触发、恢复、未满足持续时间、删除/失效样本和 job/instance 隔离；独立 CI 固定工具版本并校验发布者 SHA-256。Alertmanager 路由与通知送达未验收。
 
 参考：[视觉与总体架构评估](../research/web-and-mc-ecosystem.md)、[可选整合调研](../research/optional-mc-integrations.md)。

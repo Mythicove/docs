@@ -1,0 +1,114 @@
+rule_files:
+  - isles-alerts.yml
+evaluation_interval: 30s
+tests:
+  - name: scrape failure waits for duration and resolves on recovery
+    interval: 30s
+    input_series:
+      - series: 'up{job="mythic-isles",instance="isles:8095"}'
+        values: '0 0 0 0 0 1 1'
+    alert_rule_test:
+      - eval_time: 90s
+        alertname: MythicIslesScrapeFailed
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: MythicIslesScrapeFailed
+        exp_alerts:
+          - exp_labels:
+              job: mythic-isles
+              instance: isles:8095
+              severity: warning
+            exp_annotations:
+              summary: Isles metrics scrape failed for isles:8095
+              description: Prometheus has failed to scrape the private Isles endpoint for 2 minutes. Check the service, network and bearer credential. This does not establish game-server availability.
+      - eval_time: 150s
+        alertname: MythicIslesScrapeFailed
+        exp_alerts: []
+  - name: stale bridge waits for duration and clears on heartbeat recovery
+    interval: 30s
+    input_series:
+      - series: 'up{job="mythic-isles",instance="isles:8095"}'
+        values: '1 1 1 1 1 1 1 1'
+      - series: 'mythic_isles_bridge_fresh{job="mythic-isles",instance="isles:8095",server="survival"}'
+        values: '1 0 0 0 0 0 1 1'
+      - series: 'mythic_isles_bridge_fresh{job="mythic-isles",instance="isles:8095",server="creative"}'
+        values: '1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: MythicIslesBridgeStale
+        exp_alerts: []
+      - eval_time: 150s
+        alertname: MythicIslesBridgeStale
+        exp_alerts:
+          - exp_labels:
+              job: mythic-isles
+              instance: isles:8095
+              server: survival
+              severity: warning
+            exp_annotations:
+              summary: Isles Bridge observation unavailable for survival
+              description: Isles is being scraped successfully, but this configured server has had no fresh Bridge observation for 2 minutes. Check the game process, Bridge configuration and server token; this is not a Java/Bedrock reachability probe.
+      - eval_time: 3m
+        alertname: MythicIslesBridgeStale
+        exp_alerts: []
+  - name: failed or removed scrape target suppresses stale bridge alerts
+    interval: 30s
+    input_series:
+      - series: 'up{job="mythic-isles",instance="failed:8095"}'
+        values: '0 0 0 0 0 0'
+      - series: 'mythic_isles_bridge_fresh{job="mythic-isles",instance="failed:8095",server="survival"}'
+        values: '0 0 0 0 0 0'
+      - series: 'up{job="mythic-isles",instance="removed:8095"}'
+        values: '1 stale _ _ _ _'
+      - series: 'mythic_isles_bridge_fresh{job="mythic-isles",instance="removed:8095",server="survival"}'
+        values: '0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: MythicIslesBridgeStale
+        exp_alerts: []
+  - name: removed server clears pending state and does not fabricate an alert
+    interval: 30s
+    input_series:
+      - series: 'up{job="mythic-isles",instance="isles:8095"}'
+        values: '1 1 1 1 1 1'
+      - series: 'mythic_isles_bridge_fresh{job="mythic-isles",instance="isles:8095",server="deleted"}'
+        values: '0 0 stale _ _ _'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: MythicIslesBridgeStale
+        exp_alerts: []
+  - name: scrape recovery restarts the bridge pending duration
+    interval: 30s
+    input_series:
+      - series: 'up{job="mythic-isles",instance="isles:8095"}'
+        values: '1 1 0 1 1 1 1 1'
+      - series: 'mythic_isles_bridge_fresh{job="mythic-isles",instance="isles:8095",server="survival"}'
+        values: '0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: MythicIslesBridgeStale
+        exp_alerts: []
+      - eval_time: 210s
+        alertname: MythicIslesBridgeStale
+        exp_alerts:
+          - exp_labels:
+              job: mythic-isles
+              instance: isles:8095
+              server: survival
+              severity: warning
+            exp_annotations:
+              summary: Isles Bridge observation unavailable for survival
+              description: Isles is being scraped successfully, but this configured server has had no fresh Bridge observation for 2 minutes. Check the game process, Bridge configuration and server token; this is not a Java/Bedrock reachability probe.
+  - name: jobs and instances do not satisfy each others health gates
+    interval: 30s
+    input_series:
+      - series: 'up{job="mythic-isles",instance="other:8095"}'
+        values: '1 1 1 1 1'
+      - series: 'up{job="unrelated",instance="isles:8095"}'
+        values: '1 1 1 1 1'
+      - series: 'mythic_isles_bridge_fresh{job="mythic-isles",instance="isles:8095",server="survival"}'
+        values: '0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: MythicIslesBridgeStale
+        exp_alerts: []

@@ -1,0 +1,20 @@
+groups:
+  - name: mythic-isles
+    interval: 30s
+    rules:
+      - alert: MythicIslesScrapeFailed
+        expr: up{job="mythic-isles"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Isles metrics scrape failed for {{ $labels.instance }}"
+          description: "Prometheus has failed to scrape the private Isles endpoint for 2 minutes. Check the service, network and bearer credential. This does not establish game-server availability."
+      - alert: MythicIslesBridgeStale
+        expr: (mythic_isles_bridge_fresh{job="mythic-isles"} == 0) and on (job, instance) (up{job="mythic-isles"} == 1)
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Isles Bridge observation unavailable for {{ $labels.server }}"
+          description: "Isles is being scraped successfully, but this configured server has had no fresh Bridge observation for 2 minutes. Check the game process, Bridge configuration and server token; this is not a Java/Bedrock reachability probe."

@@ -66,6 +66,26 @@ Isles 私网监听地址提供 `GET /metrics`（Prometheus text 0.0.4），使�
 
 已用 **官方 Prometheus 3.16.0 / Windows / Purpur 1.21.1/2329 / Java 21** 实际抓取验证：带令牌目标 `up=1`，无令牌对照 `up=0`，读取 TPS 与三个 GC 收集器；停服并等过真实 90 秒后，`fresh=0` 且性能即时序列消失，TSDB 的 5 分钟历史仍能查询。可在 Paper 原生验收中设置 `ISLES_TEST_PROMETHEUS_DIR` 指向已安装的 Prometheus 目录复跑。没有把配置解析当作容器运行、多副本或任意第三方 exporter 兼容验收。
 
+#### 告警规则
+
+将 `deploy/prometheus/isles-alerts.yml` 与抓取配置放在同一配置目录；`isles.yml` 的 `rule_files` 已引用它。合并进现有部署时也合并 `rule_files`，或按实际挂载位置使用绝对路径。规则默认匹配 `job="mythic-isles"`，修改 job 名称时同步修改两条规则。
+
+- **`MythicIslesScrapeFailed`**：该目标的 `up=0` 持续 2 分钟。检查 Isles 进程、私网链路和抓取凭据；它不表示 Minecraft 端口一定不可达。
+- **`MythicIslesBridgeStale`**：已配置服务器的 `bridge_fresh=0`，且同一 `job,instance` 的 Isles 目标仍然 `up=1`，持续 2 分钟。观察原先有效时，需先经过 90 秒有效期，再等待 2 分钟和规则调度时间。没有连过 Bridge 的服务器同样可能触发，包含草稿服务器。
+
+抓取失败时，Bridge 告警被抑制，避免一次 Isles 故障产生每服重复通知；恢复抓取后，如心跳依旧失效，会重新等待完整 2 分钟。删除服务器、移除抓取目标产生的失效序列不会被当作新的 Bridge 故障。这两条规则不检测目标从配置中意外消失的情况，目标清单完整性需由部署方管理。
+
+规则只定义 Prometheus 告警状态。邮件、聊天等通知需由已有 Alertmanager 接收和路由；此示例未配置收件人。没有为 TPS／CPU 设置通用阈值，因为合理值取决于服务器负载和运维目标。
+
+用 Prometheus 3.16.0 自带 `promtool` 在 `deploy/prometheus/` 下复验：
+
+```sh
+promtool check rules isles-alerts.yml
+promtool test rules isles-alerts.test.yml
+```
+
+测试通过真实 PromQL／告警规则引擎验证持续时间、正常恢复、故障抑制、服务器／目标删除及跨目标标签隔离；这些是确定性时间序列场景，不等同于通知送达验收。仓库的 `prometheus rules` CI 使用固定版本和发布者 SHA-256 检查同样的规则。
+
 ## packwiz 发布
 
 在服务器中填写 `pack.toml` 地址，先保存配置，再点击“校验并发布客户端包”。成功后前台出现 `.mrpack` 下载按钮，可用于支持该格式的启动器和 Compass 的文件导入。

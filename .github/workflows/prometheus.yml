@@ -1,0 +1,34 @@
+name: prometheus rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - deploy/prometheus/**
+      - .github/workflows/prometheus.yml
+  pull_request:
+    paths:
+      - deploy/prometheus/**
+      - .github/workflows/prometheus.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Obtain pinned promtool
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --location --output prometheus.tar.gz https://github.com/prometheus/prometheus/releases/download/v3.16.0/prometheus-3.16.0.linux-amd64.tar.gz
+          echo '68727009472a2c02e1ff7f062fd5b3e637285bffc8fc2d340c76fb449d6e0f34  prometheus.tar.gz' | sha256sum --check
+          tar -xzf prometheus.tar.gz prometheus-3.16.0.linux-amd64/promtool
+      - name: Validate configuration and alert behavior
+        working-directory: deploy/prometheus
+        run: |
+          "${{ runner.temp }}/prometheus-3.16.0.linux-amd64/promtool" check config --syntax-only isles.yml
+          "${{ runner.temp }}/prometheus-3.16.0.linux-amd64/promtool" check rules isles-alerts.yml
+          "${{ runner.temp }}/prometheus-3.16.0.linux-amd64/promtool" test rules isles-alerts.test.yml
