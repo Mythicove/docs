@@ -44,7 +44,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | PlaceholderAPI | 站长选定的玩家资料展示项；不可用结果明确 | Paper Bridge | 已交付；真服 Server expansion 解析通过 |
 | Plan | 既有分析入口、访问隔离；本人活动与聚合资料 | E1/E2，深入需 Bridge | 5.9/3705 + SQLite 真服验证已存会话、离线本人资料、当前服聚合及重启持久性；面板沿用自身鉴权，MySQL/代理/SSO 待验收 |
 | spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 与管理员 GC 次数/累计耗时已真服验证；报告生成/分享入口待做 |
-| Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 待做 |
+| Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 私网服务令牌 `/metrics`、`/healthz` 及 Bridge 性能 gauge 已交付，真实 Prometheus 3.16.0 验证鉴权、90 秒失效及 TSDB 历史；独立只读凭据、多副本与容器运行待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | loopback 未签名 Bedrock 协议真客户端验证绑定、版本、实际 Bukkit UUID 白名单与 UDP 探测；Xbox 在线认证、真实 Java 关联、代理及双入口配置待验收/完善 |
 | ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion/Backwards 5.12.2 + Rewind 4.2.0 已真服验证 1.12.2/1.8.8 进服绑定、本人版本及协议 47 禁用；1.7、代理/在线认证与 Compass 启动前检查待做 |
 | WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge | 本人领地/角色/世界/中心坐标已真服验证；地图覆盖层与授权修改待做 |
@@ -98,6 +98,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - spark GC（2026-11-11）：官方 `Spark.gc()` API 按收集器读取次数/毫秒，复用管理员 Bridge 心跳；保留 provider 正常运行基线、零值和独立未知字段，不作为 JVM 生命周期或滚动区间统计。Purpur 1.21.1/2329 内置 spark / Java 21.0.8 真进程通过 `jcmd GC.run` 观察 G1 Old Generation 从 0 次／0 ms 增至 1 次／102 ms；禁用内置 spark 的真服回归通过。HTTP 场景覆盖管理员/本人/公开隔离、负数/小数拒绝、基线重置与不可用清旧值；生产浏览器读取 `web/e2e/fixtures/gc-observations.json`，验证中英与 390px 布局。网站没有强制 GC、历史采样或性能报告生成接口，报告分享仍保留待办。
 
 - ViaBackwards / ViaRewind（2026-11-11）：后台插件清单新增扩展版本，继续复用 ViaVersion 官方支持协议 API，无新增字段或手写版本表。Purpur 1.21.1/2329 + ViaVersion/Backwards 5.12.2 + Rewind 4.2.0 的真实 Mineflayer 1.12.2/1.8.8 客户端完成 spawn、游戏内绑定与原始协议读取；配置禁用协议 47 并重启后，列表移除 `1.8.x` 且新 1.8.8 连接被明确拒绝。另验仅 Backwards 扩展及仅 ViaVersion 的对照，后者不公布 1.12 且连接在 spawn 前断开。`legacy-protocol-observations.json` 保留真服结果，生产浏览器验证管理员范围/扩展版本、本人旧协议、禁用更新、离线清理与 390px 布局。实际范围是 offline loopback 协议链路；现代高度转换限制、完整游戏行为、1.7、代理/在线认证及 Compass 检查仍保留待办。
+
+- Prometheus 首批（2026-11-11）：Isles 新增直接私网服务令牌 `/metrics`，复用既有 Prometheus 编码库，按配置服务器 ID 输出 Bridge 时效、接收时间与有效 TPS/MSPT/系统 CPU/GC gauge，不采集玩家标签、不在抓取时探测上游。真实 Prometheus 3.16.0 + Purpur/Bridge 验证认证目标 `up=1`、无凭据 `up=0`、TPS/GC 采集；停止游戏并等待生产 90 秒边界后性能即时序列消失、`fresh=0`，TSDB 历史仍可查询，而 `/healthz` 仍为 200。`ISLES_TEST_PROMETHEUS_DIR` 可复跑，保留 `prometheus-result.json`。文档新增抓取 job；首批沿用管理服务令牌，未将其冒充独立只读权限，容器/多副本与任意 exporter 支持仍分别待验收。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的游戏 Bridge 平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia Bridge 已支持；Compass 的 Fabric 客户端验收与服务器 Bridge 支持是不同范围。
 

@@ -44,6 +44,28 @@ docker compose -f docker-compose.yml -f docs/deploy/compose.isles.yml up -d --bu
 
 HTTP 上游错误不会回显带 key 的 URL。管理审计记录操作、目标及由 Web 计算的匿名会话标识，不写入控制台命令正文。Isles 服务日志应纳入部署日志保留；直接持有服务令牌的调用方处于管理信任边界。
 
+### Prometheus 抓取 Isles
+
+Isles 私网监听地址提供 `GET /metrics`（Prometheus text 0.0.4），使用现有 `ISLES_ADMIN_TOKEN` Bearer 鉴权。Prometheus 直接访问 `http://isles:8095/metrics`，不通过浏览器 BFF；不要把服务令牌放进公开网页。该令牌同时拥有 Isles 管理权限，因此抓取端必须位于受信任部署中。首批沿用服务令牌，没有新增独立监控凭据。
+
+将 `docs/deploy/prometheus/isles.yml` 中的 job 合入已有 Prometheus 配置，把服务令牌只读挂载为 `/etc/prometheus/isles-token`。示例目标 `isles:8095` 对应 Compose 服务名，独立部署按实际私网地址调整。需要跨受信任私网之外抓取时，由部署层提供 TLS。该文件是抓取配置示例，不会自动启动 Prometheus 容器。
+
+| 指标 | 含义 |
+|---|---|
+| `mythic_isles_bridge_fresh{server}` | 已配置服务器的最近心跳是否少于 90 秒；未连接或失效为 0，含未公开服务器 |
+| `mythic_isles_bridge_observed_timestamp_seconds{server}` | 最近接受的心跳 Unix 时间，过期时仍可用于计算数据年龄 |
+| `mythic_isles_bridge_tps{server}` | 最新有效观察中 spark 的 10 秒 TPS |
+| `mythic_isles_bridge_mspt_seconds{server}` | spark 一分钟平均 tick 耗时，转为秒 |
+| `mythic_isles_bridge_system_cpu_ratio{server}` | spark 一分钟系统 CPU 比例，不是单个游戏进程占比 |
+| `mythic_isles_bridge_gc_collections{server,collector}` | spark 正常运行基线以来的收集器次数 |
+| `mythic_isles_bridge_gc_collection_seconds{server,collector}` | 同一基线下的累计 GC 秒数，不是暂停分布 |
+
+全部指标是 gauge；GC 基线可以重置，不把它们当作 `_total` counter 使用 `rate()`。性能值缺失、未知或超过 90 秒时不生成序列，不沿用旧样本制造新观察；Prometheus 负责保存历史。抓取仅读取当前快照，不触发游戏探测、面板请求或强制 GC。标签不含玩家、UUID、地址、显示名或密钥。
+
+可查询 `mythic_isles_bridge_fresh == 0` 发现失效 Bridge，用 `time() - mythic_isles_bridge_observed_timestamp_seconds` 查看年龄；`max_over_time(mythic_isles_bridge_tps[5m])` 可查看历史窗口。`GET /healthz` 继续只检查 Isles 进程：游戏服停止后它仍可能返回 200。
+
+已用 **官方 Prometheus 3.16.0 / Windows / Purpur 1.21.1/2329 / Java 21** 实际抓取验证：带令牌目标 `up=1`，无令牌对照 `up=0`，读取 TPS 与三个 GC 收集器；停服并等过真实 90 秒后，`fresh=0` 且性能即时序列消失，TSDB 的 5 分钟历史仍能查询。可在 Paper 原生验收中设置 `ISLES_TEST_PROMETHEUS_DIR` 指向已安装的 Prometheus 目录复跑。没有把配置解析当作容器运行、多副本或任意第三方 exporter 兼容验收。
+
 ## packwiz 发布
 
 在服务器中填写 `pack.toml` 地址，先保存配置，再点击“校验并发布客户端包”。成功后前台出现 `.mrpack` 下载按钮，可用于支持该格式的启动器和 Compass 的文件导入。

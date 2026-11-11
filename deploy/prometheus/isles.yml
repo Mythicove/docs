@@ -1,0 +1,13 @@
+# Merge this scrape job into an existing private Prometheus deployment.
+# Mount the existing Isles service token as /etc/prometheus/isles-token.
+# This token grants Isles administration: keep Prometheus and its config trusted.
+scrape_configs:
+  - job_name: mythic-isles
+    scrape_interval: 20s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/isles-token
+    static_configs:
+      - targets: [isles:8095]
