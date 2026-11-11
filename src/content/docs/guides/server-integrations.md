@@ -169,6 +169,14 @@ Chunky 1.4.40 的快速任务可能先写入终止存档、随后才回报异步
 
 已真服验证 **Towny 0.103.2.0 + flatfile + Purpur 1.21.1/2329**：创建城镇/国家、镇长与国王识别、转移镇长、assistant 职级、离线重启和移除居民。测试环境没有经济插件，Towny 有缺少 economy provider 及 `TownMobPVM:SulfurCube` 提示；验证的是上述只读路径，不代表 Towny 经济、战争与全部游戏版本兼容。MySQL/Folia 尚未验收。Towny 采集复用 2000 个已验证 UUID 和 256 KiB 心跳限制；单居民职级超过 32 条会明确使该次 Towny 观察不可用。
 
+## spark 垃圾回收观察
+
+已安装或由 Paper 提供 spark 服务时，Bridge 自动读取其官方 GC API，无需新增配置。管理员进入 `/admin/integrations`，选择服务器并点击 Bridge 的“刷新”，可查看每个垃圾收集器的回收次数与累计耗时（毫秒）；数据沿用 Bridge 心跳时间与新鲜度提示。默认心跳约 20 秒，页面刷新不会直接向 JVM 请求 GC。
+
+计数以 **spark 正常运行基线**为起点，扣除启动阶段的 GC，随 provider／服务器重启而重置。不是 JVM 启动以来总量、最近一分钟统计、暂停分布或各收集器时间的可直接相加总量。零值按 provider 返回保留；未知的次数或耗时分别显示“未提供”。没有 spark／观察时不补零，公开服务器目录和本人游戏资料不包含这些管理员统计。
+
+已在 **Purpur 1.21.1 build 2329 内置 spark / Microsoft Java 21.0.8 / Windows** 真服验证：用 JDK `jcmd GC.run` 对验收服务器触发回收，下一次心跳的 G1 Old Generation 从 0 次／0 ms 变为 1 次／102 ms；禁用内置 spark 后，绑定与白名单仍正常且不产生 GC 字段。生产浏览器使用该真服记录验证后台展示、未知值、零值、重置、观察消失、中英与 390px 布局。`jcmd` 只用于本地验收脚本，网站未提供强制回收接口；spark 性能报告的生成和分享仍待单独适配。
+
 ## Simple Voice Chat 本人连接状态
 
 在游戏服安装 [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) 与 Bridge，按[官方指南](https://modrepo.de/minecraft/voicechat/wiki/server_setup)配置独立 UDP 端口并重启。客户端需要对应版本的语音模组；仅安装服务端插件不会让原版客户端具备语音能力。整合包与代理部署参见[私服指南](./private-modpack-workflows.md)。

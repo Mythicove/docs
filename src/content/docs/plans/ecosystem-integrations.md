@@ -43,7 +43,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | LuckPerms | 本站负责的成员组授予/撤销、上下文及状态读取 | Bridge、身份绑定 | 全局组授予/撤销及读取已验证；上下文/到期待做 |
 | PlaceholderAPI | 站长选定的玩家资料展示项；不可用结果明确 | Paper Bridge | 已交付；真服 Server expansion 解析通过 |
 | Plan | 既有分析入口、访问隔离；本人活动与聚合资料 | E1/E2，深入需 Bridge | 5.9/3705 + SQLite 真服验证已存会话、离线本人资料、当前服聚合及重启持久性；面板沿用自身鉴权，MySQL/代理/SSO 待验收 |
-| spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 已验证；GC/报告入口待做 |
+| spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 与管理员 GC 次数/累计耗时已真服验证；报告生成/分享入口待做 |
 | Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | loopback 未签名 Bedrock 协议真客户端验证绑定、版本、实际 Bukkit UUID 白名单与 UDP 探测；Xbox 在线认证、真实 Java 关联、代理及双入口配置待验收/完善 |
 | ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion 5.12.2 协议范围与在线玩家版本已真服验证；Backwards/Rewind 与 Compass 检查待做 |
@@ -94,6 +94,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - Modrinth 文件识别（2026-11-11）：浏览器 Web Crypto 计算本地文件 SHA-512，仅传哈希，经既有 BFF / Isles 固定源查询 `version_file`，结果核对发布者哈希并仅展示匹配文件。复用目录一分钟/16 条缓存和每分钟 60 次请求预算，未收录 404 与上游失败 502 分开。真实索引确认 Simple Voice Chat 2.6.25（`5OqsnSs7`）本地 939410 字节 JAR 的版本/大小/哈希；修改内容后不匹配。新增 `scripts/catalog-live.mjs` 可复跑，HTTP 场景验证无效输入、哈希不一致、缺身份、非法文件 URL 与缓存；生产浏览器覆盖改名识别、内容不上传、中英、390px 及 128MiB 上限。结果是文件身份，不代表已安装、已运行或通过安全/实例兼容性检查。
 
 - packwiz→Compass 原生验收（2026-11-11）：独立导出的已提交版本，真实 Isles 发布 packwiz 1.1 为 1086 字节 `.mrpack`，经公开端点下载并核对 SHA-256 内容地址；Compass 使用现有 inspect/install/prepare_launch/spawn 路径下载 MC 1.21.1、Fabric 0.16.14 与官方 Fabric API 0.116.18+1.21.1（Modrinth `5SwzqWUu`），真实客户端初始化到方块材质图集并确认模组已加载。验证客户端文件大小/哈希、覆盖配置、可选文件安装、服务端文件不下载到客户端和重复 slug 拒绝；发布后同大小坏文件被下载器报告，未提升为游戏文件或残留 `.part`。脚本 `mythic-isles/scripts/compass-pack-live.mjs` 联动 `compass/src-tauri/tests/isles_pack_live.rs` 可复跑；身份使用 loopback 协议夹具，不是在线账号或实际进服验收。此次关闭的是文件导入与原生核心链路，桌面点击、一键远程安装、认证进服、多平台运行及 packwiz optional.default 选择仍保留待办。
+
+- spark GC（2026-11-11）：官方 `Spark.gc()` API 按收集器读取次数/毫秒，复用管理员 Bridge 心跳；保留 provider 正常运行基线、零值和独立未知字段，不作为 JVM 生命周期或滚动区间统计。Purpur 1.21.1/2329 内置 spark / Java 21.0.8 真进程通过 `jcmd GC.run` 观察 G1 Old Generation 从 0 次／0 ms 增至 1 次／102 ms；禁用内置 spark 的真服回归通过。HTTP 场景覆盖管理员/本人/公开隔离、负数/小数拒绝、基线重置与不可用清旧值；生产浏览器读取 `web/e2e/fixtures/gc-observations.json`，验证中英与 390px 布局。网站没有强制 GC、历史采样或性能报告生成接口，报告分享仍保留待办。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的游戏 Bridge 平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia Bridge 已支持；Compass 的 Fabric 客户端验收与服务器 Bridge 支持是不同范围。
 
