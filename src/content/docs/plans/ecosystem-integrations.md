@@ -36,7 +36,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | Dynmap | 已有地图入口、官方标记 API | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
 | packwiz | 源检查、版本发布、`.mrpack` 导出/安装、可选项与服务端分离 | E1，Hoard/Compass | 待做 |
 | AutoModpack | 独立实例安装/共存、服务端配置指引；协议适配单独验证 | Compass | 共存/独立实例指引已交付；同步协议与实例真验收待做 |
-| Modrinth | 搜索/版本/哈希识别，选定版本安装，保留来源 | Hoard/Compass | 搜索、兼容版本、上游下载及哈希展示已交付；按文件哈希识别和 Compass 安装待做 |
+| Modrinth | 搜索/版本/哈希识别，选定版本安装，保留来源 | Hoard/Compass | 搜索、兼容版本、上游下载/哈希及浏览器本地 SHA-512 文件识别已交付；Compass 安装待做 |
 | Hangar | 插件搜索/版本/下载来源，平台过滤 | E1/E2 | 搜索、按平台版本/下载/哈希已交付；服务端安装待做 |
 | Polymer | 资源包版本/产物链接、AutoHost 接入；发布本站产物 | 资源包分发 | AutoHost 部署指引已交付；产物采集/发布待做 |
 | SkinsRestorer | 已验证身份应用本站皮肤，持久/临时和代理模式验证 | Bridge、Mirror | 待做 |
@@ -90,6 +90,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - Geyser/Floodgate 首批（2026-11-11）：Geyser 2.8.3 b941、Floodgate 2.2.5 b141、ViaVersion 5.12.2 与 Purpur 1.21.1/2329 实进程，Bedrock 1.21.100 通过真实 RakNet/加密握手、`start_game` 和游戏内命令完成一次性绑定，实际检查 Bukkit UUID 写入原生白名单；Java 玩家没有被误标基岩。另跑 Geyser 无 Floodgate 路径，验证实际 UDP 探测。本人页分开显示 Bedrock 原始版本和 ViaVersion 转换后 Java 协议；后台读取 Geyser 支持版本。HTTP/生产浏览器场景覆盖个人所有权、公开数据隔离、平台枚举、身份持久化和离线移除在线连接观察。夹具仅 loopback、允许未签名代理连接，XUID 为零；不将它冒充 Xbox Live 或真实 Java 账号关联验收，代理与双入口合并仍保留待办。
 
 - Simple Voice Chat 首批（2026-11-11）：2.6.25 / Purpur 1.21.1/2329 / Java 21 实进程通过官方 Bukkit API 采集兼容客户端、连接与声音禁用状态。仅 loopback 的协议客户端完成 compatibility 20 握手、AES-128-GCM UDP 认证与连接校验，验证声音禁用/恢复、停止 keepalive 后超时、退出后移除观察及重新进服状态重置；未装插件的真服回归通过。复用玩家快照、20 秒心跳及本人授权，未知或缺失状态不回填断开，缺字段/null 的部分观察被拒绝。生产浏览器场景读取真服记录 `web/e2e/fixtures/voicechat-observations.json`，覆盖中英界面、状态变化、390px 布局、所有权/公开隔离及离线清理。2.6.25 API 没有麦克风静音读取；其他附加插件可覆盖连接状态，因此不将观察当作实际音频、公网 UDP 或麦克风可用证明。语音组、音频传输和公网/代理仍待验收。
+
+- Modrinth 文件识别（2026-11-11）：浏览器 Web Crypto 计算本地文件 SHA-512，仅传哈希，经既有 BFF / Isles 固定源查询 `version_file`，结果核对发布者哈希并仅展示匹配文件。复用目录一分钟/16 条缓存和每分钟 60 次请求预算，未收录 404 与上游失败 502 分开。真实索引确认 Simple Voice Chat 2.6.25（`5OqsnSs7`）本地 939410 字节 JAR 的版本/大小/哈希；修改内容后不匹配。新增 `scripts/catalog-live.mjs` 可复跑，HTTP 场景验证无效输入、哈希不一致、缺身份、非法文件 URL 与缓存；生产浏览器覆盖改名识别、内容不上传、中英、390px 及 128MiB 上限。结果是文件身份，不代表已安装、已运行或通过安全/实例兼容性检查。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
 

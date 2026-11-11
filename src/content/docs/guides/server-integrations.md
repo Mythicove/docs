@@ -69,6 +69,18 @@ GET /api/isles/catalog/hangar/versions/ViaVersion/ViaVersion?platform=PAPER&limi
 
 每进程最多 60 次/分钟上游调用、16 条一分钟缓存；超出出站预算返回 429。部署兼容镜像时可在 Isles 服务端设置 `ISLES_MODRINTH_URL` 或 `ISLES_HANGAR_URL`，不能通过公开请求指定任意目标。普通皮肤站不用配置此可选服务。
 
+### 识别已有文件
+
+在 `/catalog` 的“识别本地文件”中选择已有模组或插件，再点击“通过 Modrinth 识别”。文件上限 **128 MiB**，浏览器必须处于 HTTPS 或 localhost 的安全上下文。SHA-512 使用浏览器 Web Crypto 在本地计算；文件内容与本地文件名不上传，仅哈希经 Web BFF / Isles 查询固定 Modrinth 文件索引。
+
+```text
+GET /api/isles/catalog/modrinth/hash/{128位SHA-512十六进制哈希}
+```
+
+结果给出精确版本、发布渠道、上游声明的 loader/游戏版本、发布者文件名和版本原页面，仅包含 SHA-512 与请求相同的文件。改名不会影响识别；修改过、未公开或未被索引的文件可能返回 404“未收录”。上游不可用或返回哈希不一致时为 502，不冒充无匹配；预算仍与搜索/版本接口共享。此操作独立于目录的平台与游戏版本筛选，不代表文件安全、依赖安装或当前实例兼容性已通过验证，也不会自动安装文件。
+
+已用真实 Modrinth 索引识别 **Simple Voice Chat 2.6.25** 的本地 JAR（版本 `5OqsnSs7`，939410 字节），核对发布者 SHA-512、文件大小、版本 ID，修改字节后的哈希返回 404。可通过 `node scripts/catalog-live.mjs /path/to/published.jar modrinth-version-id` 在 Isles 仓库复跑。生产浏览器另验证本地计算、改名文件、中英界面、390px 布局与超限拒绝；这里不执行或安装被识别的文件。
+
 ## 地图、统计与后续插件
 
 BlueMap、squaremap、Dynmap 和 Plan 当前可以关联为具名链接，在各自工具中打开；这不是它们的游戏内 API 适配。成员地图的鉴权仍由对应工具或反向代理控制，隐藏本站链接不等于限制地图访问。
