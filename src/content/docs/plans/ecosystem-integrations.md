@@ -46,7 +46,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | spark | TPS/MSPT/CPU/GC、报告链接，支持范围明确 | Bridge | TPS/MSPT/CPU 与管理员 GC 次数/累计耗时已真服验证；报告生成/分享入口待做 |
 | Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | loopback 未签名 Bedrock 协议真客户端验证绑定、版本、实际 Bukkit UUID 白名单与 UDP 探测；Xbox 在线认证、真实 Java 关联、代理及双入口配置待验收/完善 |
-| ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion 5.12.2 协议范围与在线玩家版本已真服验证；Backwards/Rewind 与 Compass 检查待做 |
+| ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion/Backwards 5.12.2 + Rewind 4.2.0 已真服验证 1.12.2/1.8.8 进服绑定、本人版本及协议 47 禁用；1.7、代理/在线认证与 Compass 启动前检查待做 |
 | WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge | 本人领地/角色/世界/中心坐标已真服验证；地图覆盖层与授权修改待做 |
 | Towny | 城镇/国家/居民/招募与地图；授权管理 | Paper Bridge | 0.103.2.0 flatfile 真服验证城镇/国家概况、本人角色/职级、离线重启及移除；公开招募、地图与授权修改待做 |
 | FTB Teams / Chunks | 团队、领地及实际强制加载状态 | 对应模组平台 Bridge | 待做 |
@@ -96,6 +96,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 - packwiz→Compass 原生验收（2026-11-11）：独立导出的已提交版本，真实 Isles 发布 packwiz 1.1 为 1086 字节 `.mrpack`，经公开端点下载并核对 SHA-256 内容地址；Compass 使用现有 inspect/install/prepare_launch/spawn 路径下载 MC 1.21.1、Fabric 0.16.14 与官方 Fabric API 0.116.18+1.21.1（Modrinth `5SwzqWUu`），真实客户端初始化到方块材质图集并确认模组已加载。验证客户端文件大小/哈希、覆盖配置、可选文件安装、服务端文件不下载到客户端和重复 slug 拒绝；发布后同大小坏文件被下载器报告，未提升为游戏文件或残留 `.part`。脚本 `mythic-isles/scripts/compass-pack-live.mjs` 联动 `compass/src-tauri/tests/isles_pack_live.rs` 可复跑；身份使用 loopback 协议夹具，不是在线账号或实际进服验收。此次关闭的是文件导入与原生核心链路，桌面点击、一键远程安装、认证进服、多平台运行及 packwiz optional.default 选择仍保留待办。
 
 - spark GC（2026-11-11）：官方 `Spark.gc()` API 按收集器读取次数/毫秒，复用管理员 Bridge 心跳；保留 provider 正常运行基线、零值和独立未知字段，不作为 JVM 生命周期或滚动区间统计。Purpur 1.21.1/2329 内置 spark / Java 21.0.8 真进程通过 `jcmd GC.run` 观察 G1 Old Generation 从 0 次／0 ms 增至 1 次／102 ms；禁用内置 spark 的真服回归通过。HTTP 场景覆盖管理员/本人/公开隔离、负数/小数拒绝、基线重置与不可用清旧值；生产浏览器读取 `web/e2e/fixtures/gc-observations.json`，验证中英与 390px 布局。网站没有强制 GC、历史采样或性能报告生成接口，报告分享仍保留待办。
+
+- ViaBackwards / ViaRewind（2026-11-11）：后台插件清单新增扩展版本，继续复用 ViaVersion 官方支持协议 API，无新增字段或手写版本表。Purpur 1.21.1/2329 + ViaVersion/Backwards 5.12.2 + Rewind 4.2.0 的真实 Mineflayer 1.12.2/1.8.8 客户端完成 spawn、游戏内绑定与原始协议读取；配置禁用协议 47 并重启后，列表移除 `1.8.x` 且新 1.8.8 连接被明确拒绝。另验仅 Backwards 扩展及仅 ViaVersion 的对照，后者不公布 1.12 且连接在 spawn 前断开。`legacy-protocol-observations.json` 保留真服结果，生产浏览器验证管理员范围/扩展版本、本人旧协议、禁用更新、离线清理与 390px 布局。实际范围是 offline loopback 协议链路；现代高度转换限制、完整游戏行为、1.7、代理/在线认证及 Compass 检查仍保留待办。
 
 部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的游戏 Bridge 平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia Bridge 已支持；Compass 的 Fabric 客户端验收与服务器 Bridge 支持是不同范围。
 

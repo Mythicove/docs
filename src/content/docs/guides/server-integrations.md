@@ -128,6 +128,14 @@ PlaceholderAPI 的展示项在服务器插件配置的 `placeholders` 中设置�
 
 Paper Bridge 已支持可选的 WorldGuard 与 ViaVersion：安装对应插件后自动检测。玩家 `/game` 页可查看在线时观察到的本人领地成员关系、世界和区域中心坐标，以及实际客户端协议版本；后台可查看 ViaVersion 排除被禁协议后的允许范围。领地最多 32 条并明确截断，不公开其他玩家的领地资料，也不提供网页修改保护规则。协议列表不能代替对代理、认证或模组兼容性的验证。
 
+### ViaBackwards / ViaRewind 旧客户端
+
+需要旧 Java 客户端连接新服时，按上游说明组合安装 ViaVersion、ViaBackwards，以及所需的 ViaRewind。Bridge 后台显示检测到的三个插件版本，支持范围仍由 **ViaVersion 官方 API** 提供，包含已安装扩展的转换路径并排除 `block-protocols` / `block-versions` 禁用项；本站不维护第二份手写兼容表。玩家本人页显示实际连接协议名称，退出后移除在线版本观察，已验证的 UUID 绑定保留。
+
+已在 **Purpur 1.21.1/2329 / Java 21 / ViaVersion 5.12.2 / ViaBackwards 5.12.2 / ViaRewind 4.2.0** 实进程验证：1.12.2、1.8.8 客户端进入游戏并执行一次性绑定，读取版本分别为 `1.12.2`、`1.8.x`。在 ViaVersion 配置中设置 `block-protocols: [47]` 并重启后，下一次心跳范围不再含 `1.8.x`，新的 1.8.8 连接收到明确拒绝。另验 ViaVersion + ViaBackwards 的 1.12.2 路径；仅 ViaVersion 时不列出 1.12，旧客户端也无法完成进服。
+
+这批验收使用 offline-mode、仅 loopback 的协议客户端，覆盖登录、spawn、绑定及版本读取。ViaBackwards 对现代世界高度的旧客户端显示限制有实际警告；支持列表不代表所有物品、方块、高度或游戏行为都能无损转换。1.7 客户端、在线认证、代理网络、Compass 启动前版本检查仍待独立验收。固定扩展版本及 SHA-512 校验已进入 `bridge/paper/test/fetch-plugins.mjs`，可通过 `ISLES_TEST_PLUGIN_FILTER=ViaVersion.jar,ViaBackwards.jar,ViaRewind.jar` 复跑。
+
 安装 Vault 与实际经济插件后，Bridge 会读取已存在账户的余额与 provider 提供的货币显示格式，出现在已绑定玩家的本人资料中。只有 Vault、没有 Economy provider 时不伪造零余额；也不自动创建经济账户。不提供存取款、转账和网页发货接口，避免把只读资料误当作完整的游戏经济交易系统。
 
 ## Chunky 世界预生成
