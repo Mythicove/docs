@@ -17,7 +17,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | E1 | Isles 基础：持久化服务器、公开/管理 API、秘密隔离、Java/Bedrock 状态 | HTTP 场景验证配置→公开读取→状态及未授权拒绝 | 已交付 |
 | E2 | Web 服务器目录、详情、集成后台及代理鉴权 | 真后端页面流程，普通用户不能管理；未配置可独立运行 | 已交付 |
 | E3 | MCSManager、Pterodactyl 的实例发现/控制/日志，监控接口 | 测试上游协议边界，真实目标面板验证另记版本 | HTTP 常用操作已交付；真实面板、实时流及历史监控待做 |
-| E4 | packwiz 与 `.mrpack`、Modrinth/Hangar 来源、资源包 | 发布不可变版本，客户端/服务端分离，真实包安装 | packwiz 发布与 Modrinth/Hangar 搜索已交付；Compass 安装、资源包和不支持格式待做 |
+| E4 | packwiz 与 `.mrpack`、Modrinth/Hangar 来源、资源包 | 发布不可变版本，客户端/服务端分离，真实包安装 | packwiz 发布、Compass 文件导入/原生启动及 Modrinth/Hangar 搜索已验证；一键远程安装、资源包和不支持格式待做 |
 | E5 | 游戏 Bridge：平台连接、游戏身份验证、基础状态 | 真服启动与 HTTP 交互，连接撤销和 UUID 授权 | Paper 路径已交付；其他平台待做 |
 | E6 | LuckPerms、spark、PlaceholderAPI、Plan | 成员资格、性能摘要、本人资料与面板入口 | 全局权限组、占位符、性能及 Plan 本人/聚合首批已交付；上下文与报告等深入功能待做 |
 | E7 | 游戏世界、治理、跨平台与社区扩展 | 每种实际支持平台有测试/真服证据 | ViaVersion、WorldGuard、Vault、Chunky 与 Towny 首批已交付；其他项目和深层联动待做 |
@@ -34,7 +34,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | BlueMap | 地图入口/嵌入、权限与网关说明；世界/地标/皮肤关联 | E1/E2，深度需 Bridge | 地图配置、独立嵌入页与保存视角已交付；真地图、标记与皮肤待做 |
 | squaremap | 已有地图入口、地图标记适配 | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
 | Dynmap | 已有地图入口、官方标记 API | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
-| packwiz | 源检查、版本发布、`.mrpack` 导出/安装、可选项与服务端分离 | E1，Hoard/Compass | 待做 |
+| packwiz | 源检查、版本发布、`.mrpack` 导出/安装、可选项与服务端分离 | E1，Hoard/Compass | Isles 发布→公开下载→Compass 原生安装/启动已验证，含哈希、配置覆盖、可选安装及服务端文件跳过；桌面点击、一键远程安装与默认可选项语义仍待做 |
 | AutoModpack | 独立实例安装/共存、服务端配置指引；协议适配单独验证 | Compass | 共存/独立实例指引已交付；同步协议与实例真验收待做 |
 | Modrinth | 搜索/版本/哈希识别，选定版本安装，保留来源 | Hoard/Compass | 搜索、兼容版本、上游下载/哈希及浏览器本地 SHA-512 文件识别已交付；Compass 安装待做 |
 | Hangar | 插件搜索/版本/下载来源，平台过滤 | E1/E2 | 搜索、按平台版本/下载/哈希已交付；服务端安装待做 |
@@ -93,6 +93,8 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 
 - Modrinth 文件识别（2026-11-11）：浏览器 Web Crypto 计算本地文件 SHA-512，仅传哈希，经既有 BFF / Isles 固定源查询 `version_file`，结果核对发布者哈希并仅展示匹配文件。复用目录一分钟/16 条缓存和每分钟 60 次请求预算，未收录 404 与上游失败 502 分开。真实索引确认 Simple Voice Chat 2.6.25（`5OqsnSs7`）本地 939410 字节 JAR 的版本/大小/哈希；修改内容后不匹配。新增 `scripts/catalog-live.mjs` 可复跑，HTTP 场景验证无效输入、哈希不一致、缺身份、非法文件 URL 与缓存；生产浏览器覆盖改名识别、内容不上传、中英、390px 及 128MiB 上限。结果是文件身份，不代表已安装、已运行或通过安全/实例兼容性检查。
 
-部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia 已支持。
+- packwiz→Compass 原生验收（2026-11-11）：独立导出的已提交版本，真实 Isles 发布 packwiz 1.1 为 1086 字节 `.mrpack`，经公开端点下载并核对 SHA-256 内容地址；Compass 使用现有 inspect/install/prepare_launch/spawn 路径下载 MC 1.21.1、Fabric 0.16.14 与官方 Fabric API 0.116.18+1.21.1（Modrinth `5SwzqWUu`），真实客户端初始化到方块材质图集并确认模组已加载。验证客户端文件大小/哈希、覆盖配置、可选文件安装、服务端文件不下载到客户端和重复 slug 拒绝；发布后同大小坏文件被下载器报告，未提升为游戏文件或残留 `.part`。脚本 `mythic-isles/scripts/compass-pack-live.mjs` 联动 `compass/src-tauri/tests/isles_pack_live.rs` 可复跑；身份使用 loopback 协议夹具，不是在线账号或实际进服验收。此次关闭的是文件导入与原生核心链路，桌面点击、一键远程安装、认证进服、多平台运行及 packwiz optional.default 选择仍保留待办。
+
+部署入口见[配置服务器与可选集成](../guides/server-integrations.md)。当前“深度已验证”的游戏 Bridge 平台仅为上述 Paper 兼容环境，不宣称 Fabric/NeoForge/Folia Bridge 已支持；Compass 的 Fabric 客户端验收与服务器 Bridge 支持是不同范围。
 
 参考：[视觉与总体架构评估](../research/web-and-mc-ecosystem.md)、[可选整合调研](../research/optional-mc-integrations.md)。
