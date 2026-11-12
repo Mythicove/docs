@@ -173,6 +173,43 @@ BlueMap、squaremap、Dynmap 和 Plan 当前可以关联为具名链接，在各
 
 仅成员地图应在其网页和数据入口统一鉴权；配置在本站的地址必须是允许玩家知道的浏览器入口，不填内网管理端点或私密 token。当前没有自动改写 BlueMap 标记/玩家皮肤，也没有把页面嵌入当成游戏内 API 接入完成。
 
+### Dynmap 的 WorldGuard 公开领地层
+
+安装 Dynmap、WorldEdit、WorldGuard 与官方 [Dynmap-WorldGuard](https://github.com/webbukkit/Dynmap-WorldGuard) 配套插件。后者直接同步 WorldGuard 区域到 Dynmap 的 `worldguard.markerset`；本站已有地图入口可以展示该地图。
+
+首次启动前写入 `plugins/Dynmap-WorldGuard/config.yml`：
+
+```yaml
+update:
+  period: 30
+layer:
+  name: '公开领地'
+  hidebydefault: false
+use3dregions: false
+visibleregions: ['world/spawn', 'world/community']
+hiddenregions: []
+infowindow: '<div class="infowindow">%regionname%</div>'
+```
+
+将清单替换为站长选定的真实 `世界名/区域ID`。**此插件的空清单 `[]` 表示公开全部区域**；需要暂时不公开任何区域时，停用配套插件。区域名称、边界和世界名是公开地图内容，弹窗仅显示区域名称，省略默认配置中的 owners、members、groups 与 flags。Dynmap 自身的玩家位置/聊天可见性另按其配置管理，领地层设置不控制这些内容。
+
+Dynmap 的 `configuration.txt` 可设置 `webserver-bindaddress: 127.0.0.1` 和 `webserver-port: 8123`，由已有网关提供浏览器入口；容器部署按实际受信任网络调整。创建、重定义或删除区域后，等待配套插件更新及地图数据刷新。普通地图入口、tiles 和 marker JSON 必须使用相同访问权限。
+
+已在 Purpur 1.21.1/2329、Java 21、Dynmap 3.7-beta-8、WorldGuard 7.0.12、WorldEdit 7.3.9 与官方配套插件固定源码 `82bdc16eec68bad16e14331d5588088551b22cbd`（1.4-SNAPSHOT）上验证：游戏内创建实际矩形区域；地图 HTTP 标记边界从 `[0,11]` 更新为 `[0,16]`（含最后一个方块的外缘）；删除后消失；未选择的物理/全局区域和成员 UUID 未进入标记数据，Dynmap 网页可访问。该验收覆盖标记同步与 HTTP 产物，浏览器地图渲染和网关部署仍需部署方检查。
+
+在 Isles 的 `bridge/paper/` 目录复跑，需预先准备 Paper-compatible JAR、Java 21、Go、Maven 和 npm 依赖：
+
+```sh
+node test/fetch-plugins.mjs /absolute/plugin-fixtures
+node test/fetch-dynmap-worldguard.mjs /absolute/plugin-fixtures
+PAPER_SERVER_JAR=/absolute/purpur.jar \
+ISLES_TEST_PLUGIN_DIR=/absolute/plugin-fixtures \
+ISLES_TEST_PLUGIN_FILTER=WorldGuard.jar,WorldEdit.jar,Dynmap.jar,Dynmap-WorldGuard.jar \
+node test/live.mjs
+```
+
+Windows 使用环境变量语法，并可将 `MAVEN_COMMAND` 指向 `mvn.cmd` 的绝对路径。下载固定发布版本并校验发布者摘要；配套插件从固定官方源码构建。原生测试目录保留 `map-observations.json`、`scenario-result.json` 与日志；其配置使用 2 秒更新周期，仅用于独立 loopback 测试服。
+
 ## 游戏身份、白名单与玩家资料
 
 `mythic-isles/bridge/paper` 提供 Java 21 Paper/Spigot 插件，初始验证环境为 Purpur 1.21.1。可从 Isles CI 的 `isles-paper-bridge` artifact 获取 JAR，放入 `plugins/` 后重启。

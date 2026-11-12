@@ -33,7 +33,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | Pterodactyl | Client API 选择服务器、资源、power、command、WebSocket | E1/E2 | Client HTTP 适配已交付；真面板和 WebSocket 待做 |
 | BlueMap | 地图入口/嵌入、权限与网关说明；世界/地标/皮肤关联 | E1/E2，深度需 Bridge | 地图配置、独立嵌入页与保存视角已交付；真地图、标记与皮肤待做 |
 | squaremap | 已有地图入口、地图标记适配 | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
-| Dynmap | 已有地图入口、官方标记 API | E1/E2，深度需 Bridge | 地图配置与独立嵌入页已交付；真地图与标记适配待做 |
+| Dynmap | 已有地图入口、官方标记 API | E1/E2，官方配套插件 | 地图入口已交付；Dynmap-WorldGuard 选定领地边界创建/更新/删除及公开标记数据隔离已真服验证；浏览器渲染、皮肤联动待做 |
 | packwiz | 源检查、版本发布、`.mrpack` 导出/安装、可选项与服务端分离 | E1，Hoard/Compass | Isles 发布→公开下载→Compass 原生安装/启动已验证，含哈希、配置覆盖、可选安装及服务端文件跳过；桌面点击、一键远程安装与默认可选项语义仍待做 |
 | AutoModpack | 独立实例安装/共存、服务端配置指引；协议适配单独验证 | Compass | 共存/独立实例指引已交付；同步协议与实例真验收待做 |
 | Modrinth | 搜索/版本/哈希识别，选定版本安装，保留来源 | Hoard/Compass | 搜索、兼容版本、上游下载/哈希及浏览器本地 SHA-512 文件识别已交付；Compass 安装待做 |
@@ -47,7 +47,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | Prometheus Exporter | `/metrics`、`/health`，历史监控接已有 Prometheus | E1/E2 | 私网 `/metrics`、`/healthz` 及 Bridge gauge 已真采集验证；抓取失败/Bridge 过期告警与规则引擎验收已交付；独立只读凭据已真采集及权限隔离验证；Alertmanager 通知、多副本与容器运行待做 |
 | Geyser / Floodgate | Java/Bedrock 入口、基岩探测、验证后的跨平台身份 | E1，身份需 Bridge | loopback 未签名 Bedrock 协议真客户端验证绑定、版本、实际 Bukkit UUID 白名单与 UDP 探测；Xbox 在线认证、真实 Java 关联、代理及双入口配置待验收/完善 |
 | ViaVersion / Backwards / Rewind | 实际支持版本范围与进服检查 | Bridge、Compass | ViaVersion/Backwards 5.12.2 + Rewind 4.2.0 已真服验证 1.12.2/1.8.8 进服绑定、本人版本及协议 47 禁用；1.7、代理/在线认证与 Compass 启动前检查待做 |
-| WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge | 本人领地/角色/世界/中心坐标已真服验证；地图覆盖层与授权修改待做 |
+| WorldGuard | 领地/成员只读、地图定位；授权管理 | Paper Bridge + 官方地图配套插件 | 本人领地与 Dynmap 选定公开领地覆盖层已真服验证；授权修改待做 |
 | Towny | 城镇/国家/居民/招募与地图；授权管理 | Paper Bridge | 0.103.2.0 flatfile 真服验证城镇/国家概况、本人角色/职级、离线重启及移除；公开招募、地图与授权修改待做 |
 | FTB Teams / Chunks | 团队、领地及实际强制加载状态 | 对应模组平台 Bridge | 待做 |
 | FTB Quests | 任务定义、本人/团队进度只读，隐藏规则 | 对应模组平台 Bridge | 待做 |
