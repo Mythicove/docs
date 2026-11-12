@@ -98,6 +98,26 @@ promtool test rules isles-alerts.test.yml
 
 单次发布限制为 90 秒、总读取 256MiB、单个远程模组 128MiB、单个覆盖文件 32MiB、最多 2000 项。实际外部文件仍从其原下载源获取；Isles 不把所有远程模组重新打包分发。
 
+### CoreProtect 坐标历史查询
+
+在 Paper 服务器安装启用 API 的 CoreProtect 24.0+，管理员在整合页刷新 Bridge 后可输入世界、X/Y/Z 和回溯秒数。查询使用官方 API v12 精确坐标接口，限制为最近 30 天、每页 100 条，数据库查询在异步线程执行。任务及结果沿用 Isles 持久队列，公开服务器目录不包含历史。
+
+结果展示记录时间、操作者名称、原始动作、可解析材料和当前回滚状态；操作者名称不等于本站已验证身份。查询仅包含已存数据库记录，刚发生而尚未写入的数据可能暂时不可见。每页是独立读取，新事件可能使偏移变化；读取请求丢失确认时允许重读。空结果表示没有匹配的已存记录。旧 API、API 禁用、世界未加载或坐标超出该世界高度会使任务失败。
+
+真服验收使用 Purpur 1.21.1、CoreProtect CE 24.1 / SQLite，以及官方源码提交 `0af209a0a05135216599113c0b5e2638ad3c704b`。玩家实际放置并破坏石头后，精确坐标查询返回两条记录，时间单位为 Unix 毫秒；空坐标和偏移页通过，查询后世界仍为空气。HTTP 场景验证管理员隔离、参数拒绝、结果持久性和公开目录不泄漏；生产 Web/BFF 场景验证提交与显示历史、空结果。
+
+官方 Maven `net.coreprotect:coreprotect:24.1` 用于编译 API，其 JAR 未设置发行分支，不能直接当作启用插件的验收产物。复跑脚本从上述固定官方源码构建 `development` 分支，仅用于独立测试服务器：构建需 JDK 25 和 Maven，服务器运行仍可用 Java 21。二进制不随仓库分发。
+
+```sh
+# Set JAVA_HOME to a JDK 25 installation for fixture compilation.
+# On Windows also set MAVEN_COMMAND to the absolute mvn.cmd path if needed.
+node test/fetch-coreprotect.mjs /absolute/fixture-directory
+# Run from mythic-isles/bridge/paper, with the bridge already built.
+PAPER_SERVER_JAR=/path/to/purpur.jar ISLES_TEST_PLUGIN_DIR=/absolute/fixture-directory ISLES_TEST_PLUGIN_FILTER=CoreProtect.jar node test/live.mjs
+```
+
+首批范围为独立管理员只读坐标查询；举报单关联、回滚/恢复和 MySQL 尚未验收。
+
 ### 用 Compass 安装已发布客户端包
 
 1. 在网站的服务器详情页下载已发布的 `.mrpack`，保存到本机。发布版本使用 SHA-256 内容地址，修改源文件后需重新发布，新产物不会覆盖旧版本。

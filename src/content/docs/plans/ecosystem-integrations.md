@@ -51,7 +51,7 @@ description: Web、Compass、服务器与可选插件整合的交付顺序、验
 | Towny | 城镇/国家/居民/招募与地图；授权管理 | Paper Bridge | 0.103.2.0 flatfile 真服验证城镇/国家概况、本人角色/职级、离线重启及移除；公开招募、地图与授权修改待做 |
 | FTB Teams / Chunks | 团队、领地及实际强制加载状态 | 对应模组平台 Bridge | 待做 |
 | FTB Quests | 任务定义、本人/团队进度只读，隐藏规则 | 对应模组平台 Bridge | 待做 |
-| CoreProtect | 举报坐标关联历史查询；回滚/恢复作为独立管理流程 | Paper Bridge | 待做 |
+| CoreProtect | 举报坐标关联历史查询；回滚/恢复作为独立管理流程 | Paper Bridge | CE 24.1 / API v12 / SQLite 管理员精确坐标只读查询已真服验证，含原始动作、毫秒时间、回滚状态与分页；举报单关联、回滚/恢复及 MySQL 待做 |
 | Ledger | Fabric 历史查询/举报关联，先确认支持接口 | Fabric Bridge | 待做 |
 | LibertyBans | 本人处罚、管理查询、申诉；授权处罚操作 | Bridge、身份绑定 | 待做 |
 | Vault | 本人余额/货币格式；交易需单独完整语义 | Paper Bridge、Economy provider | Vault 1.7.3 + EssentialsX Economy 2.21.2 只读余额/格式已真服验证；不提供交易 |
