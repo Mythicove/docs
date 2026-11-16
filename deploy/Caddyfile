@@ -19,7 +19,7 @@
 	reverse_proxy /api/isles/* web:3000
 	# 邮件落地页 GET 是 web 页面；同名 POST（/account/verify 等）是 mirror API，由下方规则承接
 	@web_landing {
-		path /account/verify /account/reset-password
+		path /account/verify /account/reset-password /account/pending
 		method GET
 	}
 	reverse_proxy @web_landing web:3000
@@ -31,7 +31,7 @@
 	# ---- Mirror：Yggdrasil / 账号 / 皮肤库 / 纹理 / 渲染 / 管理 / OIDC Provider ----
 	# /metrics 有意不经网关暴露（Prometheus 在 compose 网络内直抓 mirror:8080/hoard:8081）
 	# /reports：举报提交（mirror API）；根路径 / 的 JSON 元信息由下方 @yggmeta 承接
-	@mirror path /authserver/* /sessionserver/* /api/* /account/* /oauth/* /oauth2/* /mojang/* /skinlib* /skin/* /cape/* /textures/* /avatars/* /renders/* /usm/* /MinecraftSkins/* /MinecraftCloaks/* /admin/batch-import /site/* /reports /.well-known/openid-configuration /.well-known/jwks.json /healthz
+	@mirror path /authserver/* /sessionserver/* /api/* /account/* /oauth/* /oauth2/* /mojang/* /skinlib* /skin/* /cape/* /textures/* /skin-presets* /avatars/* /renders/* /usm/* /MinecraftSkins/* /MinecraftCloaks/* /admin/batch-import /site/* /reports /.well-known/openid-configuration /.well-known/jwks.json /healthz
 	reverse_proxy @mirror mirror:8080
 
 	# ---- Yggdrasil 根元信息：启动器 GET / 带 JSON Accept（浏览器落地页仍走 web）----

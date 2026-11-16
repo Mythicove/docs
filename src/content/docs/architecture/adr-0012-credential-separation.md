@@ -31,6 +31,13 @@ Mirror 此前只有**一个**密码凭据（`users.password_hash`，Argon2id）�
 - **"纯密码账号还有多少"只做提示，不做门禁。** `CountPasswordOnlyUsers`（`password_hash <> '' AND status='active' AND email_verified AND NOT EXISTS(identities)`，走 `users_password_only` 部分索引）只在管理面板打开时算一次。登录热路径上的判定是"**这个账号自己**有没有绑定"——而登录本来就要读用户行，不增加查询。于是宽限集合自然收缩，归零那一刻主密码登录已无人可用，**不需要第二个开关，也不需要自动切换状态**。
 - **`Signout` 语义收窄并真正实现**：此前它校验密码后什么也不删（一个纯粹的 no-op）。现在校验「玩家名 + 独立密码」后销毁**该玩家**的游戏会话。协议原文是"注销该账号所有令牌"，但凭证属于单个玩家，用一条玩家凭证去清掉同账号其他玩家的会话并不合理，故按玩家收窄（网站会话 `player_id` 为空，天然不受影响）。
 - **`availableProfiles` 只含认证到的那一个玩家。** 一条独立密码只证明它所属玩家的身份；同账号下别的玩家各有各的密码，不该因为知道其中一条就被列出来。这也让"进服身份"与"启动器里看到的身份"必然一致（此前的 bug 类）。
+- **会话自带授权范围，HTTP 面同样按玩家收窄**（2026-10-30 补，把上一条的原则落实到 Yggdrasil 协议之外）。`availableProfiles` 只约束了协议响应，而 `/account/*` 与后台管理端点此前一律按 `sessions.user_id` 授权——启动器会话也是 `sessions` 里的一行，于是那条边界只存在于一个端点上。判别式就是既有的 `credential_id`（`Session.IsLauncher()`），不需要新列：
+  - **玩家级**（`GET /account/players`、`/account/players/{name}/credentials` 的查/建/删）：启动器会话可见与可操作的范围裁到它钉住的那个玩家，范围外一律 404 且与"玩家不存在"不可区分（否则可用玩家名探测账号结构）。
+  - **外观与发布**：`yggdrasil.ScopedPlayers` 同时约束皮肤/披风上传与清除、预设、模型切换、皮肤库应用与发布，以及 `/mojang/verify`。这些入口在解析玩家时先限定会话范围，再执行写入；网站会话仍可操作账号下所有玩家。HTTP 回归覆盖同账号其他玩家拒绝、当前玩家成功和网站会话成功。
+  - **账号级**（`me`、`password`、`identities`、增删改玩家、微软 OAuth 绑定与解绑）：`WebSessionOnly` 中间件拒绝启动器会话，回稳定码 `web_session_required`，启动器据此引导用户回网站。
+  - **后台管理**：`AdminRole` 一律拒绝启动器会话，即使账号 `role=admin`，且不写入审计操作者（否则审计记成 `user:<id>`，事后看不出那是个启动器令牌）。
+
+  这条不是理论洁癖：未收窄时，持有**任意一条**玩家独立密码换来的 accessToken 即可为同账号下别的玩家新建独立密码（等于接管，且事后撤销原来那条拦不住）、改名、删除玩家；管理员本人用启动器登录后，落在 `secrets.json` 里的那个令牌就是全站后台入口。而独立密码的设计前提正是"会被备份、同步、在共享机器上留存，所以要能按设备单独撤销"。
 - **顺带修掉三个既有缺口**（都是本次改动的必经之路）：`GetUserAuth` 加 `status='active'` 过滤（此前 banned/suspended 照样能拿会话）；`/oauth2/login/accept` 挂上 `"auth"` 限流桶（此前它是全站唯一能无限速试主密码的端点）；`login_methods` 的 `password` 开关真正强制生效。
 
 ## 后果
@@ -50,4 +57,5 @@ Mirror 此前只有**一个**密码凭据（`users.password_hash`，Argon2id）�
 - 未处理（记入台账，不在本次范围）：
   - `sessions` TTL 24h 与 web cookie `maxAge` 7d 仍不一致（cookie 比会话多活 6 天，之后每个请求都 401 而浏览器还以为自己登录着）。
   - memstore 的会话不过期（与 pgstore 的 24h 不一致），测试因此覆盖不到过期路径。
-  - `email_verified` 仍不参与任何门禁：未验证邮箱的账号可以正常登录（本次没有顺手改，因为无 SMTP 的部署会因此把所有人锁在门外，那是一个独立的策略决定）。
+
+邮箱验证策略已在后续账号批次实现（Mirror `d46a0da`）：默认要求邮箱验证，网站与启动器登录共用 `VerifyAllowed`；管理员可通过 `allowUnverifiedLogin` 放行未验证账号。注册提供重发入口，验证码与邮件驱动半配置在启动期拒绝。
