@@ -127,3 +127,31 @@ CI 出的是 draft release，发布前过一遍：
 这些观察不足以判定在线下载链路稳定。恢复后需重跑冒烟，通过后再评估正式发布。
 
 本轮也未完成三台干净机器的安装与游戏启动验收。
+
+## Forge 下载修复后的验证
+
+Compass `eec2f5d` 已修复本轮暴露的两处下载问题：
+
+- 元数据 GET 完整读取响应后才返回，连接中断、响应体截断和暂时性 HTTP 错误复用下载器的三次尝试预算。404、认证拒绝、无效 JSON 和 SHA-1 不符仍返回失败；认证及写操作不会重放。
+- 安装器档案中的 Forge Maven 根路径工件使用同域名的显式 `/releases/` 仓库。版本聚合索引保留其已发布的根路径接口，已带 `releases` 或 `snapshots` 的 URL 保持原有仓库。
+
+原先失败的 installer 已通过实际下载器取得，大小为 9,111,901 字节，官方 SHA-1 为
+`c445499201106cd56123029315a8e53228ea677b`，安装器内的游戏版本为 1.21.4。
+[三平台 CI](https://github.com/Mythicove/mythic-compass/actions/runs/43935200267)全部通过，
+包括真实 Forge 安装和后续 `.mrpack` 安装。`dev-49` 的失败记录保留为修复前的验收结果。
+
+## 完成签名与用户环境验收的顺序
+
+1. **准备 updater 的长期密钥。** 发布者按本文生成密钥并完成离线备份，再配置
+   `TAURI_SIGNING_PUBLIC_KEY`、`TAURI_SIGNING_PRIVATE_KEY`；有口令时还需
+   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。现有未内置公钥的安装包不能作为签名升级基线。
+2. **先安装带公钥的基线版本 A，再构建更高版本 B。** 检查 B 的 `.sig` 与 `latest.json`，
+   从 A 实际升级到 B，核对实例、账号和缓存。草稿资产不会由 GitHub 的 `releases/latest`
+   端点提供，草稿打包成功不等于自动更新已验收。
+3. **配置 Apple 发布凭据。** Developer ID 证书及导出口令对应 `APPLE_CERTIFICATE`、
+   `APPLE_CERTIFICATE_PASSWORD`、`APPLE_SIGNING_IDENTITY`；公证使用 `APPLE_ID`、
+   `APPLE_PASSWORD`、`APPLE_TEAM_ID`。配齐后重新打包，验证签名、公证和实际下载后的首次打开。
+4. **完成平台用户路径。** Windows 的安装包生命周期可在隔离 runner 中自动验证；
+   Windows、macOS、Linux 的实际用户环境仍分别执行下载、安装、登录、自动获取 Java、
+   安装整合包和进入游戏，并记录系统版本、包摘要与结果。CI runner 中预装的开发工具和 Java
+   不能用来证明“不需要预装 Java”的用户体验。
