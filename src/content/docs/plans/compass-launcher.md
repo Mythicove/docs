@@ -3,7 +3,7 @@ title: Compass 启动器开发计划
 ---
 
 - 日期：2026-10-27
-- 状态：已批准，待开工
+- 状态：原生启动、实例、整合包、账号与诊断主体已交付；正在验收三平台发布，系统钥匙串与签名升级链路尚未完成。
 - 取代：[当前进度](/plans/status/)的 Phase 4 第 2 条（"Compass 原生启动或先做 Prism 账号深度集成"）。该条只给了方向，本文给出阶段/任务/验收。
 - 目标：**Compass 自己把 Minecraft 拉起来**，并逐步补齐 HMCL/PCL 的功能面（实例管理、mod 与整合包、多账号、崩溃诊断、自动更新、三平台打包）。在此之前不再宣传"启动器可用"。
 
@@ -236,7 +236,13 @@ fabric installed: id=fabric-loader-0.20.1-1.21.4 jar=1.21.4 main=…knot.KnotCli
 quilt ok: 307 loader versions, profile quilt-loader-0.31.0-beta.1-1.21.4 (libs 11)
 ```
 
-并断言启动计划里**同时**有子版本的 `-DFabricMcEmu` 与父版本的 `-Djava.library.path`（P1 那条"父+子拼接"教训的正面回归）、classpath 含 `fabric-loader` 与 `intermediary`、每一项都真在磁盘上、无残留 `${}`；Quilt 只验端点与 profile 形状（下载与合并的代码路径与 Fabric 完全相同，不必重复一遍），并断言它的 `stable` 全是 `None`。
+并断言启动计划里**同时**有子版本的 `-DFabricMcEmu` 与父版本的 `-Djava.library.path`（P1 那条"父+子拼接"教训的正面回归）、classpath 含 `fabric-loader` 与 `intermediary`、每一项都真在磁盘上、无残留 `${}`。
+
+~~Quilt 只验端点与 profile 形状（下载与合并的代码路径与 Fabric 完全相同，不必重复一遍）~~ **这句在 2026-10-30 被推翻了，Quilt 现在与 Fabric 同规格：真装 + 真拼命令行。** 那句话对**代码**成立，对**数据**不成立——而会坏的恰恰是数据。真装一遍之后测出来的事实：Quilt 的子 profile **一条 JVM 参数、一条 game 参数都不声明**（`arguments.jvm` 与 `arguments.game` 都是空的），它只贡献库、主类与 id。所以对 Quilt 真正有效的覆盖是"父版本的参数没被子版本挤掉"与"classpath 每一项都在磁盘上"（Quilt 有 Fabric 没有的 `hashed` 依赖，少下一个的症状是启动时 ClassNotFoundException）。这个"0 条"是被断言里的**空转守卫**逼出来的：第一版直接假定子版本一定声明了参数，跑出来才发现是空集——没有那道守卫的话它会恒真地绿着，而我会以为 Quilt 被覆盖了。
+
+同时把"子版本声明的字面参数必须出现在命令行里"抽成 `assert_declared_args_survive`，Fabric 与 Quilt 共用；Fabric 那边额外断言计数 > 0（它确实声明了 `-DFabricMcEmu=`），这样"某天 profile 形状变了、断言悄悄退化成空转"会是一次失败而不是一次假绿。Quilt 的 `stable` 全是 `None` 那条断言保留（Quilt 的 loader 对象没有这个字段，编成 `false` 会让 UI 把每个版本都标成"开发版"）。
+
+真启动仍然只验 Fabric/NeoForge/Forge：CI runner 没有显示环境（`COMPASS_SMOKE_LAUNCH` 不设），Quilt 的真启动没有自动化证据。它用的是与 Fabric 同一个 Knot 启动器、同一条合并路径，且子 profile 不贡献任何参数——但这句是推理，不是实测。
 
 一次偶发红：冒烟测试在"幂等重装"那步失败过一次，重跑即过——网络抖动（Downloader 本身已重试）。这条测试要下 ~550MB，判读偶发红时先按这个先验来。
 
@@ -418,11 +424,13 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 目标：多账号、令牌安全、以及把 ADR-0012 的独立密码体验补齐（现在用户必须回网站建独立密码，启动器里应当能直接看到状态并跳转）。
 
 - **W12 账号**
-  - 多账号管理与切换：我们的 Yggdrasil（玩家名 + 独立密码）、微软正版（OAuth device code flow，走 `login.microsoftonline.com` + Xbox Live → XSTS → Minecraft profile 链）、离线模式（自定义用户名，UUID 由名字派生，与 mirror 的离线 UUID 算法一致）。
+  - 多账号管理与切换：我们的 Yggdrasil（玩家名 + 独立密码）、~~微软正版（OAuth device code flow，走 `login.microsoftonline.com` + Xbox Live → XSTS → Minecraft profile 链）~~（**2026-10-30 搁置**，见下）、离线模式（自定义用户名，UUID 由名字派生，与 mirror 的离线 UUID 算法一致）。
+    - **微软正版登录暂缓**：Mirror 已实现服务端的微软绑定流程（`internal/oauth/microsoft.go`、`/mojang/oauth/auth|callback`、`premium_uuid`、`UnbindPremium`），绑定后仍使用玩家名和独立密码登录 Compass。启动器侧 device code flow 属于另一条认证链，需要单独配置桌面公共客户端并验证 Xbox / Minecraft 服务授权。现有代码和本轮测试不能证明该外部服务链路已在线验收。
+    - 顺带查清了一件被记混的事：需要**填表单申请 key** 的是 CurseForge，不是微软。HMCL 与 PCL2 对这两样东西的处理完全一致——都是构建期从环境变量注入的密钥、都不进公开仓库（HMCL：`MICROSOFT_AUTH_ID` / `CURSEFORGE_API_KEY` → JAR manifest，源码构建默认空串且 UI 降级；PCL2：`ModSecret.vb` 里 `PCL_MS_CLIENT_ID` / `PCL_CURSEFORGE_API_KEY`，文件头写着"由于包含加解密等安全信息，本文件中的部分代码已被删除"）。差别只在获取方式：Azure 自助，CurseForge 要申请。若将来真要做启动器侧正版登录，需要的是**第二个** Azure 应用（桌面公共客户端，不带 secret），不能复用 mirror 那个（web 应用，带 secret 与 redirect URI）。
   - **令牌入系统钥匙串**（`keyring`：Windows Credential Manager / macOS Keychain / Linux Secret Service），把 accessToken 移出 localStorage；钥匙串不可用时降级为加密文件并在 UI 明示风险。
   - 账号级操作：查看/新建该玩家的独立密码（直连 mirror 的 `/account/players/{name}/credentials`，明文只在输入框里）、被强制绑定第三方时的引导（`binding_required` 错误码 → 打开浏览器到账号页）、令牌失效的静默重登与"需要重新登录"的明确态。
   - 皮肤：当前账号玩家的皮肤/披风实时预览（沿用 skinview3d），多玩家时可选预览对象。
-- **验收**：可同时保存三类账号并一键切换；退出登录后 localStorage 与磁盘上都不残留可用令牌（用文件级检查断言）；被管理员强制绑定第三方的账号在启动器里得到可操作的引导而不是一个 403。
+- **验收**：可同时保存~~三类~~**两类**账号（Yggdrasil + 离线；微软正版已搁置，理由见上——启动器侧的正版登录不属于本产品的账号模型，正版由 mirror 的绑定承担）并一键切换；退出登录后 localStorage 与磁盘上都不残留可用令牌（用文件级检查断言）；被管理员强制绑定第三方的账号在启动器里得到可操作的引导而不是一个 403（**已达成**：按稳定码给按钮，不匹配文案）。
 
 ### W12 实施记录（2026-10-29，多账号 + 令牌与账号列表分离已交付）
 
@@ -445,7 +453,38 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 
 **顺带修掉一个 CI 撞出来的真 bug（`2baa377`）**：三个 modpack 测试在 CI 里并发共用一个数据目录（CI 没有 `--test-threads=1`，而我本地一直串行跑），两个安装同时下同一个库；`.part` 的名字是按 dest 定的（断点续装要靠它稳定），于是两边写同一个文件，一方 rename 成功后另一方 ENOENT，报成"下载失败"。更隐蔽的是它旁边那个窗口：A 校验通过后、rename 之前，B 可能把同一个 `.part` 截断重写，于是 dest 落地的是半截内容而**它已经"校验通过"了**——这种坏文件会被当成已下载，一路留到启动时炸成一句看不出来源的 ClassNotFoundException。两处都修了（ENOENT 时若 dest 已就位即成功；rename 之后再校验一次）。我先写的那条"两个下载器并发"测试**在撤掉修复后依然通过**（第二个下载器发现文件已就位就跳过了），所以它什么都没证明，已删除；竞争本身在单测里无法确定性复现，真正的回归信号就是 CI 那个并发场景。
 
-**W12 仍未做**：微软正版登录（待 client ID 决策）、令牌进系统钥匙串（待"钥匙串不可用时怎么办"决策）、独立密码的查看/新建（mirror 的 `/account/players/{name}/credentials`）、`binding_required` 的引导、令牌失效的静默重登、多玩家时的皮肤预览选择。
+**W12 仍未做**：微软正版登录（已定案**搁置**，见下）、令牌进系统钥匙串（待"钥匙串不可用时怎么办"决策）、CurseForge 整合包导入（待决策，且这是全计划里唯一真需要填表单申请 key 的一项）。
+
+### W12 第二批（2026-10-30）：独立密码、绑定引导、令牌轮换、皮肤预览选择
+
+**先说一件计划外的事：mirror 有一处越权，是这一批的必经之路。** 要在启动器里管独立密码，就得让启动器拿自己的 accessToken 去调 `/account/players/{name}/credentials`。查 mirror 的路由时发现：`/account/*` 与后台管理端点**一律按 `sessions.user_id` 授权**，而 ADR-0012 新增的启动器会话是**玩家级**的。后果是持有任意一条玩家独立密码换来的令牌，可以列出同账号下别的玩家、**为它们新建独立密码**（等于接管，且事后撤销原来那条拦不住）、改名、删除；该账号若是管理员，那个令牌还能开全站后台（`AdminRole` 同样只看 `user_id`）。而独立密码的设计前提恰恰是"按设备发放、会被备份同步、所以要能单独撤销"。
+
+ADR-0012 自己写过这条原则（"`availableProfiles` 只含认证到的那一个玩家……不该因为知道其中一条就被列出来"），但只落实在 Yggdrasil 协议的响应里，HTTP 面整片没管。判别式本来就有（`sessions.credential_id` 非空 ⇔ 启动器会话），只是没人拿它做授权：
+
+- `Session.IsLauncher()`；
+- **玩家级**端点走 `scopedPlayers`（一个实现点，`ownedPlayerUUID` 与 `GET /account/players` 都经它）：启动器会话只看到、只操作它钉住的那个玩家，范围外一律 404 且与"玩家不存在"不可区分（否则可用玩家名探测账号结构）；
+- **账号级**端点（`me`/`password`/`identities`/增删改玩家/正版绑定与解绑）挂 `WebSessionOnly`，回稳定码 `web_session_required`；
+- `AdminRole` 一律拒绝启动器会话，且不写审计操作者（否则审计记成 `user:<id>`，事后看不出那是个启动器令牌）。
+
+`POST /account/password` 本来就安全（要旧密码），但仍显式拒绝：不把"两套凭据互不越界"这条不变量寄托在一个入参校验上。两条测试（服务级 + 路由级）都验过**撤掉修复会红**——路由级那条红出来的正是越权本身：启动器令牌建出了一个新玩家，201。
+
+**独立密码进启动器**（查看/新建/撤销）。密码明文只在这一次 IPC 调用里存在：不落盘、不进日志、不回显（mirror 也不回显），前端提交前就从 state 里清掉——代价是失败要重输，对一个密码字段来说这个代价是对的。撤销自己正在用的那一条会**立刻把自己登出**（外键级联），而启动器无从知道是哪一条（认证响应不带 credential id），所以这是 UI 必须提前说明的后果，不是能拦下的错误。
+
+**令牌轮换：`/authserver/refresh` 只能换未过期的令牌**（mirror 的 refresh 内部先 validate）。所以"静默重登"不能等 validate 报 401 再补救——那时唯一能做的只剩让用户重输独立密码。实现是**到期前主动轮换**：TTL 24h，过半就换。时间戳与令牌存在同一个结构、同一个文件里（`Secrets.obtained_at`），不是因为它机密，而是因为它必须与令牌原子地一起变：分开存就会出现"新令牌 + 旧时间戳"（刚换完又立刻判定该换，每次检查都发一次请求）或"旧令牌 + 新时间戳"（一个已过期的令牌被当成新的，一直不换直到进服被拒）。
+
+轮换失败**不报出来**：validate 刚通过（或正要离线启动），一次网络抖动不该把一个能用的账号变成"需要重新登录"。落盘失败也照样把新令牌交出去——refresh 已经销毁了原会话，旧令牌从那一刻起是废的，交出去只会让本次启动失败在一个来自服务器的"无效会话"上，看不出根因。
+
+`auth_check` 的返回从 `Option<AccountView>` 改成 `AuthCheckView{account, expired}`：`None` 原本同时表示"从来没登录过"与"本来登录着但令牌已失效被清掉了"，而后者必须解释——否则用户看到的是启动器莫名其妙回到登录界面，自己刚才明明还登录着。
+
+**登录失败要能给出动作。** `binding_required` / `email_not_verified` 走 mirror 的稳定码，前端按码给按钮（打开网站的绑定页/账号页），不匹配文案。最常见的那一种反而没有码：mirror 对"名字或密码不对"与"这个玩家还没有独立密码"回同一句 `Invalid credentials.`——**故意**不区分，一区分就能拿玩家名探测账号是否存在。那段文案还是 Yggdrasil 协议的 `errorMessage`，HMCL/Prism + authlib-injector 会原样显示给用户，所以**不能在 wire 上加码**；映射只在启动器侧做（`login_error` → `invalid_credentials`），文案覆盖两种可能并给一个"去创建独立密码"的入口。这是 ADR-0012 之后存量用户最常见的首次失败，而原文案只会说"用户名或密码错误"。
+
+**皮肤预览可选对象。** 皮肤是按玩家名从 `config.apiUrl` 取的公开端点，用的是**设置里的站点**而不是账号自己的站点——所以候选必须过滤到"当前站点上的站点账号"，否则选一个别的站点上的账号会取到那个站点上**同名玩家**的皮肤：一张看着完全正常、其实属于另一个人的图。离线账号同理（站点上没有这个身份）。只有一个候选、或当前账号不在候选里时不渲染选择器（那时"默认预览谁"本身就是含糊的）。
+
+**顺带**：`Account::id()` 收敛了账号 id 的派生（此前 `add_offline` 里另抄了一遍同样的式子）；`session.rs` 是新模块——轮换逻辑既不能进 `account.rs`（它承诺"换钥匙串只改那三个落盘函数"，加联网逻辑这条承诺就没了），也不能留在 `commands.rs`（那道门按 `pub async fn` 数命令，用 `pub(crate)` 躲开等于拆门）。
+
+**Quilt 补成与 Fabric 同规格**（见上面 W8 记录里被推翻的那句）。
+
+**这一批的验证**：mirror `go test ./...` 全绿（含两条撤掉修复会红的越权测试）；compass `cargo test --lib` 218 + `auth_flow` 6（假 mirror 跑真 HTTP：未到期不发请求、到期换且内存与磁盘都换、换不动保留现有、离线与无机密账号永不触网）+ 契约门 8/7；clippy `-D warnings`、fmt、tsc、vite build 全干净；`install_smoke` 真跑（Fabric 9 库 / Quilt 6 库，144s）。
 
 ## Phase 5: 诊断、Java 自动下载与自动更新（预计 3 周）
 
@@ -464,13 +503,40 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
   - 版本/资源清单的增量更新（版本 manifest 的 ETag/last-modified 缓存，避免每次启动全量拉）。
 - **验收**：干净机器上不装 Java 也能启动（自动下载并绑定）；人为制造 5 类常见崩溃，启动器都能给出具体的原因与补救动作而不是"退出码 1"；发布一个 0.0.x→0.0.y 的更新，三平台的已安装实例都能自动升级。
 
+### P5 实施记录（2026-10-30：W13 日志与崩溃诊断、W14 Java 自动下载、W15 增量清单与更新器接线）
+
+**W13 的第一个决定是"不要写两套解析器"。** 计划里记的那个实测约束（传了 Mojang 的 `logging.client` 之后 stdout 是 XML/CDATA）确实存在，但把真文件拉下来看之后发现关键事实不在计划里：Mojang 的 `client-1.21.2.xml` 里，**console appender 用 `<LegacyXMLLayout />`，而 File appender 写 `logs/latest.log` 用的是纯文本 PatternLayout**。也就是说纯文本日志一直都在，XML 只在控制台。于是选择换成我们自己生成的配置（`logconfig` 模块），把控制台布局改成与 File appender 同一个 pattern——实时 stdout、归档 `latest.log`、崩溃报告三处就共用一个解析器与一套规则。除控制台布局外与 Mojang 那份逐项一致（`logs/latest.log` 路径与滚动策略、`NETWORK_PACKETS` 标记过滤、Tracy listener、`%msg{nolookups}` 这个 Log4Shell 缓解），每一项都有断言盯着：动其中任何一条都会静默关掉一个功能（File appender 没了 → 归档列表永远是空的），而症状在很远的地方。只对声明了 `logging.client` 的版本生效——给 1.12.2 塞一份带 `Tracy` 与 `RollingRandomAccessFile` 的配置，是在赌旧 log4j 里有这些类。
+
+**崩溃规则库的每条规则都对着真日志写**，而那些日志是 `tests/crash_live.rs` 真跑出来的（真装版本、真放 mod、真启 JVM），六个场景的原始输出已作为夹具存进 `tests/fixtures/crash/`。造崩溃的过程推翻了四个直觉：
+
+1. **现代 Forge/NeoForge 对"混装 loader"与"mod 版本不符"根本不崩溃。** NeoForge 打一条 `Skipping jar. File mods\sodium-fabric-….jar is a Fabric mod and cannot be loaded` 的 WARN 就跳过，Forge 打一条 `Failed to parse <jar> module-info` 的 ERROR 也跳过，两者随后**正常进游戏**。用户的症状是"我的 mod 没生效"，界面上什么都没有——所以规则库有 `Warning` 这一档，不只找致命错误。
+2. **Fabric 的 mod 解析失败不退出。** 它弹一个 GUI 错误框然后挂住（实测 241 秒后被测试杀掉，exit 是 `None`，也没写 crash-report）。所以"看退出码"这条路在最常见的一类失败上根本不通，必须从日志流里认。
+3. **`Error: A JNI error has occurred, please check your installation and try again` 同时出现在 OOM 与 Java 版本不对两种情况里**，而它的建议（检查安装）是错的。规则一律匹配它后面那行**具体的**异常，并且有一条测试专门盯着"没有任何码由这句 JNI 前导触发"。
+4. **六个场景没有一个写出 `crash-reports/`**：常见失败都发生在崩溃报告器之外（JVM 启动阶段、loader 的 mod 解析阶段）。所以主输入是 stdout 与 `latest.log`，崩溃报告只是其中一种可能的输入——计划里"查看器要么解析 XML 要么换配置"那句话的前提（崩溃分析照纯文本日志写）也因此更要紧。
+
+**计划列的九类里有三类故意没写规则**：显卡驱动/LWJGL 初始化失败、磁盘空间不足、杀毒软件锁文件。第一类试过——删掉解压出来的 natives **并不会**让 1.21.4 崩溃（现代 LWJGL 从 classpath 的 jar 里自行解压本地库），后两类无法确定性复现。没有真样本的匹配串是猜的，而猜错的规则比没有规则更糟：它会在别的情况下误报，用户会照着去修一个不存在的问题。
+
+**Fabric 的成因要看 `Immediate reason:` 那行**，不是 `Reason:`：缺 mod 是 `HARD_DEP_NO_CANDIDATE`，版本不符是 `HARD_DEP_INCOMPATIBLE_PRESELECTED`，而两者的 `Reason:` 都只写 `HARD_DEP`。第一版照 `Reason:` 判，把"缺 mod"误报成了"版本冲突"，是夹具抓出来的。取这些行而不取后面的本地化文案，是因为文案随语言变（实测这台机器上是繁体中文），而 `Immediate reason:` 是稳定 ASCII。
+
+**`-Xms` 必须被 `-Xmx` 夹住**（真 bug，造 OOM 场景时撞上的）：原来写死 `-Xms256M`，用户把内存调到 256MB 以下时 JVM 根本不启动，报的是 `Initial heap size set to a larger value than the maximum heap size`——一句完全看不出根因在启动器这边的话。
+
+**Windows 上不该用 `javaw.exe`**（真 bug，造"Java 版本不对"场景时撞上的，而且比原计划那条严重）：`javaw` 在 **JVM 启动阶段**失败时弹的是消息框，既不写 stderr 也不退出。实测 JDK 8 的 javaw 跑一个 Java 21 编译的类：两个流都是 **0 字节**，15 秒后进程还在；同样条件下 `java.exe` 立刻以退出码 1 结束并在 stderr 给出完整的 `UnsupportedClassVersionError`。而"不弹黑色控制台窗口"这个理由本来就站不住——`spawn` 里早就设了 `CREATE_NO_WINDOW`。也就是说 javaw 把"Java 版本不对"这个最常见的原因，变成了启动器眼里一次**没有输出、没有退出码的静默挂起**，比崩溃更难查。现在一律换回 `java.exe`。
+
+**W14：产品名到 Java 版本的映射不能凭印象写。** 实测（2026-10）`java-runtime-gamma` 是 **17**，不是 21；21 是 `delta`，25 是 `epsilon`，8 是 `jre-legacy`。而且**根本不需要这张表**：版本 JSON 的 `javaVersion.component` 就是产品名，`all.json` 把 (平台, 产品) 映射到 manifest。另外两个实测事实：`all.json` 是**平台在外层**、产品对应的值是**一个数组**（空数组 = 这个平台没有该产品；PowerShell 会把单元素数组自动展开，看的时候要当心）；manifest 外层有一个 `files` 键，里面才是「相对路径 → 条目」。三处形状都猜错过，全靠拉真数据纠正。**Linux arm64 整个平台不在索引里**，Apple Silicon 上没有 `jre-legacy`/`alpha`/`beta`——这些情况下明确报"请手动指定 Java 路径"，而不是给一个转不出结果的进度条。只取 `downloads.raw` 不取 `lzma`：lzma 是裸 LZMA1（不是 xz），要引新解码依赖，而体积大头 `lib/modules`（61MB）**只有 raw**，省不到一半流量。真下载验证过：`jre-legacy` 192 个文件、143MB，`java -version` 报出 Java 8 / 64 位。
+
+**W15 的清单缓存**：`manifest_cached` 用 ETag/Last-Modified 做条件请求（清单 1MB+，而内容几天才变一次，列版本/装版本/装 loader 每次都要取）。三条退化路径都退到"和没有缓存时一样"，不退到"用一个坏缓存"：服务端不给校验子 → 每次全量；304 但本地那份用不了 → 全量取一次**并且把缓存修好**（只取不写的话每次启动都白跑一趟条件请求，且这个状态自己永远不会好）；200 但正文解析失败 → **绝不落盘**（把坏清单缓存下来，之后每次启动都拿它当"没变"，304 永远命中，症状是版本列表停在某一天且修不好）。顺带修掉一处：`resolve_from` 在继承链的循环里取清单，最多连取 8 遍同一份 1MB 文档，已提到循环外。
+
+**W15 更新器配置已接入，签名升级尚待验收。** 仓库里的 `tauri.conf.json` 不带 `plugins.updater` 段。CI 在更新公私钥都配置时，通过 Tauri CLI `--config` 注入公钥、更新端点和 `bundle.createUpdaterArtifacts=true`；两把钥匙都缺失时构建普通安装包，只配置其中一把时明确失败。运行时按配置决定是否注册 updater，设置页通过 `update_configured` 展示可用状态。发布方负责生成和保管私钥，操作见[发布指南](/guides/compass-release/)。配置接线和脚本验证不能代替从旧安装包到新安装包的真实升级验收。
+
+**验证**：`cargo test --lib` 259（含 10 条崩溃规则全部对着真夹具命中、9 条日志归档、9 条 Java 索引、4 条 ETag 缓存）、`auth_flow` 6、契约门 8/7；`crash_live` 六个场景真跑通过（真 JVM、真 mod、真日志）；`java_live` 真下 143MB 并 `java -version` 验证；`install_smoke` 真跑 145s；clippy `-D warnings`、fmt、tsc、vite build 全干净。
+
 ## Phase 6: 三平台打包、签名与发布（预计 2~3 周）
 
 目标：让陌生人按文档装上就能用——这是"对标 HMCL/PCL"的最后一里，也是最容易被低估的一里。
 
 - **W16 Windows**
   - NSIS 安装包（含桌面/开始菜单快捷方式、卸载、可选关联 `.mrpack`）；MSI 备选；x64 与 arm64（可选）。
-  - 代码签名：**决定先发未签名包**（用户 2026-10-27 拍板），因此 SmartScreen 的"未知发布者"提示与绕行说明必须写进安装文档；若要签名，走 [SignPath](https://signpath.org/) 的开源项目免费证书（比自购 EV 证书便宜且能过 SmartScreen 信誉），届时在 `package` 作业里补 `signCommand` 与 CI 密钥托管。
+   - 代码签名：**决定先发未签名包**（用户 2026-10-27 拍板），SmartScreen 的提示与安装说明见安装指南。接入签名服务前确认许可及申请条件，再配置 Tauri Windows 签名和 CI 密钥。
   - 杀软误报与路径长度（`\\?\` 前缀）问题的处理与自检提示。
 - **W17 macOS**
   - 通用二进制或 arm64/x86_64 双包；`.dmg` + `pkg`；Gatekeeper：Developer ID 签名 + 公证（notarization）流程与 CI 集成；未签名包的"右键打开"说明。
@@ -481,6 +547,28 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
   - 文档：三平台安装与排障、镜像源配置、便携模式（把数据目录放进安装目录）、命令行参数（`compass --instance <slug> --launch`）。
 - **验收**：三台干净机器（Windows 11 / macOS arm / Ubuntu LTS）各按文档走一遍：下载→安装→首次启动向导→登录→装版本→进游戏，全程不需要命令行、不需要预先装 Java；发布一次真实版本并让已安装实例自动更新成功。
 
+### P6 实施记录（2026-10-30：打包配置、发布产物、便携模式与命令行）
+
+P0 时已经用 `tauri-action` 打通了"tag → 三平台出包 → draft release"，所以这一轮不是从零做打包，而是补上让它**能被陌生人用起来**的那几块。
+
+**打包配置**（`tauri.conf.json`，`targets: "all"` 本来就覆盖 NSIS/MSI/dmg/deb/rpm/AppImage）：`.mrpack` 文件关联；NSIS 装给当前用户（不弹 UAC）、开始菜单文件夹、简中+英文；macOS 最低 10.15；deb 依赖声明 `libwebkit2gtk-4.1-0` / `libgtk-3-0` / `libayatana-appindicator3-1`。配置由 `tauri-codegen` 在**编译期**解析，所以写错键会直接编不过——`bundle.macOS.category` 就是这么做掉的（`category` 是 `bundle` 顶层字段，不在 macOS 段里）。
+
+**文件关联带出来一个容易漏的入口**：关联之后 Windows 会用 `compass.exe "C:\…\pack.mrpack"` 启动我们，也就是**第一个位置参数可能是一个整合包路径**。只认 `--flag` 的解析器会让"双击整合包"变成一个什么都不做的正常启动。所以 `cli::parse` 认位置参数，但**只认 `.mrpack`**：`.zip` 不认，因为一个 zip 也可能是 mod、资源包或存档，猜错的后果是把用户的存档当整合包解开——那是会毁数据的。双击也**不自动导入**，仍然先只读地看一眼（有哪些文件、要叫什么名字）再让用户确认：一次双击就写几十个文件进 `instances/` 并下载几百 MB，不该是默认行为。
+
+**无法识别的参数必须被看见。** `compass --lauch`（少个 n）如果静默忽略，用户会看到启动器正常起来、以为命令生效了，然后去查一个不存在的问题（"为什么游戏没启动"）。所以 `Intent.unknown` 原样带回 UI 显示。`--instance` 后面没有值也算错误，不算"没指定"。
+
+**便携模式**：可执行文件旁边有空文件 `portable.txt` 时，数据根目录变成同级 `data/`。用标记文件而不是命令行参数，是因为"便携"是一个**部署属性**而不是每次启动的选择——双击图标、文件关联、开机自启这些入口都不会带参数，靠参数判断就会时灵时不灵。判断只看标记文件在不在，与 exe 装在哪无关（装在 `Program Files` 里也能开，只是那样多半写不进去，而写入失败会明确报错，不该由这里预先替用户决定）。文档里明确写了 `data/secrets.json` 是**明文令牌**，放进云同步目录等于把令牌同步上去。
+
+**发布产物**：当前矩阵为 Windows x64、macOS arm64、Linux x64。各平台向同一个 draft release 上传完成后，由独立 Ubuntu `checksums` 作业下载全部资产，用 `sha256sum` 生成统一 `SHA256SUMS.txt` 并上传。这样不会发生多个平台互相覆盖清单、或清单路径与下载后的资产文件名不一致。校验和上传失败会使作业失败。Apple 签名与公证依赖对应 secrets，部分配置可能导致构建失败；更新签名的公私钥配对规则见上。
+
+**macOS 的 `-XstartOnFirstThread` 其实早就处理好了**：1.16 及更早由启动器显式加，1.17+ 由版本 JSON 的 `arguments.jvm` 规则自带（现代版本重复加会冲突）。这一条只是核对并写进文档，不是新做的。
+
+**仍未做**（都不阻塞"能装能用"，但属于 P6 验收的一部分）：
+- **官网下载页**（web 侧：平台检测 + 校验和 + 更新说明）。web 仓库当前与另一个会话的在途改动交织，没有动。
+- **AUR 的 PKGBUILD 模板**（计划里就是"只给模板，社区维护"）。
+- **杀软误报与路径长度的自检提示**：文档写了成因与处置，但启动器自己不做检测。真要做，路径长度可以在启动时量一下 `cache/libraries` 的最深路径并给出提示；杀软误报无法自证，只能靠文档。
+- **三台干净机器的人工验收**与**从上一版升级一次**：这两条只有人能做完，是 P6 验收的原文，也是最容易被跳过的两条。
+
 ---
 
 ## 风险清单（按"会不会打穿里程碑"排序）
@@ -489,7 +577,7 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 2. **参数构造的正确性（P1-W3）**：占位符/规则/特性开关组合极多，错一个就是"能启动但皮肤不出/存档找不到/natives 加载失败"。缓解：契约测试用真实版本 JSON 样本覆盖 5 个代表版本；把 HMCL 的启动参数作为对照基准（同一版本同一账号，比对参数集合）；冒烟测试跑真进程。
 3. **CI 无法验证图形界面**：所有 UI 验收都靠人工清单。缓解：UI 逻辑尽量下沉到 Rust 单测；每阶段的人工验收写成可勾选清单并留档（截图 + 版本 + 平台）。
 4. **下载体积与限流**：1.21 全量资源约 500MB+，官方 CDN 在部分地区很慢或被限。缓解：镜像源可配 + 并发可调 + 断点续传 + 全局去重缓存（多实例只下一次）；BMCLAPI 等镜像只作为可选默认值，写清合规与可用性风险。
-5. ~~**签名与公证成本（P6）**~~ **已定案（2026-10-27）**：macOS 有 Apple Developer 账号 ⇒ Developer ID 签名 + 公证按原计划做（P6-W17），只剩把证书/凭据接进 CI 的活；Windows 先发**未签名**包，安装文档写清 SmartScreen 提示与绕行方式，若要签名走 SignPath 的开源项目免费证书（P6-W16）。剩余风险只是 CI 密钥托管与公证排队时间。
+5. **签名与公证（P6）**：Windows 当前先发未签名包；macOS Developer ID 签名、公证和 updater 签名均已预留 CI 接线，仍需配置发布凭据并验收实际产物。签名服务的申请条件、密钥保管和用户端安装体验需要分别核验。
 6. **authlib-injector 与新版本的兼容**：1.20.5+ 改了服务与 profile 签名，第三方认证依赖 authlib-injector 跟进。缓解：固定已验证的版本 + sha256；把"哪些游戏版本经我们实测可用"写进文档；升级前跑冒烟。
 7. **并行开发的合并冲突**（本轮已发生一次：另一会话把不能编译的合并提交推上了 mirror main）。缓解：本计划的每个 W 任务都以**独立分支 + 小步合并**推进，合并后必须 `cargo test` + `pnpm typecheck` 再推 main。
 
@@ -501,7 +589,7 @@ classpath entries: 119（一个游戏 jar 都没有，与真启动验过的组�
 | P1 完成 | `compass v0.2.0` | **Compass 自己启动了原版 Minecraft 并加载了我们的皮肤**；Prism 路径已删除 |
 | P2 完成 | `compass v0.3.0` | 多实例隔离可用，mod 与内容可管理，Hoard 是内容源 |
 | P3 完成 | `compass v0.4.0` | Fabric/Quilt/NeoForge 装得上、`.mrpack` 装得上（Forge 若降级则记为 P3.5） |
-| P4 完成 | `compass v0.5.0` | 三类账号可切换，令牌在系统钥匙串，独立密码可在启动器内管理 |
+| P4 完成 | `compass v0.5.0` | 两类账号（Yggdrasil + 离线）可切换，令牌在系统钥匙串，独立密码可在启动器内管理 |
 | P5 完成 | `compass v0.6.0` | 不装 Java 也能玩，崩溃能自己说清楚，启动器能自动更新 |
 | P6 完成 | `compass v1.0.0` | 陌生人在三平台上按文档从下载到进游戏全程无命令行 |
 
