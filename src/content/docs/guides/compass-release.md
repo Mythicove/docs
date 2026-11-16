@@ -91,6 +91,13 @@ pnpm tauri signer generate -w ~/.tauri/compass-updater.key
 
 ## 发布前的人工核对清单
 
+### 构建失败的已验证原因
+
+- Windows WiX `LGHT0311`：默认英文 MSI 使用 code page 1252，中文文件关联描述无法写入数据库。通用包描述和 `.mrpack` 关联描述使用英文；需要本地化 MSI 元数据时，应同时配置对应语言和数据库编码。
+- macOS `SecKeychainItemImport: Unable to decode the provided data`：Tauri 在 `APPLE_CERTIFICATE` 环境变量存在但为空时仍会尝试导入证书。CI 仅转发非空的 Apple 配置。若已配置真实证书，继续核对 PKCS#12 内容及导出口令。
+
+### 人工核对
+
 CI 出的是 draft release，发布前过一遍：
 
 - [ ] 当前构建矩阵的产物都在（Windows x64 exe/msi、macOS arm64 dmg、Linux x64 AppImage/deb/rpm）
@@ -103,3 +110,20 @@ CI 出的是 draft release，发布前过一遍：
 
 最后两条是计划里 P6 的验收原文，也是最容易被跳过的两条——而"陌生人能不能装上"
 恰恰只有它们能回答。
+
+## dev-49 打包验收
+
+[运行记录](https://github.com/Mythicove/mythic-compass/actions/runs/43919557016)绑定提交
+`4d1075c189fa14654360ec0c51e45ec8bc94259e`，Release 保持草稿。
+
+- 三平台常规检查、三平台打包和统一校验和作业均成功。
+- 资产共 7 个：Windows x64 NSIS/MSI、macOS arm64 DMG/app.tar.gz、Linux x64 AppImage/deb/rpm。
+- 全部资产已下载，大小、`SHA256SUMS.txt` 中的摘要和 GitHub 资产 SHA-256 逐项一致；清单完整覆盖上述 7 个文件。
+- 本地也已实际生成 MSI/NSIS，并以只读方式检查 MSI 数据库，确认 `.mrpack` 文件关联描述成功写入。
+- 该轮未配置 updater 或 Apple 签名密钥，没有 `.sig`、`latest.json`，签名升级和公证仍待验收。
+
+该运行整体结果为失败：三平台 Forge 在线安装冒烟遇到官方 Maven 的 502、404 或响应体读取失败，
+后续整合包步骤未执行。同一 installer 的独立下载曾返回 200，前一轮 Linux Forge 安装也成功；
+这些观察不足以判定在线下载链路稳定。恢复后需重跑冒烟，通过后再评估正式发布。
+
+本轮也未完成三台干净机器的安装与游戏启动验收。
