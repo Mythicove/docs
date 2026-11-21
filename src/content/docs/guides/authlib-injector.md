@@ -1,9 +1,9 @@
 ---
 title: 接入 Yggdrasil（外置登录）
-description: 服务端如何让离线服加载皮肤
+description: 服务端接入 Mirror 玩家认证与签名皮肤
 ---
 
-Mythic Mirror 兼容 Yggdrasil API，配合 authlib-injector 让离线服客户端加载自定义皮肤。
+Mythic Mirror 兼容 Yggdrasil API，配合客户端与服务端的 authlib-injector 完成社区玩家认证和自定义皮肤加载。
 
 ## 服务端（Java 版）
 
@@ -11,10 +11,12 @@ Mythic Mirror 兼容 Yggdrasil API，配合 authlib-injector 让离线服客户�
 2. 启动时追加参数：
 
 ```bash
-java -javaagent:authlib-injector-1.2.x.jar=https://<你的域名>/authserver -jar server.jar
+java -Dauthlibinjector.side=server -javaagent:authlib-injector-1.2.8.jar=https://<你的域名> -jar server.jar --nogui
 ```
 
-其中 `https://<你的域名>/authserver` 指向 Mirror 的认证端点。
+传入 Mirror 的站点根地址；注入器自行拼接 `/authserver` 和 `/sessionserver` 等端点。客户端也必须接入同一个 Mirror，Compass 会自动完成注入。
+
+外置在线认证使用 `server.properties` 中的 `online-mode=true`。已在 Purpur 1.21.1 build 2329、Java 21、authlib-injector 1.2.8 与真实 Compass/Fabric 客户端验证进服，服务端 UUID、SLIM 皮肤 URL、有效属性签名和 PNG 内容均通过核对。该场景设置 `enforce-secure-profile=false`；聊天安全档案签名是另一项能力。
 
 ## 关键端点
 
@@ -26,8 +28,8 @@ java -javaagent:authlib-injector-1.2.x.jar=https://<你的域名>/authserver -ja
 | `GET /sessionserver/session/minecraft/hasJoined` | 服务端换取玩家资料 |
 | `GET /sessionserver/session/minecraft/profile/{uuid}` | 返回带 RSA 签名的 profile |
 
-## 1.19+ 签名要求
+## 皮肤属性签名
 
-Mojang 从 1.19 起强制校验 profile 的 `textures` 属性签名。Mirror 使用 RSA-2048 私钥（见 [ADR-0008](/architecture/adr-0008-rsa-key-management/)）对 textures 属性做 SHA256withRSA 签名，公钥经根 meta 端点下发。
+Mirror 使用 RSA-2048 私钥（见 [ADR-0008](/architecture/adr-0008-rsa-key-management/)）对 base64 编码的 `textures` 属性值做 Yggdrasil 协议要求的 SHA1withRSA 签名，公钥经根 meta 端点下发。authlib-injector 使用该公钥与协议算法验证属性签名。
 
 > 离线 UUID 生成与 Mojang 一致：`UUID.nameUUIDFromBytes("OfflinePlayer:" + name)`。

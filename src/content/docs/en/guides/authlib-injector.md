@@ -1,15 +1,19 @@
 ---
 title: Plug in Yggdrasil
-description: Load skins on an offline server with authlib-injector
+description: Connect server authentication and signed skins to Mirror
 ---
 
-Mythic Mirror speaks Yggdrasil. Point authlib-injector at it and offline-server clients load your skins.
+Mythic Mirror speaks Yggdrasil. Connect both clients and servers through authlib-injector for community player authentication and custom skins.
 
 ## Server (Java)
 
 ```bash
-java -javaagent:authlib-injector-1.2.x.jar=https://<your-domain>/authserver -jar server.jar
+java -Dauthlibinjector.side=server -javaagent:authlib-injector-1.2.8.jar=https://<your-domain> -jar server.jar --nogui
 ```
+
+Use the Mirror site root; the injector appends `/authserver` and `/sessionserver` itself. Compass injects the client automatically. External online authentication uses `online-mode=true` in `server.properties`.
+
+The Windows scenario passed with Purpur 1.21.1 build 2329, Java 21, authlib-injector 1.2.8 and a real Compass/Fabric client. Native Bukkit observations confirmed the Mirror player UUID, SLIM skin URL, valid property signature and matching PNG bytes. It used `enforce-secure-profile=false`; secure chat profile signing requires separate validation.
 
 ## Key endpoints
 
@@ -21,4 +25,4 @@ java -javaagent:authlib-injector-1.2.x.jar=https://<your-domain>/authserver -jar
 | `GET /sessionserver/session/minecraft/hasJoined` | Server fetches the profile |
 | `GET /sessionserver/session/minecraft/profile/{uuid}` | Signed profile |
 
-Mojang requires the `textures` property signature from 1.19+. Mirror signs it with an RSA-2048 key (see [ADR-0008](/architecture/adr-0008-rsa-key-management/)).
+Mirror signs the base64-encoded `textures` value with the Yggdrasil protocol's SHA1withRSA algorithm and an RSA-2048 key (see [ADR-0008](/architecture/adr-0008-rsa-key-management/)). The root metadata supplies the public key that authlib-injector uses to verify property signatures.

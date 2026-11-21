@@ -252,3 +252,22 @@ node scripts/compass-pack-live.mjs /absolute/path/to/compass /absolute/path/to/m
 从 Isles 仓库执行。Mirror 使用隔离内存存储和开发邮件日志驱动，邮箱确认仍经真实
 业务端点处理。PostgreSQL 持久化、外部邮件投递、桌面登录点击、实际加入在线服务器
 及服务器身份/皮肤另行验收。此次扩展只修改验收代码，`dev-61` 仍是最新安装包。
+
+## 在线服务器身份与签名皮肤验收
+
+后续场景已完成实际进服：Windows 原生用例约 395 秒，Compass 下载的官方 Java 21
+同时运行 Fabric 客户端与 Purpur 1.21.1 build 2329；客户端通过已有实例直连设置
+及 Quick Play 连接，客户端和服务端都注入固定 authlib-injector 1.2.8。
+服务器保持 `online-mode=true`，Bukkit 原生观察确认玩家 UUID 与 Mirror 资料一致，
+上传的 SLIM 皮肤签名有效，其 URL 返回的 PNG 摘要与上传后存储的内容一致。
+
+首次真实进服暴露了 Mirror 属性签名算法不匹配：原实现用 SHA256withRSA，
+authlib-injector 按 Yggdrasil 协议使用 SHA1withRSA，导致服务器接受登录后仍报告
+皮肤签名无效。已修正唯一签名生成端、相关契约测试与接入指南，原始失败场景通过。
+部署身份服务需包含该 Mirror 修复；Compass 生产代码未变，最新安装包仍为 `dev-61`。
+
+复跑在前述命令前设置 `PAPER_SERVER_JAR`，指向对应 Paper 兼容服务端 JAR，
+并准备 JDK 21 和 Maven。结果增加 `serverJoin`、`serverUuid`、`serverSkin`；
+`game-server/server-player.json` 与 `server-observed-skin.png` 保存原生身份观察与皮肤字节。
+客户端首次提示已通过初始配置接受，服务器使用 `enforce-secure-profile=false`。
+桌面首次启动点击、皮肤实际渲染、公网/代理、聊天档案签名及 Mac/Linux 进服另行验收。
