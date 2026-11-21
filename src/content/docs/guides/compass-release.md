@@ -218,3 +218,18 @@ Windows 生命周期 JSON 确认真实安装、`.mrpack` 关联、开始菜单�
 
 本草稿仍为未签名 0.1.0，没有签名更新资产。完整干净用户环境的 GUI 登录、自动 Java 选择、
 进入游戏及服务器身份/皮肤验收，以及签名升级与 Apple 公证，继续按前述独立路径执行。
+
+## 下载的 Java 启动真实社区整合包
+
+提交 `4c83ae6` 扩展 Isles→Compass 跨产品场景：从已安装游戏版本读取官方 Java 组件，
+由 Compass 安装到独立运行目录，探测版本与架构后作为实例 Java 路径保存，
+通过 `runner::prepare_launch` 与真实进程启动执行，并确认启动计划使用下载后的 Java。
+
+Windows 本地完整实测通过：真实 Isles 发布的原样 `.mrpack` 安装 Minecraft 1.21.1、
+Fabric Loader 0.16.14 与 Fabric API 0.116.18，下载官方 `java-runtime-delta`（Java 21），
+客户端完成方块纹理图集初始化。重复导入拒绝、客户端文件取舍、覆盖文件、SHA-1 与大小校验，
+以及同大小损坏下载不落盘也通过。完整运行约 258 秒，产出 `scenario-result.json`、
+`compass-result.json` 与客户端日志；可通过 Isles 的 `scripts/compass-pack-live.mjs` 重跑。
+
+身份服务使用 loopback 协议 fixture，尚未验证真实玩家登录、服务器身份或皮肤。
+场景显式选择下载的 Java，不代表无匹配 Java 时的自动选择分支或桌面点击流程已经验收。
