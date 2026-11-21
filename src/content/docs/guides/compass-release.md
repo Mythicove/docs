@@ -231,5 +231,24 @@ Fabric Loader 0.16.14 与 Fabric API 0.116.18，下载官方 `java-runtime-delta
 以及同大小损坏下载不落盘也通过。完整运行约 258 秒，产出 `scenario-result.json`、
 `compass-result.json` 与客户端日志；可通过 Isles 的 `scripts/compass-pack-live.mjs` 重跑。
 
-身份服务使用 loopback 协议 fixture，尚未验证真实玩家登录、服务器身份或皮肤。
+该次历史运行的身份服务使用 loopback 协议 fixture；后续真实身份链见下节。
 场景显式选择下载的 Java，不代表无匹配 Java 时的自动选择分支或桌面点击流程已经验收。
+
+## 真实 Mirror 玩家身份链验收
+
+扩展的跨产品场景在 Windows 完整通过，原生验收用例运行约 237 秒。场景构建并启动
+Mirror 服务，通过真实 HTTP 端点注册账号、确认邮箱、登录网站会话并创建玩家独立密码。
+Compass 的 `ApiClient` 完成玩家认证，真实令牌保存后重载并校验，通过原生启动核心
+注入 authlib-injector；客户端报告注入器运行，加载 Fabric API 并完成方块纹理图集初始化。
+
+拒绝路径与会话生命周期也通过：网站主密码和邮箱用户名不能用于启动器认证；注销后
+令牌无效；撤销玩家独立密码使此前由它签发的有效会话失效，并拒绝再次登录。
+验收结果保留在 `scenario-result.json` 和 `compass-result.json`，复跑命令为：
+
+```sh
+node scripts/compass-pack-live.mjs /absolute/path/to/compass /absolute/path/to/mythic-mirror
+```
+
+从 Isles 仓库执行。Mirror 使用隔离内存存储和开发邮件日志驱动，邮箱确认仍经真实
+业务端点处理。PostgreSQL 持久化、外部邮件投递、桌面登录点击、实际加入在线服务器
+及服务器身份/皮肤另行验收。此次扩展只修改验收代码，`dev-61` 仍是最新安装包。

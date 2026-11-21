@@ -126,15 +126,15 @@ PAPER_SERVER_JAR=/path/to/purpur.jar ISLES_TEST_PLUGIN_DIR=/absolute/fixture-dir
 
 当前 Compass 会安装索引中标为客户端可选的文件，并单独显示数量；不会按 packwiz `optional.default` 自动取消选择。客户端 `unsupported` 文件跳过，`overrides/` 和 `client-overrides/` 按现有导入规则处理；服务端专用内容不用于客户端安装。重复实例目录拒绝覆盖。下载失败会列入安装结果，不能仅凭实例已出现在列表就认定整包完整。
 
-已在 **Windows / Java 21 / MC 1.21.1 / Fabric Loader 0.16.14** 通过真实 Isles 发布产物进行 Compass 原生安装和启动，固定 Fabric API **0.116.18+1.21.1**（Modrinth `5SwzqWUu`）。1086 字节产物安装了实际模组和一个可选文件，应用一个配置覆盖并跳过一个服务端文件；核对下载文件哈希/大小，真实客户端加载 Fabric API 并初始化方块材质图集。发布后将可选文件的下载内容改成同大小坏文件，再导入新实例，失败文件被明确报告且没有落成游戏文件或残留 `.part`。这里验证的是现有原生导入/启动核心，未将其记为桌面点击、网站一键安装、在线账号认证或实际加入服务器。
+已在 **Windows / Java 21 / MC 1.21.1 / Fabric Loader 0.16.14** 通过真实 Isles 发布产物进行 Compass 原生安装和启动，固定 Fabric API **0.116.18+1.21.1**（Modrinth `5SwzqWUu`）。1086 字节产物安装了实际模组和一个可选文件，应用一个配置覆盖并跳过一个服务端文件；核对下载文件哈希/大小，真实客户端加载 Fabric API 并初始化方块材质图集。发布后将可选文件的下载内容改成同大小坏文件，再导入新实例，失败文件被明确报告且没有落成游戏文件或残留 `.part`。扩展场景还通过真实 Mirror 注册、邮箱确认、玩家独立密码认证、账号令牌保存与重载，以及客户端 authlib-injector 注入；网站主密码和邮箱用户名被拒绝，注销使令牌失效，撤销独立密码使既有会话失效并拒绝再次登录。桌面点击、网站一键安装和实际加入服务器仍待验收。
 
-复跑需要 Go、Rust、Java 21、网络和可用桌面/OpenGL 会话。两个仓库都在相同验收版本时，从 Isles 仓库执行：
+复跑需要 Go、Rust、网络和可用桌面/OpenGL 会话；场景会下载官方 Java 21。使用配套验收版本的 Isles、Compass 和 Mirror 仓库，从 Isles 仓库执行：
 
 ```sh
-node scripts/compass-pack-live.mjs /absolute/path/to/compass
+node scripts/compass-pack-live.mjs /absolute/path/to/compass /absolute/path/to/mythic-mirror
 ```
 
-脚本使用临时 Isles 数据与临时 Compass 实例，输出 `scenario-result.json`、`compass-result.json`、完整客户端及测试日志；固定官方模组版本从原站下载，packwiz/身份外部边界由 loopback 夹具提供。不会复用日常账号或实例；成功初始化后结束验收客户端。原生用例需要显式运行此脚本；普通 CI 编译用例但不启动图形客户端。Mac/Linux 原生运行、一键远程安装、packwiz 默认可选项选择和真实账号进服继续保留待验收。
+脚本使用临时 Isles 数据、临时 Compass 实例和真实 Mirror 服务进程，输出 `scenario-result.json`、`compass-result.json`、客户端及测试日志；固定官方模组版本从原站下载，packwiz 来源使用 loopback 夹具。Mirror 使用隔离内存存储和开发邮件日志驱动，邮箱确认令牌从该驱动取得，再通过真实确认端点提交；该结果覆盖身份业务和协议，不覆盖 PostgreSQL 持久化或外部邮件投递。不会复用日常账号或实例；成功初始化后结束验收客户端。原生用例需要显式运行此脚本；普通 CI 编译用例但不启动图形客户端。Mac/Linux 原生运行、一键远程安装、packwiz 默认可选项选择和真实账号进服继续保留待验收。
 
 ## 内容来源
 
