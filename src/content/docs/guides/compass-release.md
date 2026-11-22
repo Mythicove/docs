@@ -232,7 +232,7 @@ Fabric Loader 0.16.14 与 Fabric API 0.116.18，下载官方 `java-runtime-delta
 `compass-result.json` 与客户端日志；可通过 Isles 的 `scripts/compass-pack-live.mjs` 重跑。
 
 该次历史运行的身份服务使用 loopback 协议 fixture；后续真实身份链见下节。
-场景显式选择下载的 Java，不代表无匹配 Java 时的自动选择分支或桌面点击流程已经验收。
+场景显式选择下载的 Java。无匹配 Java 时的自动选择分支另行验收；后续桌面操作见下节。
 
 ## 真实 Mirror 玩家身份链验收
 
@@ -270,4 +270,34 @@ authlib-injector 按 Yggdrasil 协议使用 SHA1withRSA，导致服务器接受�
 并准备 JDK 21 和 Maven。结果增加 `serverJoin`、`serverUuid`、`serverSkin`；
 `game-server/server-player.json` 与 `server-observed-skin.png` 保存原生身份观察与皮肤字节。
 客户端首次提示已通过初始配置接受，服务器使用 `enforce-secure-profile=false`。
-桌面首次启动点击、皮肤实际渲染、公网/代理、聊天档案签名及 Mac/Linux 进服另行验收。
+后续 Windows 启动器操作与皮肤预览见下节；游戏首次提示、公网/代理、聊天档案签名及 Mac/Linux 进服另行验收。
+
+## Windows 原生桌面操作验收
+
+真实 Windows WebView2 窗口已完成以下操作：中文玩家名输入、拒绝网站主密码、
+玩家独立密码登录、关闭后重启恢复账号、皮肤预览、点击启动在线进服、停止游戏及退出登录。
+服务器观察确认 UUID 与 Mirror 玩家一致、SLIM 皮肤已签名；退出登录后原令牌验证返回 403，
+本地账号和令牌文件均已删除。登录密码未写入账号或令牌文件。
+
+首次桌面复验发现重复启动缺陷：Minecraft 将 `--quickPlayPath` 写为日志文件，
+启动器却在下一次准备时把该路径创建为目录，导致 Windows 文件错误 183。
+已删除错误的建目录操作，保留客户端负责写入日志；同一真实流程复验通过。
+
+从当前 Compass 源码构建原生可执行文件后，在 Isles 仓库执行：
+
+```powershell
+$env:COMPASS_EXE='D:\Caches\.cargo\target\release\compass.exe'
+$env:PAPER_SERVER_JAR='D:\Temp\opencode\purpur-1.21.1-2329.jar'
+$env:MAVEN_COMMAND='D:\Temp\opencode\apache-maven-3.9.11\bin\mvn.cmd'
+node scripts/compass-pack-live.mjs /absolute/path/to/compass /absolute/path/to/mythic-mirror
+```
+
+路径按本机调整。桌面操作使用相邻 `web` 仓库的 Playwright 依赖和
+`e2e/compass-desktop-live.mjs`，部署独立便携目录，通过 CDP 操作真实 WebView2。
+`desktop-result.json` 记录所测 exe 的 SHA-256 与各项结果，`scenario-result.json`
+增加 `desktop` 结果；桌面子目录保留登录、皮肤预览、退出截图及服务器观察和日志。
+皮肤截图已人工确认显示上传的角色纹理。
+
+此场景复用真实安装好的实例，游戏首次提示已在初始配置中接受；
+首次安装的全程桌面点击、游戏内皮肤渲染及无匹配 Java 自动选择仍需验收。
+所测文件为本地源码构建，最新发布安装包仍为 `dev-61`，不包含此次 Quick Play 修复。
