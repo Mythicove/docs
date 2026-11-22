@@ -205,7 +205,7 @@ Linux 136 个文件、macOS arm64 145 个文件；均为 64 位 Java 21，重复
 缺失 `release` 文件修复成功。文件数指实际下载文件，不包含目录与符号链接。
 本轮为 main push，未生成新的发布安装包；`dev-58` 保留为此前提交的打包验收记录。
 
-## dev-61 最新安装包验收
+## dev-61 安装包验收
 
 [运行 `44918281851`](https://github.com/Mythicove/mythic-compass/actions/runs/44918281851)
 整体成功，草稿 `dev-61` 指向 `23b6042ba1e489902f78853bb7472588678e48e6`，
@@ -214,7 +214,7 @@ Linux 136 个文件、macOS arm64 145 个文件；均为 64 位 Java 21，重复
 
 7 个发布资产已全部下载，文件大小与 SHA-256 和清单、GitHub 记录逐项一致。
 Windows 生命周期 JSON 确认真实安装、`.mrpack` 关联、开始菜单、原生窗口启动、卸载及关联恢复。
-后续公开测试应采用 `dev-61`；`dev-58` 仅作为此前版本的历史验收记录。
+该轮验收采用 `dev-61`；`dev-58` 作为此前版本的历史验收记录。
 
 本草稿仍为未签名 0.1.0，没有签名更新资产。完整干净用户环境的 GUI 登录、自动 Java 选择、
 进入游戏及服务器身份/皮肤验收，以及签名升级与 Apple 公证，继续按前述独立路径执行。
@@ -251,7 +251,7 @@ node scripts/compass-pack-live.mjs /absolute/path/to/compass /absolute/path/to/m
 
 从 Isles 仓库执行。Mirror 使用隔离内存存储和开发邮件日志驱动，邮箱确认仍经真实
 业务端点处理。PostgreSQL 持久化、外部邮件投递、桌面登录点击、实际加入在线服务器
-及服务器身份/皮肤另行验收。此次扩展只修改验收代码，`dev-61` 仍是最新安装包。
+及服务器身份/皮肤另行验收。此次扩展只修改验收代码，彼时安装包为 `dev-61`。
 
 ## 在线服务器身份与签名皮肤验收
 
@@ -264,7 +264,7 @@ node scripts/compass-pack-live.mjs /absolute/path/to/compass /absolute/path/to/m
 首次真实进服暴露了 Mirror 属性签名算法不匹配：原实现用 SHA256withRSA，
 authlib-injector 按 Yggdrasil 协议使用 SHA1withRSA，导致服务器接受登录后仍报告
 皮肤签名无效。已修正唯一签名生成端、相关契约测试与接入指南，原始失败场景通过。
-部署身份服务需包含该 Mirror 修复；Compass 生产代码未变，最新安装包仍为 `dev-61`。
+部署身份服务需包含该 Mirror 修复；该轮 Compass 生产代码未变，安装包为 `dev-61`。
 
 复跑在前述命令前设置 `PAPER_SERVER_JAR`，指向对应 Paper 兼容服务端 JAR，
 并准备 JDK 21 和 Maven。结果增加 `serverJoin`、`serverUuid`、`serverSkin`；
@@ -300,4 +300,44 @@ node scripts/compass-pack-live.mjs /absolute/path/to/compass /absolute/path/to/m
 
 此场景复用真实安装好的实例，游戏首次提示已在初始配置中接受；
 首次安装的全程桌面点击、游戏内皮肤渲染及无匹配 Java 自动选择仍需验收。
-所测文件为本地源码构建，最新发布安装包仍为 `dev-61`，不包含此次 Quick Play 修复。
+该轮所测文件为本地源码构建，彼时发布安装包 `dev-61` 不包含此次 Quick Play 修复。
+
+## dev-66 最新安装包验收
+
+[运行 `44978838714`](https://github.com/Mythicove/mythic-compass/actions/runs/44978838714)
+整体成功，草稿 `dev-66` 指向 `37133a2d821206e1196e2b72af8e0da70b50e12c`，
+包含上述 Quick Play 修复。三平台检查、在线安装冒烟、打包及统一校验和通过。
+7 个发布资产已全部下载并与 `SHA256SUMS.txt` 逐项核对一致。
+
+Windows 安装验收 JSON 确认安装、卸载、开始菜单、原生窗口、`.mrpack` 关联及恢复。
+NSIS SHA-256 为 `175500510c24d629ef879f22a189e77524b1c97351fd137ed1ea1cf0c4592d51`，
+MSI 为 `385667f7e2915f3de430b7ce2396a6db1bfee96f999f68776f4273916ba5494a`。
+最新安装包验收使用 `dev-66`；上述 `dev-61` 记录保留为历史结果。
+
+本草稿仍未签名，没有签名更新资产；签名升级和 Apple 公证按前述流程执行。
+
+### 空目录桌面与首次游戏提示
+
+使用 `dev-66` NSIS 中提取的原生可执行文件完成 Windows WebView2 复验，exe SHA-256
+为 `e8a2c8ef800587b65ce1413dd2b8eb2ca44506d48e1f79bfa3dac4af3574cbf5`。
+原生核心用例先运行通过（约 406 秒）；随后重新核对该次 Isles 发布工件的内容摘要，
+启动独立 Mirror 身份服务，在新的便携目录执行桌面验收。
+
+- 初始实例列表与缓存为空，通过 `.mrpack` 启动确认页，实际点击安装并配置直连服务器。
+- 启动器子进程使用隔离 `LOCALAPPDATA`、空 `JAVA_HOME` 和仅含 System32 的 PATH；
+  只读 Java 探测确认无匹配运行时。点击启动后自动下载并使用官方 Java 21，实例仍保持自动选择。
+- 游戏首次启动前 `options.txt` 不存在；截图确认出现 “Welcome to Minecraft!”，
+  在真实 Java 窗口点击 Continue 后进入服务器连接流程，点击位置与窗口身份写入截图旁的 JSON。
+- 连续两次点击启动、在线进服、停止均通过；每次服务端观察都确认同一玩家 UUID、
+  `onlineMode=true`、SLIM 皮肤及有效属性签名。第二次启动使用客户端已生成的 Quick Play 日志。
+- 中文输入、主密码拒绝、独立密码登录、重启恢复、皮肤预览及退出登录通过。
+  退出后令牌验证返回 403、两个账号文件删除，后续撤销独立密码也使其会话失效。
+
+结果保存在该运行目录的 `desktop-result.json`；桌面子目录保留
+`first-prompt.png`、`first-prompt-accepted.png`、`server-player-1.json`、
+`server-player-2.json` 与每次进服的游戏窗口截图。皮肤预览截图已人工确认。
+窗口驱动 `web/e2e/compass-game-window.ps1` 以 Compass 子进程关系选择 Java 窗口，
+通过 Windows 窗口激活并核对前台身份后捕获或点击；冷启动窗口等待与进服等待分别计时。
+
+此次完成 Windows 空目录桌面流程。游戏内皮肤完整渲染、聊天档案签名及 Mac/Linux
+实际进服仍按对应环境验收；Mirror 使用隔离内存存储和开发邮件日志。
